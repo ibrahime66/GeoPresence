@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Console Super Admin — GeoPresence{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 mb-0">Console plateforme</h1>
+  <div class="d-flex gap-2">
+    <a href="{% url 'superadmin:audit_log_list' %}" class="btn btn-outline-secondary">Journal d'audit</a>
+    <a href="{% url 'superadmin:organization_create' %}" class="btn btn-primary">Nouvelle organisation</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Organisations actives</div>
+      <div class="fs-3 fw-bold" style="color:var(--gp-blue)">{{ org_counts.active }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Organisations suspendues</div>
+      <div class="fs-3 fw-bold text-danger">{{ org_counts.suspended }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Utilisateurs (plateforme)</div>
+      <div class="fs-3 fw-bold" style="color:var(--gp-navy)">{{ users_total }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Pointages aujourd'hui</div>
+      <div class="fs-3 fw-bold" style="color:var(--gp-green)">{{ attendances_today }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-lg-6">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h6 mb-0">Organisations récentes</h2>
+      <a href="{% url 'superadmin:organization_list' %}" class="small">Voir tout</a>
+    </div>
+    <table class="table table-sm">
+      <tbody>
+        {% for org in recent_organizations %}
+        <tr>
+          <td>{{ org.display_name }}</td>
+          <td class="text-muted small">{{ org.created_at|date:"d/m/Y" }}</td>
+          <td>
+            {% if org.status == "ACTIVE" %}<span class="badge bg-success">Active</span>
+            {% elif org.status == "SUSPENDED" %}<span class="badge bg-danger">Suspendue</span>
+            {% else %}<span class="badge bg-secondary">{{ org.get_status_display }}</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td class="text-muted">Aucune organisation.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h6 mb-0">Activité récente</h2>
+      <a href="{% url 'superadmin:audit_log_list' %}" class="small">Voir tout</a>
+    </div>
+    <table class="table table-sm">
+      <tbody>
+        {% for log in recent_audit_logs %}
+        <tr>
+          <td class="text-muted small">{{ log.timestamp|date:"d/m H:i" }}</td>
+          <td>{{ log.action }}</td>
+          <td class="text-muted small">{{ log.tenant.display_name|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td class="text-muted">Aucune activité.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

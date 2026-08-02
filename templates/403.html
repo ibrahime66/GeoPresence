@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Accès refusé — GeoPresence{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-8 col-md-6">
+    <div class="alert alert-danger">
+      Vous n'avez pas les droits nécessaires pour accéder à cette page.
+      {% if exception %}<div class="small mt-1">{{ exception }}</div>{% endif %}
+    </div>
+    <a href="{% url 'core:dashboard' %}">Retour au tableau de bord</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord — GeoPresence{% endblock %}
+{% block content %}
+<h1 class="h4">Bienvenue, {{ user.full_name|default:user.email }}</h1>
+<p class="text-muted mb-4">{{ user.tenant.display_name }} — {% now "l d F Y" %}</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Présents aujourd'hui</div>
+      <div class="fs-3 fw-bold" style="color:var(--gp-green)">{{ present_today }} <span class="fs-6 text-muted">/ {{ total_employees }}</span></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Absents aujourd'hui</div>
+      <div class="fs-3 fw-bold text-danger">{{ absent_today }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Retards aujourd'hui</div>
+      <div class="fs-3 fw-bold" style="color:#B7791F">{{ late_today }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="border rounded p-3 h-100">
+      <div class="text-muted small">Taux de présence</div>
+      <div class="fs-3 fw-bold" style="color:var(--gp-blue)">
+        {{ rate_today }}%
+        {% if rate_today > rate_yesterday %}<span class="fs-6 text-success">▲</span>
+        {% elif rate_today < rate_yesterday %}<span class="fs-6 text-danger">▼</span>
+        {% endif %}
+      </div>
+      <div class="text-muted small">Hier : {{ rate_yesterday }}%</div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="{% url 'leaves:pending' %}" class="btn btn-outline-secondary">
+    Congés à valider {% if pending_leaves %}<span class="badge bg-primary">{{ pending_leaves }}</span>{% endif %}
+  </a>
+  <a href="{% url 'absences:pending' %}" class="btn btn-outline-secondary">
+    Justificatifs à valider {% if pending_absences %}<span class="badge bg-primary">{{ pending_absences }}</span>{% endif %}
+  </a>
+</div>
+
+<h2 class="h6">Administration</h2>
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="{% url 'agencies:list' %}" class="btn btn-outline-dark">Agences</a>
+  <a href="{% url 'departments:list' %}" class="btn btn-outline-dark">Départements</a>
+  <a href="{% url 'departments:position_list' %}" class="btn btn-outline-dark">Postes</a>
+  <a href="{% url 'schedules:list' %}" class="btn btn-outline-dark">Horaires</a>
+  <a href="{% url 'employees:list' %}" class="btn btn-outline-dark">Employés</a>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-lg-8">
+    <div class="border rounded p-3 h-100">
+      <h2 class="h6">Taux de présence — 30 derniers jours</h2>
+      <canvas id="trendChart" height="90"></canvas>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="border rounded p-3 h-100">
+      <h2 class="h6">Absences par motif (ce mois)</h2>
+      {% if reason_labels %}
+      <canvas id="reasonChart" height="200"></canvas>
+      {% else %}
+      <p class="text-muted small mb-0">Aucune absence ce mois-ci.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="border rounded p-3 h-100">
+      <h2 class="h6">Top retards (ce mois)</h2>
+      {% if late_ranking %}
+      <canvas id="lateChart" height="200"></canvas>
+      {% else %}
+      <p class="text-muted small mb-0">Aucun retard enregistré ce mois-ci.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <h2 class="h6">Activité récente</h2>
+    <table class="table table-sm">
+      <tbody>
+        {% for a in recent_attendances %}
+        <tr>
+          <td class="text-nowrap text-muted small">{{ a.server_time|date:"d/m H:i" }}</td>
+          <td>{{ a.employee.user.full_name|default:a.employee.user.email }}</td>
+          <td>{{ a.get_clock_type_display }}</td>
+          <td>{{ a.get_status_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td class="text-muted">Aucun pointage.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ trend_labels|json_script:"trend-labels" }}
+{{ trend_values|json_script:"trend-values" }}
+{{ reason_labels|json_script:"reason-labels" }}
+{{ reason_values|json_script:"reason-values" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+(() => {
+  const trendLabels = JSON.parse(document.getElementById("trend-labels").textContent);
+  const trendValues = JSON.parse(document.getElementById("trend-values").textContent);
+  new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+      labels: trendLabels,
+      datasets: [{
+        label: "Taux de présence (%)",
+        data: trendValues,
+        borderColor: "#0B63F6",
+        backgroundColor: "rgba(11,99,246,0.08)",
+        tension: 0.25,
+        fill: true,
+        pointRadius: 0,
+      }],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + "%" } } },
+    },
+  });
+
+  const reasonLabels = JSON.parse(document.getElementById("reason-labels").textContent);
+  const reasonValues = JSON.parse(document.getElementById("reason-values").textContent);
+  if (reasonLabels.length) {
+    new Chart(document.getElementById("reasonChart"), {
+      type: "doughnut",
+      data: {
+        labels: reasonLabels,
+        datasets: [{ data: reasonValues, backgroundColor: ["#0B63F6", "#16C74E", "#0A1E45", "#2F8CFF", "#98A2B3", "#B7791F"] }],
+      },
+      options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } } },
+    });
+  }
+
+  {% if late_ranking %}
+  new Chart(document.getElementById("lateChart"), {
+    type: "bar",
+    data: {
+      labels: [{% for r in late_ranking %}"{{ r.employee__user__first_name }} {{ r.employee__user__last_name }}",{% endfor %}],
+      datasets: [{ label: "Minutes de retard cumulées", data: [{% for r in late_ranking %}{{ r.total_late }},{% endfor %}], backgroundColor: "#0B63F6" }],
+    },
+    options: { indexAxis: "y", plugins: { legend: { display: false } } },
+  });
+  {% endif %}
+})();
+</script>
+{% endblock %}

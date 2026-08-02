@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Modifier {{ object }} — GeoPresence{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8">
+    <h1 class="h4 mb-3">Modifier {{ object }}</h1>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      {% endif %}
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="col-12 col-sm-6">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary mt-4">Enregistrer</button>
+      <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary mt-4">Annuler</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

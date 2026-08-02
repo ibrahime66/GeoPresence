@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Mes congés — GeoPresence{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8">
+    {% if not employee %}
+      <div class="alert alert-warning">Aucun profil employé actif associé à votre compte.</div>
+    {% else %}
+      <h1 class="h4 mb-3">Mes congés</h1>
+      <p>Solde actuel : <strong>{{ employee.leave_balance }} j</strong></p>
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <h2 class="h6">Nouvelle demande</h2>
+          <form method="post" action="{% url 'leaves:submit' %}">
+            {% csrf_token %}
+            <div class="row g-2">
+              <div class="col-12 col-sm-4">
+                <label class="form-label">{{ form.leave_type.label }}</label>
+                {{ form.leave_type }}
+              </div>
+              <div class="col-6 col-sm-3">
+                <label class="form-label">{{ form.start_date.label }}</label>
+                {{ form.start_date }}
+              </div>
+              <div class="col-6 col-sm-3">
+                <label class="form-label">{{ form.end_date.label }}</label>
+                {{ form.end_date }}
+              </div>
+              <div class="col-12">
+                <label class="form-label">{{ form.comment.label }}</label>
+                {{ form.comment }}
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Soumettre</button>
+          </form>
+        </div>
+      </div>
+
+      <table class="table">
+        <thead><tr><th>Type</th><th>Du</th><th>Au</th><th>Jours</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+          {% for leave in leaves %}
+          <tr>
+            <td>{{ leave.leave_type.name }}</td>
+            <td>{{ leave.start_date }}</td>
+            <td>{{ leave.end_date }}</td>
+            <td>{{ leave.working_days }}</td>
+            <td>{{ leave.get_status_display }}</td>
+            <td>
+              {% if leave.status == "PENDING" %}
+              <form method="post" action="{% url 'leaves:cancel' leave.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Annuler</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-muted">Aucune demande.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

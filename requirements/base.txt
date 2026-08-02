@@ -1,0 +1,14 @@
+# Dépendances communes à tous les environnements.
+#
+# mysqlclient nécessite les en-têtes MySQL système pour compiler :
+#   sudo apt install -y libmysqlclient-dev python3-dev build-essential pkg-config
+# ⚠️ Ne JAMAIS installer default-libmysqlclient-dev ni libmariadb3/mariadb-common sur
+# cette distribution : ça force la désinstallation de mysql-server (conflit apt).
+
+Django==4.2.30
+djangorestframework==3.17.1
+mysqlclient==2.2.8
+django-environ==0.14.0
+Pillow==12.3.0
+argon2-cffi==25.1.0
+cryptography==50.0.0

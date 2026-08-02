@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Modifier{% else %}Nouvel{% endif %} horaire — GeoPresence{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">{% if object %}Modifier l'horaire{% else %}Nouvel horaire{% endif %}</h1>
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <div class="row g-3 mb-4">
+    {% for field in form %}
+    <div class="col-12 col-sm-4">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2 class="h6">Créneaux hebdomadaires</h2>
+  <p class="text-muted small">
+    Un créneau où l'heure de fin est antérieure à l'heure de début est considéré comme chevauchant minuit
+    (équipe de nuit) — le jour indiqué reste le jour de <strong>début</strong> du créneau.
+  </p>
+
+  {{ formset.management_form }}
+  {% if formset.non_form_errors %}
+    <div class="alert alert-danger">{% for e in formset.non_form_errors %}<div>{{ e }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Jour</th><th>Début</th><th>Fin</th><th>Pause déb.</th><th>Pause fin</th>
+          <th>Arrivée −</th><th>Arrivée +</th><th>Départ −</th><th>Départ +</th>
+          <th>Matière</th><th>Salle</th><th>Groupe</th><th>Annulé</th><th>Suppr.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot_form in formset %}
+        <tr>
+          {% for hidden in slot_form.hidden_fields %}{{ hidden }}{% endfor %}
+          <td>{{ slot_form.weekday }}</td>
+          <td>{{ slot_form.start_time }}</td>
+          <td>{{ slot_form.end_time }}</td>
+          <td>{{ slot_form.break_start_time }}</td>
+          <td>{{ slot_form.break_end_time }}</td>
+          <td>{{ slot_form.clock_in_window_before_minutes }}</td>
+          <td>{{ slot_form.clock_in_window_after_minutes }}</td>
+          <td>{{ slot_form.clock_out_window_before_minutes }}</td>
+          <td>{{ slot_form.clock_out_window_after_minutes }}</td>
+          <td>{{ slot_form.subject }}</td>
+          <td>{{ slot_form.room }}</td>
+          <td>{{ slot_form.group_label }}</td>
+          <td class="text-center">{{ slot_form.is_cancelled }}</td>
+          <td class="text-center">{% if slot_form.instance.pk %}{{ slot_form.DELETE }}{% endif %}</td>
+        </tr>
+        {% if slot_form.non_field_errors %}
+        <tr><td colspan="14"><div class="text-danger small">{{ slot_form.non_field_errors }}</div></td></tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+  <a href="{% url 'schedules:list' %}" class="btn btn-outline-secondary">Annuler</a>
+</form>
+{% endblock %}

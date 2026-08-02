@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Agences — GeoPresence{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Agences</h1>
+  <a href="{% url 'agencies:create' %}" class="btn btn-primary">Nouvelle agence</a>
+</div>
+<table class="table">
+  <thead><tr><th>Nom</th><th>Code</th><th>Type</th><th>Ville</th><th>Rayon</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    {% for agency in agencies %}
+    <tr>
+      <td>{{ agency.name }}</td>
+      <td>{{ agency.code }}</td>
+      <td>{{ agency.get_agency_type_display }}</td>
+      <td>{{ agency.city }}</td>
+      <td>{{ agency.radius_meters }} m</td>
+      <td>{% if agency.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+      <td><a href="{% url 'agencies:update' agency.pk %}">Modifier</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="text-muted">Aucune agence. Une organisation doit disposer d'au moins une agence pour que ses employés puissent pointer.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

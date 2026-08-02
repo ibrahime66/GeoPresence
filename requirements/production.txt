@@ -1,0 +1,4 @@
+-r base.txt
+
+# Dépendances de production — ajoutées au sprint dédié au déploiement
+# (gunicorn, whitenoise, sentry-sdk, redis, celery, etc.)

@@ -1,0 +1,199 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GeoPresence — Gestion de présence géolocalisée</title>
+  <meta name="description" content="GeoPresence vérifie la présence de vos équipes par géolocalisation et photo horodatée, calcule retards et heures supplémentaires automatiquement, et centralise congés et absences.">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/favicon-192.png' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{% static 'css/main.css' %}" rel="stylesheet">
+</head>
+<body class="gp-landing">
+
+  <header class="gp-nav">
+    <div class="gp-nav-inner">
+      <a class="gp-brand" href="#">
+        <img src="{% static 'img/logo-mark.png' %}" alt="GeoPresence">
+        GeoPresence
+      </a>
+      <nav class="gp-nav-links d-none d-md-flex">
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#comment-ca-marche">Comment ça marche</a>
+        <a href="#securite">Sécurité</a>
+      </nav>
+      <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary">Se connecter</a>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="gp-hero">
+    <div>
+      <span class="gp-eyebrow"><span class="dot"></span> Multi-site &amp; multi-organisation</span>
+      <h1>Le pointage qui prouve <span class="accent">où</span> vos équipes travaillent.</h1>
+      <p class="lead">
+        Géolocalisation, photo prise en temps réel et calcul automatique des retards et heures
+        supplémentaires — une seule plateforme pour piloter la présence de vos équipes, sur un ou
+        plusieurs sites.
+      </p>
+      <div class="gp-hero-ctas">
+        <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary gp-btn-lg">Se connecter</a>
+        <a href="#comment-ca-marche" class="gp-btn gp-btn-ghost gp-btn-lg">Comment ça marche</a>
+      </div>
+      <div class="gp-trust-row">
+        <span>{% include "core/_icon.html" with icon="check" %} Isolation stricte entre organisations</span>
+        <span>{% include "core/_icon.html" with icon="check" %} Journal d'audit inaltérable</span>
+        <span>{% include "core/_icon.html" with icon="check" %} Mots de passe Argon2id</span>
+      </div>
+    </div>
+
+    <div class="gp-hero-visual">
+      <div class="gp-mock">
+        <div class="gp-mock-map">
+          <div class="gp-mock-zone"></div>
+          <img src="{% static 'img/logo-mark.png' %}" alt="" class="gp-mock-pin">
+          <div class="gp-mock-radius-label">Rayon autorisé : 200 m</div>
+        </div>
+        <div class="gp-mock-result">
+          <div class="gp-mock-check">{% include "core/_icon.html" with icon="check" color="white" %}</div>
+          <div class="gp-mock-result-text">
+            <strong>Arrivée enregistrée</strong>
+            <span>08:02 — À l'heure</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMMENT ÇA MARCHE ============ -->
+  <section class="gp-section" id="comment-ca-marche">
+    <div class="gp-section-head">
+      <span class="gp-kicker">Comment ça marche</span>
+      <h2>Trois vérifications, en moins d'une seconde</h2>
+      <p>Le pointage est revalidé côté serveur à chaque étape — jamais seulement côté téléphone.</p>
+    </div>
+    <div class="gp-steps">
+      <div class="gp-step">
+        <div class="gp-step-num">1</div>
+        <h3>L'employé pointe</h3>
+        <p>Depuis son téléphone, en un geste : position GPS haute précision et photo prise en direct (jamais depuis la galerie).</p>
+      </div>
+      <div class="gp-step">
+        <div class="gp-step-num">2</div>
+        <h3>Le système vérifie</h3>
+        <p>Zone GPS autorisée, horaire attendu, absence de doublon, cohérence de la séquence arrivée/départ.</p>
+      </div>
+      <div class="gp-step">
+        <div class="gp-step-num">3</div>
+        <h3>Le statut est calculé</h3>
+        <p>À l'heure, retard, départ anticipé ou heures supplémentaires — automatiquement, sans ressaisie.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FONCTIONNALITÉS ============ -->
+  <section class="gp-section" id="fonctionnalites">
+    <div class="gp-section-head">
+      <span class="gp-kicker">Fonctionnalités</span>
+      <h2>Tout ce qu'il faut pour piloter la présence</h2>
+      <p>Pensé pour les organisations avec plusieurs sites, plusieurs équipes et des horaires qui ne se ressemblent pas.</p>
+    </div>
+    <div class="gp-features">
+      <div class="gp-card">
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon="pin" %}</div>
+        <h3>Géofencing précis</h3>
+        <p>Chaque agence définit sa zone GPS autorisée (50 à 5000 m). Un pointage hors zone est refusé et journalisé.</p>
+      </div>
+      <div class="gp-card">
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon="camera" %}</div>
+        <h3>Photo en temps réel</h3>
+        <p>Caméra uniquement, jamais la galerie du téléphone. Impossible de pointer à la place d'un collègue.</p>
+      </div>
+      <div class="gp-card">
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon="building" %}</div>
+        <h3>Multi-site &amp; multi-organisation</h3>
+        <p>Une organisation, plusieurs agences — et une isolation stricte des données entre chaque client de la plateforme.</p>
+      </div>
+      <div class="gp-card">
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon="calendar" %}</div>
+        <h3>Horaires flexibles</h3>
+        <p>Fixes, en rotation, personnalisés ou par créneau — avec gestion automatique des équipes de nuit à cheval sur minuit.</p>
+      </div>
+      <div class="gp-card">
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon="clipboard" %}</div>
+        <h3>Congés &amp; absences</h3>
+        <p>Demandes, validations et soldes gérés de bout en bout, avec justificatifs et workflow manager dédié.</p>
+      </div>
+      <div class="gp-card">
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon="shield" %}</div>
+        <h3>Journal d'audit inaltérable</h3>
+        <p>Chaque connexion, chaque pointage, chaque modification est tracée — en écriture seule, sans exception.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTEURS ============ -->
+  <section class="gp-section pt-0">
+    <div class="gp-section-head mb-4">
+      <span class="gp-kicker">Pour qui</span>
+      <h2>Une plateforme, tous les secteurs</h2>
+    </div>
+    <div class="gp-pills">
+      <span class="gp-pill">Entreprises</span>
+      <span class="gp-pill">Établissements scolaires</span>
+      <span class="gp-pill">Universités</span>
+      <span class="gp-pill">Restaurants</span>
+      <span class="gp-pill">Pharmacies</span>
+      <span class="gp-pill">Cliniques &amp; hôpitaux</span>
+      <span class="gp-pill">ONG</span>
+      <span class="gp-pill">Administrations</span>
+      <span class="gp-pill">Associations</span>
+    </div>
+  </section>
+
+  <!-- ============ SÉCURITÉ ============ -->
+  <section class="gp-security" id="securite">
+    <div class="gp-section">
+      <div class="gp-security-grid">
+        <div>
+          <span class="gp-kicker">Sécurité</span>
+          <h2 class="mt-2 mb-3" style="font-size:2rem;font-weight:800;color:var(--gp-navy);">Conçu pour résister, pas seulement pour fonctionner</h2>
+          <p style="color:var(--gp-gray-600);">
+            La sécurité n'est pas une option ajoutée après coup : isolation des données, chiffrement
+            et traçabilité sont au cœur de l'architecture, dès la première ligne de code.
+          </p>
+        </div>
+        <ul>
+          <li>{% include "core/_icon.html" with icon="check" %} Mots de passe hachés avec Argon2id, jamais stockés en clair</li>
+          <li>{% include "core/_icon.html" with icon="check" %} Verrouillage automatique après plusieurs échecs de connexion</li>
+          <li>{% include "core/_icon.html" with icon="check" %} Isolation stricte des données entre organisations, fail-secure par défaut</li>
+          <li>{% include "core/_icon.html" with icon="check" %} Numéros d'identité et données sensibles chiffrés au repos</li>
+          <li>{% include "core/_icon.html" with icon="check" %} Journal d'audit en écriture seule, non modifiable — même par un administrateur</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA FINALE ============ -->
+  <section class="gp-section">
+    <div class="gp-cta-band">
+      <h2>Prêt à essayer GeoPresence ?</h2>
+      <p>Connectez-vous pour découvrir la plateforme.</p>
+      <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary gp-btn-lg">Se connecter</a>
+    </div>
+  </section>
+
+  <footer class="gp-footer">
+    <div class="gp-footer-inner">
+      <div class="gp-footer-brand">
+        <img src="{% static 'img/logo-mark.png' %}" alt="">
+        GeoPresence
+      </div>
+      <p>&copy; {% now "Y" %} GeoPresence. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Congés en attente — GeoPresence{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Demandes de congé en attente</h1>
+<table class="table">
+  <thead><tr><th>Employé</th><th>Type</th><th>Du</th><th>Au</th><th>Jours</th><th>Commentaire</th><th></th></tr></thead>
+  <tbody>
+    {% for leave in leaves %}
+    <tr>
+      <td>{{ leave.employee }}</td>
+      <td>{{ leave.leave_type.name }}</td>
+      <td>{{ leave.start_date }}</td>
+      <td>{{ leave.end_date }}</td>
+      <td>{{ leave.working_days }}</td>
+      <td>{{ leave.employee_comment }}</td>
+      <td class="d-flex gap-2">
+        <form method="post" action="{% url 'leaves:review' leave.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve">
+          <button type="submit" class="btn btn-sm btn-success">Approuver</button>
+        </form>
+        <form method="post" action="{% url 'leaves:review' leave.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <button type="submit" class="btn btn-sm btn-outline-danger">Rejeter</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="text-muted">Aucune demande en attente.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
