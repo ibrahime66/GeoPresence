@@ -1,23 +1,30 @@
 {% extends "base.html" %}
 {% block title %}{% if object %}Modifier{% else %}Nouveau{% endif %} poste — GeoPresence{% endblock %}
+{% block page_title %}{% if object %}Modifier le poste{% else %}Nouveau poste{% endif %}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-6">
-    <h1 class="h4 mb-3">{% if object %}Modifier le poste{% else %}Nouveau poste{% endif %}</h1>
+<div class="gp-page-header">
+  <div><h1>{% if object %}Modifier le poste{% else %}Nouveau poste{% endif %}</h1></div>
+</div>
+<div class="gp-card gp-form-card">
+  <div class="gp-card-body">
     <form method="post" novalidate>
       {% csrf_token %}
       {% if form.non_field_errors %}
         <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
       {% endif %}
       {% for field in form %}
+      {% if field.name != "department" or departments_enabled %}
       <div class="mb-3">
         <label class="form-label">{{ field.label }}</label>
         {{ field }}
         {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
       </div>
+      {% endif %}
       {% endfor %}
-      <button type="submit" class="btn btn-primary">Enregistrer</button>
-      <a href="{% url 'departments:position_list' %}" class="btn btn-outline-secondary">Annuler</a>
+      <div class="gp-form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="{% url 'departments:position_list' %}" class="btn btn-outline-secondary">Annuler</a>
+      </div>
     </form>
   </div>
 </div>

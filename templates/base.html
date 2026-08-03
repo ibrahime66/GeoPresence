@@ -1,5 +1,5 @@
 {% load i18n static %}<!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE|default:'fr' }}">
+<html lang="{{ LANGUAGE_CODE|default:'fr' }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,35 +7,162 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
     <link rel="icon" type="image/png" sizes="96x96" href="{% static 'img/favicon-96.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon-192.png' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#0A1E45">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{% static 'css/main.css' %}" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand gp-app-navbar mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'core:dashboard' %}{% else %}{% url 'core:home' %}{% endif %}">
-                <img src="{% static 'img/logo-mark.png' %}" alt="">
-                GeoPresence
-            </a>
-            {% if user.is_authenticated %}
-            <form method="post" action="{% url 'accounts:logout' %}" class="d-flex align-items-center">
-                {% csrf_token %}
-                <span class="navbar-text me-3">{{ user.email }}</span>
-                <button type="submit" class="btn btn-outline-secondary btn-sm">Se déconnecter</button>
-            </form>
+<body class="gp-app-body">
+{# Toutes les pages qui étendent base.html sont derrière LoginRequiredMixin/RoleRequiredMixin — #}
+{# user.is_authenticated est donc toujours vrai ici ; pas de variante "visiteur" à gérer. #}
+<div class="gp-shell">
+    <div class="gp-sidebar-backdrop" id="gpSidebarBackdrop"></div>
+    <aside class="gp-sidebar" id="gpSidebar">
+        <a class="gp-sidebar-brand" href="{% url 'core:dashboard' %}">
+            <img src="{% static 'img/logo-mark.png' %}" alt="">
+            <span>GeoPresence</span>
+        </a>
+        <nav class="gp-sidebar-nav">
+            {% if user.role == "SUPER_ADMIN" %}
+                <div class="gp-sidebar-section">{% trans "Plateforme" %}</div>
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'superadmin' %}is-active{% endif %}" href="{% url 'superadmin:dashboard' %}">
+                    {% include "core/_icon.html" with icon="grid" size="18" %} {% trans "Tableau de bord" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'organization_list' %}is-active{% endif %}" href="{% url 'superadmin:organization_list' %}">
+                    {% include "core/_icon.html" with icon="building" size="18" %} {% trans "Organisations" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'audit_log_list' %}is-active{% endif %}" href="{% url 'superadmin:audit_log_list' %}">
+                    {% include "core/_icon.html" with icon="shield" size="18" %} {% trans "Journal d'audit" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'backups' %}is-active{% endif %}" href="{% url 'backups:list' %}">
+                    {% include "core/_icon.html" with icon="archive" size="18" %} {% trans "Sauvegardes" %}
+                </a>
+                {% if ai_available %}
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'ai:chat' %}">
+                    {% include "core/_icon.html" with icon="mail" size="18" %} GeoIA
+                </a>
+                {% endif %}
+            {% else %}
+                <div class="gp-sidebar-section">{% trans "Tableau de bord" %}</div>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'core' %}is-active{% endif %}" href="{% url 'core:dashboard' %}">
+                    {% include "core/_icon.html" with icon="grid" size="18" %} {% trans "Accueil" %}
+                </a>
+                {% if ai_available %}
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'ai:chat' %}">
+                    {% include "core/_icon.html" with icon="mail" size="18" %} GeoIA
+                </a>
+                {% endif %}
+
+                {% if user.role != "ADMIN" %}
+                <div class="gp-sidebar-section">{% trans "Mon espace" %}</div>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'attendance' %}is-active{% endif %}" href="{% url 'attendance:clock_page' %}">
+                    {% include "core/_icon.html" with icon="target" size="18" %} {% trans "Pointer" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'my_leaves' %}is-active{% endif %}" href="{% url 'leaves:my_leaves' %}">
+                    {% include "core/_icon.html" with icon="calendar" size="18" %} {% trans "Mes congés" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'my_absences' %}is-active{% endif %}" href="{% url 'absences:my_absences' %}">
+                    {% include "core/_icon.html" with icon="clipboard" size="18" %} {% trans "Mes absences" %}
+                </a>
+                {% endif %}
+
+                {% if user.role == "ADMIN" %}
+                <div class="gp-sidebar-section">{% trans "Organisation" %}</div>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'agencies' %}is-active{% endif %}" href="{% url 'agencies:list' %}">
+                    {% include "core/_icon.html" with icon="pin" size="18" %} {% trans "Agences" %}
+                </a>
+                {% if departments_enabled %}
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'departments' %}is-active{% endif %}" href="{% url 'departments:list' %}">
+                    {% include "core/_icon.html" with icon="building" size="18" %} {% trans "Départements" %}
+                </a>
+                {% endif %}
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'position_list' %}is-active{% endif %}" href="{% url 'departments:position_list' %}">
+                    {% include "core/_icon.html" with icon="briefcase" size="18" %} {% trans "Postes" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'schedules' %}is-active{% endif %}" href="{% url 'schedules:list' %}">
+                    {% include "core/_icon.html" with icon="clock" size="18" %} {% trans "Horaires" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'employees' %}is-active{% endif %}" href="{% url 'employees:list' %}">
+                    {% include "core/_icon.html" with icon="users" size="18" %} {% trans "Employés" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'announcements' %}is-active{% endif %}" href="{% url 'announcements:list' %}">
+                    {% include "core/_icon.html" with icon="megaphone" size="18" %} {% trans "Annonces" %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'tenants' %}is-active{% endif %}" href="{% url 'tenants:settings' %}">
+                    {% include "core/_icon.html" with icon="settings" size="18" %} {% trans "Paramètres" %}
+                </a>
+                {% endif %}
+
+                {% if user.role == "ADMIN" or user.role == "MANAGER" %}
+                <div class="gp-sidebar-section">{% trans "Validations" %}</div>
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'pending' and request.resolver_match.namespace == 'leaves' %}is-active{% endif %}" href="{% url 'leaves:pending' %}">
+                    {% include "core/_icon.html" with icon="calendar" size="18" %} {% trans "Congés à valider" %}
+                    {% if pending_leaves_count %}<span class="gp-sidebar-badge">{{ pending_leaves_count }}</span>{% endif %}
+                </a>
+                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'pending' and request.resolver_match.namespace == 'absences' %}is-active{% endif %}" href="{% url 'absences:pending' %}">
+                    {% include "core/_icon.html" with icon="clipboard" size="18" %} {% trans "Justificatifs à valider" %}
+                    {% if pending_absences_count %}<span class="gp-sidebar-badge">{{ pending_absences_count }}</span>{% endif %}
+                </a>
+                {% endif %}
             {% endif %}
+        </nav>
+        <div class="gp-sidebar-foot">
+            <a href="{% url 'accounts:profile' %}" class="gp-sidebar-avatar" title="{% trans 'Mon profil' %}">{{ user.first_name|slice:":1"|upper|default:user.email|slice:":1"|upper }}</a>
+            <a href="{% url 'accounts:profile' %}" class="gp-sidebar-user text-decoration-none">
+                <div class="gp-sidebar-user-name">{{ user.full_name|default:user.email }}</div>
+                <div class="gp-sidebar-user-role">{{ user.get_role_display }}</div>
+            </a>
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="gp-sidebar-logout" aria-label="{% trans 'Se déconnecter' %}" title="{% trans 'Se déconnecter' %}">
+                    {% include "core/_icon.html" with icon="logout" size="18" %}
+                </button>
+            </form>
         </div>
-    </nav>
+    </aside>
 
-    <div class="container">
-        {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-
-        {% block content %}{% endblock %}
+    <div class="gp-main">
+        <header class="gp-topbar">
+            <button type="button" class="gp-topbar-toggle" id="gpSidebarToggle" aria-label="{% trans 'Ouvrir le menu' %}">
+                {% include "core/_icon.html" with icon="menu" size="20" %}
+            </button>
+            <div class="gp-topbar-title">{% block page_title %}{% endblock %}</div>
+        </header>
+        <main class="gp-content">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
     </div>
+</div>
+<script>
+    (() => {
+        const sidebar = document.getElementById("gpSidebar");
+        const backdrop = document.getElementById("gpSidebarBackdrop");
+        const toggle = document.getElementById("gpSidebarToggle");
+        if (!sidebar || !toggle) return;
+        const close = () => { sidebar.classList.remove("is-open"); backdrop.classList.remove("is-open"); };
+        toggle.addEventListener("click", () => {
+            sidebar.classList.toggle("is-open");
+            backdrop.classList.toggle("is-open");
+        });
+        backdrop.addEventListener("click", close);
+    })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch(() => {
+                // PWA optionnelle : une erreur d'enregistrement (navigateur non
+                // compatible, contexte non sécurisé...) ne doit jamais bloquer l'app.
+            });
+        });
+    }
+</script>
 </body>
 </html>

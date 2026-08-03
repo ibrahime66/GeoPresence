@@ -5,6 +5,9 @@ from apps.core.models import TenantModel
 
 
 def attendance_photo_path(instance, filename):
+    # Conservée uniquement pour la compatibilité de l'historique des migrations
+    # (référencée par upload_to dans migrations/0002_*) — la photo obligatoire
+    # au pointage a été retirée, plus aucun code actif ne l'appelle.
     d = instance.clock_date
     return f"organizations/{instance.tenant_id}/attendance-photos/{d:%Y}/{d:%m}/{d:%d}/{instance.id}.jpg"
 
@@ -52,11 +55,19 @@ class Attendance(TenantModel):
     # serveur indépendante possible à ce stade (limitation documentée).
     is_gps_mocked = models.BooleanField(default=False)
 
-    photo = models.ImageField(upload_to=attendance_photo_path, max_length=255)
-
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.CharField(max_length=255, blank=True)
     device_type = models.CharField(max_length=20, blank=True)
+
+    # CDC §10.2.4 : créneau d'horaire concerné par ce pointage — toujours
+    # renseigné quand un horaire s'applique (même hors mode multi-créneaux,
+    # où c'est simplement le seul créneau du jour). Permet à une organisation
+    # "pointage multi-créneaux" (apps.tenants.org_settings) d'avoir plusieurs
+    # arrivées/départs par jour, un par créneau (ex. enseignant à plusieurs
+    # cours) — cf. apps.attendance.services._check_sequence.
+    schedule_slot = models.ForeignKey(
+        "schedules.ScheduleSlot", null=True, blank=True, on_delete=models.SET_NULL, related_name="attendances"
+    )
 
     # Calculés par apps.attendance.services au moment de l'enregistrement.
     scheduled_time = models.DateTimeField(null=True, blank=True)
@@ -77,11 +88,14 @@ class Attendance(TenantModel):
     class Meta:
         ordering = ["-server_time"]
         constraints = [
-            # RM-POINT-004 : un seul pointage par employé/jour/type (arrivée,
-            # départ, et éventuellement pause) — cas standard. Le cas enseignant
-            # (plusieurs créneaux/jour) est une extension différée.
+            # RM-POINT-004 : un seul pointage par employé/jour/type/créneau.
+            # Filet de sécurité niveau base — le cas "schedule_slot NULL" (pas
+            # d'horaire défini) reste couvert par apps.attendance.services.
+            # _check_sequence, MySQL ne rejetant pas deux NULL comme doublons
+            # dans un index unique.
             models.UniqueConstraint(
-                fields=["tenant", "employee", "clock_date", "clock_type"], name="attendance_one_per_day_type"
+                fields=["tenant", "employee", "clock_date", "clock_type", "schedule_slot"],
+                name="attendance_one_per_day_type_slot",
             ),
         ]
         indexes = [

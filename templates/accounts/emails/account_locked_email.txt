@@ -1,0 +1,7 @@
+Bonjour {{ user.first_name|default:user.email }},
+
+Votre compte GeoPresence a été temporairement verrouillé après plusieurs tentatives de connexion échouées.
+
+Vous pourrez réessayer de vous connecter dans {{ duration_minutes }} minutes.
+
+Si vous n'êtes pas à l'origine de ces tentatives, contactez votre administrateur dès que possible.

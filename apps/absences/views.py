@@ -7,13 +7,14 @@ from django.views.generic import TemplateView
 
 from apps.accounts.mixins import RoleRequiredMixin
 from apps.accounts.models import User
+from apps.core.views import paginate_queryset
 from apps.employees.services import get_active_employee
 
 from .forms import JustificationForm
 from .models import Absence
-from .services import AbsenceRejected, review_absence, submit_justification
+from .services import AbsenceCancelled, AbsenceRejected, cancel_justification, review_absence, submit_justification
 
-APPROVER_ROLES = (User.Role.MANAGER, User.Role.SUPERVISOR, User.Role.ADMIN)
+APPROVER_ROLES = (User.Role.MANAGER, User.Role.ADMIN)
 
 
 class MyAbsencesView(LoginRequiredMixin, TemplateView):
@@ -24,8 +25,10 @@ class MyAbsencesView(LoginRequiredMixin, TemplateView):
         employee = get_active_employee(self.request.user)
         context["employee"] = employee
         if employee is not None:
-            context["absences"] = Absence.objects.all_tenants().filter(employee=employee).select_related("reason")
+            qs = Absence.objects.all_tenants().filter(employee=employee).select_related("reason")
             context["form"] = JustificationForm(tenant=employee.tenant)
+            context.update(paginate_queryset(self.request, qs))
+            context["absences"] = context["page_obj"].object_list
         return context
 
 
@@ -56,6 +59,18 @@ class SubmitJustificationView(LoginRequiredMixin, View):
         return redirect("absences:my_absences")
 
 
+class CancelJustificationView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        employee = get_active_employee(request.user)
+        absence = get_object_or_404(Absence.objects.all_tenants(), pk=pk, employee=employee)
+        try:
+            cancel_justification(absence)
+            messages.success(request, "Justificatif annulé.")
+        except AbsenceCancelled as exc:
+            messages.error(request, exc.message)
+        return redirect("absences:my_absences")
+
+
 class PendingAbsencesView(RoleRequiredMixin, TemplateView):
     allowed_roles = APPROVER_ROLES
     template_name = "absences/pending_absences.html"
@@ -67,7 +82,8 @@ class PendingAbsencesView(RoleRequiredMixin, TemplateView):
         ).select_related("employee__user", "reason")
         if self.request.user.role == User.Role.MANAGER:
             qs = qs.filter(employee__manager=self.request.user)
-        context["absences"] = qs
+        context.update(paginate_queryset(self.request, qs))
+        context["absences"] = context["page_obj"].object_list
         return context
 
 

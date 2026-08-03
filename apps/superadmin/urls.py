@@ -11,5 +11,7 @@ urlpatterns = [
     path("superadmin/organisations/<uuid:pk>/modifier/", views.OrganizationUpdateView.as_view(), name="organization_update"),
     path("superadmin/organisations/<uuid:pk>/suspendre/", views.OrganizationSuspendView.as_view(), name="organization_suspend"),
     path("superadmin/organisations/<uuid:pk>/reactiver/", views.OrganizationReactivateView.as_view(), name="organization_reactivate"),
+    path("superadmin/organisations/<uuid:pk>/supprimer/", views.OrganizationDeleteView.as_view(), name="organization_delete"),
     path("superadmin/audit/", views.AuditLogListView.as_view(), name="audit_log_list"),
+    path("superadmin/audit/export/<str:fmt>/", views.AuditLogExportView.as_view(), name="audit_log_export"),
 ]

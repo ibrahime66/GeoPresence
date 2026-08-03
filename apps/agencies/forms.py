@@ -25,3 +25,10 @@ class AgencyForm(BootstrapModelFormMixin, forms.ModelForm):
         self.fields["responsible"].queryset = User.objects.filter(tenant=tenant)
         self.fields["responsible"].required = False
         self.fields["default_schedule"].queryset = Schedule.objects.all_tenants().filter(tenant=tenant, is_active=True)
+        if not self.instance.pk:
+            # CDC §6.4.2 : rayon GPS par défaut configurable par organisation —
+            # pré-rempli uniquement à la création (une agence existante garde sa
+            # propre valeur, jamais réécrasée par un changement de paramètre global).
+            from apps.tenants.org_settings import get_org_setting
+
+            self.fields["radius_meters"].initial = get_org_setting(tenant, "gps_radius_default_meters")

@@ -1,10 +1,11 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login as auth_login, logout as auth_logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -13,22 +14,33 @@ from django.views.generic import FormView, TemplateView
 
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.security import captcha, ratelimit
 from apps.tenants.models import Organization
+from apps.tenants.org_settings import get_org_setting, lockout_duration_minutes
 
+from . import sessions
 from .constants import (
     ADMIN_ROLES,
-    LOCKOUT_DURATION_MINUTES,
-    MAX_FAILED_LOGIN_ATTEMPTS,
+    CAPTCHA_FAILURE_THRESHOLD,
+    LOGIN_RATE_LIMIT_MAX_ATTEMPTS,
+    LOGIN_RATE_LIMIT_WINDOW_SECONDS,
     PASSWORD_RESET_TOKEN_LIFETIME_MINUTES,
-    SESSION_DURATION_ADMIN_SECONDS,
-    SESSION_DURATION_DEFAULT_SECONDS,
+    REPEATED_LOCKOUT_THRESHOLD,
 )
 from .forms import BootstrapPasswordChangeForm, BootstrapSetPasswordForm, LoginForm, PasswordResetRequestForm
-from .models import PasswordResetToken
+from .models import PasswordResetToken, UserSession
+from .password_policy import record_password
 
 User = get_user_model()
 
 GENERIC_LOGIN_ERROR = "Identifiants incorrects."
+
+
+def _captcha_context():
+    return {
+        "captcha_enabled": captcha.is_enabled(),
+        "hcaptcha_site_key": getattr(settings, "HCAPTCHA_SITE_KEY", ""),
+    }
 
 
 class LoginView(FormView):
@@ -44,14 +56,46 @@ class LoginView(FormView):
             return redirect("core:dashboard")
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(_captcha_context())
+        submitted_email = self.request.POST.get("email", "").strip().lower()
+        context["show_captcha"] = bool(
+            submitted_email and captcha.is_required(submitted_email, threshold=CAPTCHA_FAILURE_THRESHOLD)
+        )
+        return context
+
     def form_valid(self, form):
         request = self.request
         email = form.cleaned_data["email"]
         password = form.cleaned_data["password"]
+        ip = ratelimit.get_client_ip(request)
+
+        # CDC §13.3.1 : max 10 tentatives/minute/IP, tous formulaires de
+        # connexion confondus — la vérification la plus large passe en premier.
+        if ratelimit.hit(
+            "login_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+        ):
+            audit.log_event(
+                request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description=f"Limite de débit dépassée (IP {ip})"
+            )
+            form.add_error(None, "Trop de tentatives depuis cette adresse. Réessayez dans une minute.")
+            return self.form_invalid(form)
+
+        # CDC §13.4 : CAPTCHA après 3 échecs sur cet e-mail. Neutralisé tant
+        # qu'aucune clé hCaptcha n'est configurée (`captcha.is_enabled`).
+        if captcha.is_required(email, threshold=CAPTCHA_FAILURE_THRESHOLD):
+            if not captcha.verify(request.POST.get("h-captcha-response", ""), ip):
+                audit.log_event(
+                    request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description="CAPTCHA invalide ou manquant"
+                )
+                form.add_error(None, "Merci de valider le CAPTCHA avant de continuer.")
+                return self.form_invalid(form)
 
         user = User.objects.filter(email=email).first()
 
         if user is None:
+            captcha.register_failure(email)
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description=f"E-mail inconnu : {email}"
             )
@@ -59,6 +103,7 @@ class LoginView(FormView):
             return self.form_invalid(form)
 
         if user.tenant_id and user.tenant.status != Organization.Status.ACTIVE:
+            captcha.register_failure(email)
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Organisation suspendue"
             )
@@ -66,6 +111,7 @@ class LoginView(FormView):
             return self.form_invalid(form)
 
         if not user.is_active:
+            captcha.register_failure(email)
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Compte inactif"
             )
@@ -74,6 +120,7 @@ class LoginView(FormView):
 
         now = timezone.now()
         if user.locked_until and user.locked_until > now:
+            captcha.register_failure(email)
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Compte verrouillé"
             )
@@ -82,20 +129,25 @@ class LoginView(FormView):
             return self.form_invalid(form)
 
         if not user.check_password(password):
+            captcha.register_failure(email)
             user.failed_login_attempts += 1
-            if user.failed_login_attempts >= MAX_FAILED_LOGIN_ATTEMPTS:
-                user.locked_until = now + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+            max_attempts = get_org_setting(user.tenant, "max_failed_login_attempts")
+            if user.failed_login_attempts >= max_attempts:
+                duration = lockout_duration_minutes(user.tenant, user.lockout_count)
+                user.locked_until = now + timedelta(minutes=duration)
                 user.failed_login_attempts = 0
-                user.save(update_fields=["failed_login_attempts", "locked_until"])
+                user.lockout_count += 1
+                user.save(update_fields=["failed_login_attempts", "locked_until", "lockout_count"])
                 audit.log_event(
                     request,
                     audit.ACCOUNT_LOCKED,
                     AuditLog.Result.FAILURE,
                     user=user,
-                    description=f"Verrouillage après {MAX_FAILED_LOGIN_ATTEMPTS} échecs consécutifs",
+                    description=f"Verrouillage n°{user.lockout_count} après {max_attempts} échecs ({duration} min)",
                 )
+                self._notify_lockout(user, duration)
                 form.add_error(
-                    None, f"Compte verrouillé pendant {LOCKOUT_DURATION_MINUTES} minutes suite à plusieurs échecs."
+                    None, f"Compte verrouillé pendant {duration} minutes suite à plusieurs échecs."
                 )
             else:
                 user.save(update_fields=["failed_login_attempts"])
@@ -106,21 +158,53 @@ class LoginView(FormView):
             return self.form_invalid(form)
 
         # Succès.
+        captcha.reset(email)
         user.failed_login_attempts = 0
         user.locked_until = None
-        user.save(update_fields=["failed_login_attempts", "locked_until"])
+        user.lockout_count = 0
+        user.save(update_fields=["failed_login_attempts", "locked_until", "lockout_count"])
 
         auth_login(request, user)
-        session_duration = (
-            SESSION_DURATION_ADMIN_SECONDS if user.role in ADMIN_ROLES else SESSION_DURATION_DEFAULT_SECONDS
-        )
-        request.session.set_expiry(session_duration)
+        duration_hours_key = "session_duration_admin_hours" if user.role in ADMIN_ROLES else "session_duration_employee_hours"
+        request.session.set_expiry(get_org_setting(user.tenant, duration_hours_key) * 3600)
+        sessions.register_session(request, user)
 
         audit.log_event(request, audit.LOGIN_SUCCESS, AuditLog.Result.SUCCESS, user=user)
 
         if user.must_change_password:
             return redirect("accounts:force_password_change")
         return redirect("core:dashboard")
+
+    @staticmethod
+    def _notify_lockout(user, duration_minutes):
+        """CDC §13.3.1 : e-mail à l'utilisateur à chaque verrouillage, et aux
+        Administrateurs de l'organisation en cas de blocage répété."""
+        send_mail(
+            subject="Votre compte GeoPresence a été verrouillé",
+            message=render_to_string(
+                "accounts/emails/account_locked_email.txt",
+                {"user": user, "duration_minutes": duration_minutes},
+            ),
+            from_email=None,
+            recipient_list=[user.email],
+        )
+
+        if user.lockout_count >= REPEATED_LOCKOUT_THRESHOLD and user.tenant_id:
+            admin_emails = list(
+                User.objects.filter(tenant=user.tenant, role=User.Role.ADMIN, is_active=True).values_list(
+                    "email", flat=True
+                )
+            )
+            if admin_emails:
+                send_mail(
+                    subject=f"Verrouillages répétés du compte {user.email}",
+                    message=render_to_string(
+                        "accounts/emails/account_locked_admin_email.txt",
+                        {"user": user, "duration_minutes": duration_minutes, "lockout_count": user.lockout_count},
+                    ),
+                    from_email=None,
+                    recipient_list=admin_emails,
+                )
 
 
 class LogoutView(LoginRequiredMixin, View):
@@ -130,6 +214,10 @@ class LogoutView(LoginRequiredMixin, View):
     def post(self, request):
         user = request.user
         audit.log_event(request, audit.LOGOUT, AuditLog.Result.SUCCESS, user=user)
+        # auth_logout() va flush() la session (supprime la ligne Session
+        # Django) — nettoie la ligne de suivi UserSession correspondante
+        # avant, sinon elle resterait orpheline (session_key recyclable).
+        UserSession.objects.filter(session_key=request.session.session_key).delete()
         auth_logout(request)
         messages.success(request, "Vous avez été déconnecté.")
         return redirect("accounts:login")
@@ -152,15 +240,16 @@ class ForcePasswordChangeView(LoginRequiredMixin, FormView):
         user.must_change_password = False
         user.last_password_change = timezone.now()
         user.save(update_fields=["must_change_password", "last_password_change"])
+        record_password(user)
         # Garde la session courante active après le changement (évite une
         # auto-déconnexion surprenante) tout en respectant Django (le hash de
         # session dépend du mot de passe).
         update_session_auth_hash(self.request, user)
         audit.log_event(self.request, audit.PASSWORD_CHANGED, AuditLog.Result.SUCCESS, user=user)
         messages.success(self.request, "Mot de passe mis à jour avec succès.")
-        # RM-AUTH-008 : invalider les AUTRES sessions actives de ce compte —
-        # nécessite le suivi par-utilisateur des sessions (CDC §5.6.2, module
-        # UserSession différé). Non implémenté ici.
+        # RM-AUTH-008 : invalide les AUTRES sessions actives de ce compte —
+        # la session courante (déjà réhachée ci-dessus) est explicitement épargnée.
+        sessions.revoke_all_sessions(user, except_session_key=self.request.session.session_key)
         return redirect("core:dashboard")
 
 
@@ -171,8 +260,22 @@ class PasswordResetRequestView(FormView):
     template_name = "accounts/password_reset_request.html"
     form_class = PasswordResetRequestForm
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(_captcha_context())
+        return context
+
     def form_valid(self, form):
         request = self.request
+
+        # CDC §13.4 : CAPTCHA systématique sur ce formulaire public (pas de
+        # seuil de tentatives — neutralisé si hCaptcha n'est pas configuré).
+        if captcha.is_enabled() and not captcha.verify(
+            request.POST.get("h-captcha-response", ""), ratelimit.get_client_ip(request)
+        ):
+            form.add_error(None, "Merci de valider le CAPTCHA avant de continuer.")
+            return self.form_invalid(form)
+
         email = form.cleaned_data["email"]
         user = User.objects.filter(email=email, is_active=True).first()
 
@@ -240,16 +343,101 @@ class PasswordResetConfirmView(FormView):
         user.last_password_change = timezone.now()
         user.failed_login_attempts = 0
         user.locked_until = None
+        user.lockout_count = 0
         user.save(
-            update_fields=["must_change_password", "last_password_change", "failed_login_attempts", "locked_until"]
+            update_fields=[
+                "must_change_password",
+                "last_password_change",
+                "failed_login_attempts",
+                "locked_until",
+                "lockout_count",
+            ]
         )
+        record_password(user)
+        captcha.reset(user.email)
         self.reset_token.used_at = timezone.now()
         self.reset_token.save(update_fields=["used_at"])
         audit.log_event(self.request, audit.PASSWORD_RESET_COMPLETED, AuditLog.Result.SUCCESS, user=user)
-        # RM-AUTH-008 : invalider toutes les sessions actives de ce compte —
-        # même limitation différée que ci-dessus (module UserSession).
+        # RM-AUTH-008 : aucune session courante à épargner ici (l'utilisateur
+        # n'est pas authentifié pendant un reset de mot de passe) — tout est révoqué.
+        sessions.revoke_all_sessions(user)
         return redirect("accounts:password_reset_complete")
 
 
 class PasswordResetCompleteView(TemplateView):
     template_name = "accounts/password_reset_complete.html"
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
+    """CDC §3.5.1/§5.6.2 : profil personnel — informations éditables en
+    self-service + liste des sessions actives, pour tous les rôles."""
+
+    template_name = "accounts/profile.html"
+
+    def get_context_data(self, **kwargs):
+        from apps.employees.forms import EmployeeSelfServiceForm
+        from apps.employees.services import get_active_employee
+
+        context = super().get_context_data(**kwargs)
+        employee = get_active_employee(self.request.user)
+        context["employee"] = employee
+        if employee is not None:
+            context["form"] = EmployeeSelfServiceForm(instance=employee)
+        context["sessions"] = self.request.user.sessions.order_by("-last_activity_at")
+        context["current_session_key"] = self.request.session.session_key
+
+        from .forms import LanguageForm
+        from .password_policy import password_expires_at
+
+        context["password_expires_at"] = password_expires_at(self.request.user)
+        context["language_form"] = LanguageForm(instance=self.request.user)
+        return context
+
+
+class ProfileUpdateView(LoginRequiredMixin, View):
+    def post(self, request):
+        from apps.employees.forms import EmployeeSelfServiceForm
+        from apps.employees.services import get_active_employee
+
+        employee = get_active_employee(request.user)
+        if employee is None:
+            messages.error(request, "Aucun profil employé actif associé à ce compte.")
+            return redirect("accounts:profile")
+
+        form = EmployeeSelfServiceForm(request.POST, request.FILES, instance=employee)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profil mis à jour.")
+        else:
+            messages.error(request, "Formulaire invalide — vérifiez les champs.")
+        return redirect("accounts:profile")
+
+
+class SessionRevokeView(LoginRequiredMixin, View):
+    """CDC §5.6.2 : l'utilisateur révoque n'importe laquelle de ses sessions
+    distantes — jamais la session courante depuis cette page (utiliser
+    Déconnexion pour ça, plus explicite)."""
+
+    def post(self, request, pk):
+        user_session = get_object_or_404(UserSession, pk=pk, user=request.user)
+        if user_session.session_key == request.session.session_key:
+            messages.error(request, "Impossible de révoquer votre session actuelle ici — utilisez « Se déconnecter ».")
+            return redirect("accounts:profile")
+        sessions.revoke_session(user_session)
+        messages.success(request, "Session révoquée.")
+        return redirect("accounts:profile")
+
+
+class LanguageUpdateView(LoginRequiredMixin, View):
+    """CDC §3.5.1/§24.2 : langue d'affichage — self-service, tous rôles."""
+
+    def post(self, request):
+        from .forms import LanguageForm
+
+        form = LanguageForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Langue mise à jour.")
+        else:
+            messages.error(request, "Langue invalide.")
+        return redirect("accounts:profile")

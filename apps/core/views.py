@@ -1,18 +1,49 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Sum
-from django.shortcuts import redirect
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
+from django.views import View
 from django.views.generic import TemplateView
 
 from apps.absences.models import Absence
+from apps.accounts.mixins import RoleRequiredMixin
+from apps.announcements import services as announcement_services
 from apps.attendance import services as attendance_services
 from apps.attendance.models import Attendance
 from apps.employees.models import Employee
 from apps.employees.services import get_active_employee
 from apps.leaves.models import Leave
+
+DEFAULT_PAGE_SIZE = 25
+
+
+def paginate_queryset(request, queryset, page_size=DEFAULT_PAGE_SIZE):
+    """Pagination manuelle pour les TemplateView qui construisent leur contexte
+    à la main (pas de ListView) — mêmes noms de contexte (`page_obj`,
+    `is_paginated`) que Django's MultipleObjectMixin, pour rester compatible
+    avec templates/_pagination.html."""
+    page_obj = Paginator(queryset, page_size).get_page(request.GET.get("page"))
+    return {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()}
+
+
+class ServiceWorkerView(View):
+    """Sert service-worker.js à la racine du domaine (pas sous /static/) —
+    la portée maximale d'un Service Worker est son propre répertoire de
+    service ; le servir depuis /static/ limiterait son contrôle aux seules
+    URLs /static/*, hors de portée du reste de l'application (CDC §4.4)."""
+
+    def get(self, request):
+        content = (settings.BASE_DIR / "static" / "service-worker.js").read_text(encoding="utf-8")
+        response = HttpResponse(content, content_type="application/javascript")
+        response["Service-Worker-Allowed"] = "/"
+        response["Cache-Control"] = "no-cache"
+        return response
 
 
 class HomeView(TemplateView):
@@ -32,17 +63,21 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
     tenant (CDC §2.3.3), il est redirigé vers sa propre console — évite de
     dupliquer la logique de redirection dans chaque vue qui pointe vers
     "core:dashboard" (login, changement de mot de passe, page d'accueil...).
-    Admin et Employé/Manager/Superviseur reçoivent chacun un vrai tableau de
-    bord (CDC §16.2/§16.4) plutôt qu'une page générique."""
+    Admin et Employé/Manager reçoivent chacun un vrai tableau de bord
+    (CDC §16.2/§16.4) plutôt qu'une page générique."""
 
     def get(self, request, *args, **kwargs):
         if request.user.role == request.user.Role.SUPER_ADMIN:
             return redirect("superadmin:dashboard")
         return super().get(request, *args, **kwargs)
 
+    MANAGER_ROLES = ("MANAGER",)
+
     def get_template_names(self):
         if self.request.user.role == self.request.user.Role.ADMIN:
             return ["core/admin_dashboard.html"]
+        if self.request.user.role in self.MANAGER_ROLES:
+            return ["core/manager_dashboard.html"]
         return ["core/employee_dashboard.html"]
 
     def get_context_data(self, **kwargs):
@@ -50,9 +85,66 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         if user.role == user.Role.ADMIN:
             context.update(self._admin_context(user.tenant))
+        elif user.role in self.MANAGER_ROLES:
+            # CDC §16.3 : un Manager reste aussi un employé (il pointe lui-même) —
+            # son tableau de bord combine sa vue personnelle et celle de son équipe.
+            context.update(self._employee_context(user))
+            context.update(self._manager_context(user))
         else:
             context.update(self._employee_context(user))
         return context
+
+    def _manager_context(self, user):
+        today = timezone.localdate()
+
+        # CDC §3.3 : un Manager est strictement limité à ses rapports directs.
+        team_qs = Employee.objects.all_tenants().filter(
+            tenant=user.tenant, status=Employee.Status.ACTIVE, manager=user,
+        ).select_related("user", "department", "primary_agency").order_by("user__first_name")
+        team_ids = list(team_qs.values_list("id", flat=True))
+        total_team = len(team_ids)
+
+        today_arrivals = {
+            a.employee_id: a
+            for a in Attendance.objects.all_tenants().filter(
+                employee_id__in=team_ids, clock_date=today, clock_type=Attendance.ClockType.ARRIVAL
+            )
+        }
+        late_today = sum(1 for a in today_arrivals.values() if a.status == Attendance.Status.LATE)
+
+        trend_labels, trend_values = [], []
+        for i in range(6, -1, -1):
+            d = today - timedelta(days=i)
+            trend_labels.append(d.strftime("%d/%m"))
+            trend_values.append(self._presence_rate(user.tenant, d, total_team) if total_team else 0.0)
+
+        pending_leaves_qs = Leave.objects.all_tenants().filter(
+            tenant=user.tenant, status=Leave.Status.PENDING, employee__manager=user,
+        )
+        pending_absences_qs = Absence.objects.all_tenants().filter(
+            tenant=user.tenant, status=Absence.Status.PENDING_REVIEW, employee__manager=user,
+        )
+
+        team_rows = []
+        for employee in team_qs:
+            arrival = today_arrivals.get(employee.id)
+            team_rows.append({
+                "employee": employee,
+                "arrival": arrival,
+                "status": arrival.status if arrival else None,
+            })
+
+        return {
+            "team_rows": team_rows,
+            "total_team": total_team,
+            "present_team_today": len(today_arrivals),
+            "absent_team_today": max(total_team - len(today_arrivals), 0),
+            "late_team_today": late_today,
+            "team_trend_labels": trend_labels,
+            "team_trend_values": trend_values,
+            "team_pending_leaves": pending_leaves_qs.count(),
+            "team_pending_absences": pending_absences_qs.count(),
+        }
 
     @staticmethod
     def _presence_rate(tenant, date, total_employees):
@@ -142,7 +234,7 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         today = timezone.localdate()
         month_start = today.replace(day=1)
 
-        next_clock_type, clock_date = attendance_services.get_clock_status(employee)
+        next_clock_type, clock_date, _next_clock_slot = attendance_services.get_clock_status(employee)
         if next_clock_type is None:
             today_status = "done"
         elif next_clock_type == Attendance.ClockType.DEPARTURE:
@@ -170,6 +262,8 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             "my_absences_pending": Absence.objects.all_tenants().filter(
                 employee=employee, status=Absence.Status.PENDING_REVIEW
             ).count(),
+            # CDC §16.4 : « Annonces de l'organisation ».
+            "active_announcements": announcement_services.active_announcements_for_employee(employee),
         })
         return context
 
@@ -208,3 +302,21 @@ class TenantFormMixin(TenantQuerysetMixin):
         except IntegrityError:
             form.add_error(None, "Cette valeur existe déjà pour votre organisation.")
             return self.form_invalid(form)
+
+
+class ToggleActiveView(RoleRequiredMixin, TenantQuerysetMixin, View):
+    """Bascule un champ booléen (`is_active` par défaut) en une requête POST —
+    évite de dupliquer une vue dédiée pour chaque module qui n'a besoin que
+    d'activer/désactiver une ligne depuis sa liste (CDC : agences,
+    départements, postes, horaires « créer, modifier, activer et désactiver »,
+    §7.3/§10/§3.2.2). Sous-classer avec `model`, `allowed_roles` et
+    `success_url` (+ `active_field` si différent de `is_active`)."""
+
+    active_field = "is_active"
+    success_url = None
+
+    def post(self, request, *args, **kwargs):
+        obj = get_object_or_404(self.get_queryset(), pk=kwargs["pk"])
+        setattr(obj, self.active_field, not getattr(obj, self.active_field))
+        obj.save(update_fields=[self.active_field])
+        return redirect(self.success_url)

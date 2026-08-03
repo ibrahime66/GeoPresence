@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GeoPresence — Gestion de présence géolocalisée</title>
-  <meta name="description" content="GeoPresence vérifie la présence de vos équipes par géolocalisation et photo horodatée, calcule retards et heures supplémentaires automatiquement, et centralise congés et absences.">
+  <meta name="description" content="GeoPresence vérifie la présence de vos équipes par géolocalisation, calcule retards et heures supplémentaires automatiquement, et centralise congés et absences.">
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
   <link rel="apple-touch-icon" href="{% static 'img/favicon-192.png' %}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -34,7 +34,7 @@
       <span class="gp-eyebrow"><span class="dot"></span> Multi-site &amp; multi-organisation</span>
       <h1>Le pointage qui prouve <span class="accent">où</span> vos équipes travaillent.</h1>
       <p class="lead">
-        Géolocalisation, photo prise en temps réel et calcul automatique des retards et heures
+        Géolocalisation en temps réel et calcul automatique des retards et heures
         supplémentaires — une seule plateforme pour piloter la présence de vos équipes, sur un ou
         plusieurs sites.
       </p>
@@ -78,7 +78,7 @@
       <div class="gp-step">
         <div class="gp-step-num">1</div>
         <h3>L'employé pointe</h3>
-        <p>Depuis son téléphone, en un geste : position GPS haute précision et photo prise en direct (jamais depuis la galerie).</p>
+        <p>Depuis son téléphone, en un geste : position GPS haute précision affichée en direct sur une carte interactive.</p>
       </div>
       <div class="gp-step">
         <div class="gp-step-num">2</div>
@@ -107,9 +107,9 @@
         <p>Chaque agence définit sa zone GPS autorisée (50 à 5000 m). Un pointage hors zone est refusé et journalisé.</p>
       </div>
       <div class="gp-card">
-        <div class="gp-card-icon">{% include "core/_icon.html" with icon="camera" %}</div>
-        <h3>Photo en temps réel</h3>
-        <p>Caméra uniquement, jamais la galerie du téléphone. Impossible de pointer à la place d'un collègue.</p>
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon="target" %}</div>
+        <h3>Position vérifiée en direct</h3>
+        <p>Carte GPS interactive et détection de position simulée — impossible de pointer sans être réellement sur place.</p>
       </div>
       <div class="gp-card">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="building" %}</div>

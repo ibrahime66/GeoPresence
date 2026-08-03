@@ -1,27 +1,83 @@
 {% extends "base.html" %}
 {% block title %}Employés — GeoPresence{% endblock %}
+{% block page_title %}Employés{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">Employés</h1>
-  <a href="{% url 'employees:create' %}" class="btn btn-primary">Nouvel employé</a>
+<div class="gp-page-header">
+  <div>
+    <h1>Employés</h1>
+    <p>Comptes et profils RH de votre organisation.</p>
+  </div>
+  <div class="gp-page-header-actions">
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Exporter
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'employees:export' 'csv' %}">CSV</a></li>
+        <li><a class="dropdown-item" href="{% url 'employees:export' 'xlsx' %}">Excel (.xlsx)</a></li>
+        <li><a class="dropdown-item" href="{% url 'employees:export' 'pdf' %}">PDF</a></li>
+      </ul>
+    </div>
+    <a href="{% url 'employees:import' %}" class="btn btn-outline-secondary">Importer</a>
+    <a href="{% url 'employees:create' %}" class="btn btn-primary">+ Nouvel employé</a>
+  </div>
 </div>
-<table class="table">
-  <thead><tr><th>Matricule</th><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Département</th><th>Agence</th><th>Statut</th><th></th></tr></thead>
-  <tbody>
-    {% for employee in employees %}
-    <tr>
-      <td>{{ employee.matricule }}</td>
-      <td>{{ employee.user.full_name }}</td>
-      <td>{{ employee.user.email }}</td>
-      <td>{{ employee.user.get_role_display }}</td>
-      <td>{{ employee.department|default:"—" }}</td>
-      <td>{{ employee.primary_agency }}</td>
-      <td>{{ employee.get_status_display }}</td>
-      <td><a href="{% url 'employees:update' employee.pk %}">Modifier</a></td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="8" class="text-muted">Aucun employé.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Matricule</th><th>Nom</th><th>E-mail</th><th>Rôle</th>{% if departments_enabled %}<th>Département</th>{% endif %}<th>Agence</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for employee in employees %}
+        <tr>
+          <td class="text-muted-cell">{{ employee.matricule }}</td>
+          <td class="fw-semibold">{{ employee.user.full_name }}</td>
+          <td>{{ employee.user.email }}</td>
+          <td>{{ employee.user.get_role_display }}</td>
+          {% if departments_enabled %}<td>{{ employee.department|default:"—" }}</td>{% endif %}
+          <td>{{ employee.primary_agency }}</td>
+          <td>
+            {% if employee.status == "ACTIVE" %}<span class="gp-badge success"><span class="dot"></span>Actif</span>
+            {% elif employee.status == "ON_LEAVE" %}<span class="gp-badge info"><span class="dot"></span>En congé</span>
+            {% elif employee.status == "SUSPENDED" %}<span class="gp-badge warning"><span class="dot"></span>Suspendu</span>
+            {% else %}<span class="gp-badge neutral"><span class="dot"></span>Archivé</span>{% endif %}
+          </td>
+          <td>
+            <div class="gp-table-actions">
+              <a href="{% url 'employees:update' employee.pk %}" class="gp-row-link">Modifier</a>
+              {% if employee.status != "ARCHIVED" %}
+              <span class="gp-row-sep">·</span>
+              <form method="post" action="{% url 'employees:revoke_sessions' employee.pk %}" onsubmit="return confirm('Déconnecter {{ employee.user.full_name|escapejs }} de tous ses appareils ?');">
+                {% csrf_token %}
+                <button type="submit" class="gp-row-action-btn">Sessions</button>
+              </form>
+              <span class="gp-row-sep">·</span>
+              {% if employee.status == "SUSPENDED" %}
+              <form method="post" action="{% url 'employees:status_change' employee.pk 'activate' %}">
+                {% csrf_token %}
+                <button type="submit" class="gp-row-action-btn">Réactiver</button>
+              </form>
+              {% else %}
+              <form method="post" action="{% url 'employees:status_change' employee.pk 'suspend' %}">
+                {% csrf_token %}
+                <button type="submit" class="gp-row-action-btn danger" onclick="return confirm('Suspendre {{ employee.user.full_name|escapejs }} ? Il ne pourra plus se connecter.');">Suspendre</button>
+              </form>
+              {% endif %}
+              <span class="gp-row-sep">·</span>
+              <form method="post" action="{% url 'employees:status_change' employee.pk 'archive' %}">
+                {% csrf_token %}
+                <button type="submit" class="gp-row-action-btn danger" onclick="return confirm('Archiver {{ employee.user.full_name|escapejs }} ? Cette action correspond à un départ de l\'organisation.');">Archiver</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="{% if departments_enabled %}8{% else %}7{% endif %}"><div class="gp-table-empty">Aucun employé.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
 {% endblock %}

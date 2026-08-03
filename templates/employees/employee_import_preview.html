@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Aperçu de l'import — GeoPresence{% endblock %}
+{% block page_title %}Aperçu de l'import{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Aperçu de l'import</h1>
+    <p>{{ total }} ligne(s) analysée(s) — {{ valid_rows|length }} valide(s), {{ invalid_rows|length }} en erreur.</p>
+  </div>
+</div>
+
+{% if invalid_rows %}
+<div class="gp-card mb-4">
+  <div class="gp-card-header">Lignes en erreur — ne seront pas importées</div>
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Ligne</th><th>E-mail</th><th>Erreurs</th></tr></thead>
+      <tbody>
+        {% for row in invalid_rows %}
+        <tr>
+          <td class="fw-semibold">{{ row.row }}</td>
+          <td>{{ row.email }}</td>
+          <td class="text-danger">{{ row.errors|join:" · " }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if valid_rows %}
+<div class="gp-table-card mb-4">
+  <div class="gp-card-header">Lignes prêtes à être importées</div>
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Ligne</th><th>E-mail</th><th>Nom</th><th>Rôle</th><th>Département</th><th>Poste</th><th>Agence</th><th>Contrat</th><th>Entrée</th></tr></thead>
+      <tbody>
+        {% for row in valid_rows %}
+        <tr>
+          <td class="text-muted-cell">{{ row.row }}</td>
+          <td>{{ row.email }}</td>
+          <td class="fw-semibold">{{ row.first_name }} {{ row.last_name }}</td>
+          <td>{{ row.role }}</td>
+          <td>{{ row.department_name|default:"—" }}</td>
+          <td>{{ row.position_name|default:"—" }}</td>
+          <td>{{ row.agency_name }}</td>
+          <td>{{ row.contract_type }}</td>
+          <td>{{ row.hire_date }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<form method="post" action="{% url 'employees:import_confirm' %}">
+  {% csrf_token %}
+  <div class="gp-form-actions">
+    <button type="submit" class="btn btn-primary">Confirmer l'import de {{ valid_rows|length }} employé(s)</button>
+    <a href="{% url 'employees:import' %}" class="btn btn-outline-secondary">Recommencer</a>
+  </div>
+</form>
+{% else %}
+<a href="{% url 'employees:import' %}" class="btn btn-outline-secondary">Recommencer</a>
+{% endif %}
+{% endblock %}

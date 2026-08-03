@@ -6,13 +6,14 @@ from django.views.generic import TemplateView
 
 from apps.accounts.mixins import RoleRequiredMixin
 from apps.accounts.models import User
+from apps.core.views import paginate_queryset
 from apps.employees.services import get_active_employee
 
 from .forms import LeaveRequestForm
 from .models import Leave
 from .services import LeaveRejected, approve_leave, cancel_leave, reject_leave, submit_leave
 
-APPROVER_ROLES = (User.Role.MANAGER, User.Role.SUPERVISOR, User.Role.ADMIN)
+APPROVER_ROLES = (User.Role.MANAGER, User.Role.ADMIN)
 
 
 class MyLeavesView(LoginRequiredMixin, TemplateView):
@@ -23,8 +24,10 @@ class MyLeavesView(LoginRequiredMixin, TemplateView):
         employee = get_active_employee(self.request.user)
         context["employee"] = employee
         if employee is not None:
-            context["leaves"] = Leave.objects.all_tenants().filter(employee=employee).select_related("leave_type")
+            qs = Leave.objects.all_tenants().filter(employee=employee).select_related("leave_type").order_by("-start_date")
             context["form"] = LeaveRequestForm(tenant=employee.tenant)
+            context.update(paginate_queryset(self.request, qs))
+            context["leaves"] = context["page_obj"].object_list
         return context
 
 
@@ -77,7 +80,8 @@ class PendingLeavesView(RoleRequiredMixin, TemplateView):
         ).select_related("employee__user", "leave_type")
         if self.request.user.role == User.Role.MANAGER:
             qs = qs.filter(employee__manager=self.request.user)
-        context["leaves"] = qs
+        context.update(paginate_queryset(self.request, qs))
+        context["leaves"] = context["page_obj"].object_list
         return context
 
 

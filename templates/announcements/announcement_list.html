@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Annonces — GeoPresence{% endblock %}
+{% block page_title %}Annonces{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Annonces</h1>
+    <p>Communications internes affichées sur le tableau de bord des employés concernés.</p>
+  </div>
+  <div class="gp-page-header-actions">
+    <a href="{% url 'announcements:create' %}" class="btn btn-primary">+ Nouvelle annonce</a>
+  </div>
+</div>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Titre</th><th>Ciblage</th><th>Publication</th><th>Expiration</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for a in announcements %}
+        <tr>
+          <td class="fw-semibold">{{ a.title }}</td>
+          <td class="text-muted-cell">
+            {% if a.agencies.exists or a.departments.exists or a.employees.exists %}
+              {% if a.agencies.exists %}{{ a.agencies.count }} agence(s){% endif %}
+              {% if a.departments.exists %} · {{ a.departments.count }} département(s){% endif %}
+              {% if a.employees.exists %} · {{ a.employees.count }} employé(s){% endif %}
+            {% else %}
+              Toute l'organisation
+            {% endif %}
+          </td>
+          <td class="text-nowrap">{{ a.publish_at|date:"d/m/Y H:i" }}</td>
+          <td class="text-nowrap">{{ a.expire_at|date:"d/m/Y H:i"|default:"—" }}</td>
+          <td>
+            {% if a.publish_at > now %}<span class="gp-badge info"><span class="dot"></span>Programmée</span>
+            {% elif a.expire_at and a.expire_at <= now %}<span class="gp-badge neutral"><span class="dot"></span>Expirée</span>
+            {% else %}<span class="gp-badge success"><span class="dot"></span>Active</span>{% endif %}
+          </td>
+          <td>
+            <div class="gp-table-actions">
+              <a href="{% url 'announcements:update' a.pk %}" class="gp-row-link">Modifier</a>
+              <span class="gp-row-sep">·</span>
+              <form method="post" action="{% url 'announcements:delete' a.pk %}" onsubmit="return confirm('Supprimer l\'annonce « {{ a.title|escapejs }} » ?');">
+                {% csrf_token %}
+                <button type="submit" class="gp-row-action-btn danger">Supprimer</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="gp-table-empty">Aucune annonce pour le moment.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
+{% endblock %}

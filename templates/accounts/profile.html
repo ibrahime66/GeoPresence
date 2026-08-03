@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Mon profil" %} — GeoPresence{% endblock %}
+{% block page_title %}{% trans "Mon profil" %}{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>{% trans "Mon profil" %}</h1>
+    <p>{{ user.full_name|default:user.email }} — {{ user.get_role_display }}</p>
+  </div>
+</div>
+
+{% if employee %}
+<div class="gp-card gp-form-card mb-4">
+  <div class="gp-card-header">{% trans "Informations personnelles" %}</div>
+  <div class="gp-card-body">
+    <form method="post" action="{% url 'accounts:profile_update' %}" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      {% endif %}
+      {% if employee.profile_photo %}
+      <img src="{{ employee.profile_photo.url }}" alt="" class="rounded-circle mb-3" style="width:72px;height:72px;object-fit:cover;">
+      {% endif %}
+      {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <div class="gp-form-actions">
+        <button type="submit" class="btn btn-primary">{% trans "Enregistrer" %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="gp-card gp-form-card mb-4">
+  <div class="gp-card-header">{% trans "Langue d'affichage" %}</div>
+  <div class="gp-card-body">
+    <form method="post" action="{% url 'accounts:language_update' %}" class="d-flex align-items-end gap-2 flex-wrap">
+      {% csrf_token %}
+      <div>
+        <label class="form-label">{{ language_form.language.label }}</label>
+        {{ language_form.language }}
+      </div>
+      <button type="submit" class="btn btn-outline-primary">{% trans "Changer la langue" %}</button>
+    </form>
+  </div>
+</div>
+
+<div class="gp-card mb-4">
+  <div class="gp-card-header">{% trans "Sécurité" %}</div>
+  <div class="gp-card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      {% if password_expires_at %}
+      <p class="mb-0">{% blocktrans with date=password_expires_at|date:"d/m/Y" %}Votre mot de passe expire le <strong>{{ date }}</strong>.{% endblocktrans %}</p>
+      {% else %}
+      <p class="mb-0 text-muted">{% trans "Date d'expiration du mot de passe inconnue." %}</p>
+      {% endif %}
+    </div>
+    <a href="{% url 'accounts:force_password_change' %}" class="btn btn-outline-primary">{% trans "Changer mon mot de passe" %}</a>
+  </div>
+</div>
+
+<div class="gp-table-card">
+  <div class="gp-card-header">{% trans "Sessions actives" %}</div>
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>{% trans "Appareil" %}</th><th>{% trans "Navigateur / OS" %}</th><th>{% trans "Adresse IP" %}</th><th>{% trans "Connecté depuis" %}</th><th>{% trans "Dernière activité" %}</th><th></th></tr></thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr>
+          <td class="fw-semibold">
+            {{ s.device_type|default:"—" }}
+            {% if s.session_key == current_session_key %}<span class="gp-badge info ms-1"><span class="dot"></span>{% trans "Cet appareil" %}</span>{% endif %}
+          </td>
+          <td>{{ s.browser }} / {{ s.os }}</td>
+          <td class="text-muted-cell">{{ s.ip_address|default:"—" }}</td>
+          <td class="text-nowrap">{{ s.created_at|date:"d/m/Y H:i" }}</td>
+          <td class="text-nowrap">{{ s.last_activity_at|date:"d/m/Y H:i" }}</td>
+          <td>
+            {% if s.session_key != current_session_key %}
+            <form method="post" action="{% url 'accounts:session_revoke' s.pk %}" onsubmit="return confirm('{% trans "Révoquer cette session ? Cet appareil sera déconnecté immédiatement." %}');">
+              {% csrf_token %}
+              <button type="submit" class="gp-row-action-btn danger">{% trans "Révoquer" %}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="gp-table-empty">{% trans "Aucune session active." %}</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

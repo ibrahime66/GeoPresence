@@ -26,6 +26,7 @@ class UserAdmin(DjangoUserAdmin):
                     "must_change_password",
                     "failed_login_attempts",
                     "locked_until",
+                    "lockout_count",
                     "groups",
                     "user_permissions",
                 )

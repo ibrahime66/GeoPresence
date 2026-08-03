@@ -1,27 +1,81 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{% if object %}Modifier{% else %}Nouvelle{% endif %} agence — GeoPresence{% endblock %}
+{% block page_title %}{% if object %}Modifier l'agence{% else %}Nouvelle agence{% endif %}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-8">
-    <h1 class="h4 mb-3">{% if object %}Modifier l'agence{% else %}Nouvelle agence{% endif %}</h1>
-    <form method="post" enctype="multipart/form-data" novalidate>
-      {% csrf_token %}
-      {% if form.non_field_errors %}
-        <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
-      {% endif %}
+<div class="gp-page-header">
+  <div><h1>{% if object %}Modifier l'agence{% else %}Nouvelle agence{% endif %}</h1></div>
+</div>
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <div class="gp-card gp-form-card mb-4" style="max-width: none;">
+    <div class="gp-card-header">Informations générales</div>
+    <div class="gp-card-body">
       <div class="row g-3">
         {% for field in form %}
-        <div class="col-12 col-sm-6">
-          <label class="form-label">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-        </div>
+          {% if field.name != "latitude" and field.name != "longitude" and field.name != "radius_meters" %}
+          <div class="col-12 col-sm-6">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
         {% endfor %}
       </div>
-      <button type="submit" class="btn btn-primary mt-4">Enregistrer</button>
-      <a href="{% url 'agencies:list' %}" class="btn btn-outline-secondary mt-4">Annuler</a>
-    </form>
+    </div>
   </div>
-</div>
+
+  <div class="gp-card gp-form-card mb-4" style="max-width: none;">
+    <div class="gp-card-header">Localisation & zone de pointage</div>
+    <div class="gp-card-body">
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <input type="text" id="agency-address-search" class="form-control" placeholder="Rechercher une adresse (ex. 10 rue de la Paix, Paris)">
+        </div>
+        <div class="col-auto">
+          <button type="button" id="agency-address-search-btn" class="btn btn-outline-secondary">Rechercher</button>
+        </div>
+      </div>
+
+      <div id="agency-map" style="height: 360px; border-radius: 10px; overflow: hidden; margin-bottom: 1rem;"></div>
+
+      <div class="row g-3">
+        <div class="col-12 col-sm-4">
+          <label class="form-label">{{ form.latitude.label }}</label>
+          {{ form.latitude }}
+          {% for error in form.latitude.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-12 col-sm-4">
+          <label class="form-label">{{ form.longitude.label }}</label>
+          {{ form.longitude }}
+          {% for error in form.longitude.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-12 col-sm-4">
+          <label class="form-label">{{ form.radius_meters.label }}</label>
+          {{ form.radius_meters }}
+          {% if form.radius_meters.help_text %}<div class="form-text">{{ form.radius_meters.help_text }}</div>{% endif %}
+          {% for error in form.radius_meters.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+      </div>
+      <p class="text-muted small mt-2 mb-0">
+        Cliquez sur la carte ou faites glisser le marqueur pour ajuster la position. Le cercle représente la zone
+        de pointage autorisée (rayon configuré + marge de tolérance GPS).
+      </p>
+    </div>
+  </div>
+
+  <div class="gp-form-actions">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="{% url 'agencies:list' %}" class="btn btn-outline-secondary">Annuler</a>
+  </div>
+</form>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/agencies/map.js' %}"></script>
 {% endblock %}

@@ -1,67 +1,80 @@
 {% extends "base.html" %}
 {% block title %}Mes congés — GeoPresence{% endblock %}
+{% block page_title %}Mes congés{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-8">
-    {% if not employee %}
-      <div class="alert alert-warning">Aucun profil employé actif associé à votre compte.</div>
-    {% else %}
-      <h1 class="h4 mb-3">Mes congés</h1>
+{% if not employee %}
+  <div class="alert alert-warning">Aucun profil employé actif associé à votre compte.</div>
+{% else %}
+  <div class="gp-page-header">
+    <div>
+      <h1>Mes congés</h1>
       <p>Solde actuel : <strong>{{ employee.leave_balance }} j</strong></p>
+    </div>
+  </div>
 
-      <div class="card mb-4">
-        <div class="card-body">
-          <h2 class="h6">Nouvelle demande</h2>
-          <form method="post" action="{% url 'leaves:submit' %}">
-            {% csrf_token %}
-            <div class="row g-2">
-              <div class="col-12 col-sm-4">
-                <label class="form-label">{{ form.leave_type.label }}</label>
-                {{ form.leave_type }}
-              </div>
-              <div class="col-6 col-sm-3">
-                <label class="form-label">{{ form.start_date.label }}</label>
-                {{ form.start_date }}
-              </div>
-              <div class="col-6 col-sm-3">
-                <label class="form-label">{{ form.end_date.label }}</label>
-                {{ form.end_date }}
-              </div>
-              <div class="col-12">
-                <label class="form-label">{{ form.comment.label }}</label>
-                {{ form.comment }}
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary mt-3">Soumettre</button>
-          </form>
+  <div class="gp-card gp-form-card mb-4">
+    <div class="gp-card-header">Nouvelle demande</div>
+    <div class="gp-card-body">
+      <form method="post" action="{% url 'leaves:submit' %}">
+        {% csrf_token %}
+        <div class="row g-2">
+          <div class="col-12 col-sm-4">
+            <label class="form-label">{{ form.leave_type.label }}</label>
+            {{ form.leave_type }}
+          </div>
+          <div class="col-6 col-sm-3">
+            <label class="form-label">{{ form.start_date.label }}</label>
+            {{ form.start_date }}
+          </div>
+          <div class="col-6 col-sm-3">
+            <label class="form-label">{{ form.end_date.label }}</label>
+            {{ form.end_date }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">{{ form.comment.label }}</label>
+            {{ form.comment }}
+          </div>
         </div>
-      </div>
+        <div class="gp-form-actions">
+          <button type="submit" class="btn btn-primary">Soumettre</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-      <table class="table">
+  <div class="gp-table-card">
+    <div class="gp-table-scroll">
+      <table class="gp-table">
         <thead><tr><th>Type</th><th>Du</th><th>Au</th><th>Jours</th><th>Statut</th><th></th></tr></thead>
         <tbody>
           {% for leave in leaves %}
           <tr>
-            <td>{{ leave.leave_type.name }}</td>
+            <td class="fw-semibold">{{ leave.leave_type.name }}</td>
             <td>{{ leave.start_date }}</td>
             <td>{{ leave.end_date }}</td>
             <td>{{ leave.working_days }}</td>
-            <td>{{ leave.get_status_display }}</td>
+            <td>
+              {% if leave.status == "PENDING" %}<span class="gp-badge warning"><span class="dot"></span>En attente</span>
+              {% elif leave.status == "APPROVED" %}<span class="gp-badge success"><span class="dot"></span>Approuvé</span>
+              {% elif leave.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>Rejeté</span>
+              {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ leave.get_status_display }}</span>{% endif %}
+            </td>
             <td>
               {% if leave.status == "PENDING" %}
               <form method="post" action="{% url 'leaves:cancel' leave.pk %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline-danger">Annuler</button>
+                <button type="submit" class="gp-row-action-btn danger">Annuler</button>
               </form>
               {% endif %}
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="6" class="text-muted">Aucune demande.</td></tr>
+          <tr><td colspan="6"><div class="gp-table-empty">Aucune demande.</div></td></tr>
           {% endfor %}
         </tbody>
       </table>
-    {% endif %}
+    </div>
   </div>
-</div>
+  {% include "_pagination.html" %}
+{% endif %}
 {% endblock %}

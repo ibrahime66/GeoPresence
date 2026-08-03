@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Importer des employés — GeoPresence{% endblock %}
+{% block page_title %}Importer des employés{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Importer des employés</h1>
+    <p>Fichier CSV ou Excel (.xlsx), 10 Mo max. <a href="{% url 'employees:import_template' %}" class="gp-row-link">Télécharger le modèle</a>.</p>
+  </div>
+</div>
+
+<div class="gp-card gp-form-card">
+  <div class="gp-card-body">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      {% endif %}
+      <div class="mb-3">
+        <label class="form-label">{{ form.file.label }}</label>
+        {{ form.file }}
+        {% for error in form.file.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <p class="text-muted small">
+        Colonnes attendues : {{ columns|join:", " }}.<br>
+        Le Rôle attend une des valeurs suivantes : Employé, Manager, Administrateur.
+        Département/Poste/Agence/Manager sont recherchés par nom exact au sein de votre organisation.
+      </p>
+      <div class="gp-form-actions">
+        <button type="submit" class="btn btn-primary">Analyser le fichier</button>
+        <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

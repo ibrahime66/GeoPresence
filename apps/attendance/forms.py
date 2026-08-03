@@ -10,4 +10,7 @@ class ClockForm(forms.Form):
     gps_accuracy = forms.DecimalField(max_digits=8, decimal_places=2, required=False)
     is_gps_mocked = forms.BooleanField(required=False)
     client_time = forms.DateTimeField(required=False)
-    photo = forms.ImageField()
+    # CDC §9.7 : renseigné par le client lors de la synchronisation d'un
+    # pointage mis en file d'attente hors ligne (IndexedDB) — absent en
+    # fonctionnement normal (mode ONLINE implicite).
+    mode = forms.ChoiceField(choices=Attendance.Mode.choices, required=False)

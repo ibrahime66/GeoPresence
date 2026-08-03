@@ -1,33 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Absences en attente — GeoPresence{% endblock %}
+{% block page_title %}Justificatifs à valider{% endblock %}
 {% block content %}
-<h1 class="h4 mb-3">Justificatifs en attente</h1>
-<table class="table">
-  <thead><tr><th>Employé</th><th>Date</th><th>Motif</th><th>Commentaire</th><th>Justificatif</th><th></th></tr></thead>
-  <tbody>
-    {% for absence in absences %}
-    <tr>
-      <td>{{ absence.employee }}</td>
-      <td>{{ absence.date }}</td>
-      <td>{{ absence.reason.name|default:"—" }}</td>
-      <td>{{ absence.employee_comment }}</td>
-      <td>{% if absence.justification_file %}<a href="{{ absence.justification_file.url }}" target="_blank">Voir</a>{% else %}—{% endif %}</td>
-      <td class="d-flex gap-2">
-        <form method="post" action="{% url 'absences:review' absence.pk %}">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="approve">
-          <button type="submit" class="btn btn-sm btn-success">Valider</button>
-        </form>
-        <form method="post" action="{% url 'absences:review' absence.pk %}">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="reject">
-          <button type="submit" class="btn btn-sm btn-outline-danger">Rejeter</button>
-        </form>
-      </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="6" class="text-muted">Aucun justificatif en attente.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="gp-page-header">
+  <div>
+    <h1>Justificatifs à valider</h1>
+    <p>Justificatifs d'absence en attente d'approbation{% if request.user.role == "MANAGER" %} pour votre équipe{% endif %}.</p>
+  </div>
+</div>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Employé</th><th>Date</th><th>Motif</th><th>Commentaire</th><th>Justificatif</th><th></th></tr></thead>
+      <tbody>
+        {% for absence in absences %}
+        <tr>
+          <td class="fw-semibold">{{ absence.employee }}</td>
+          <td>{{ absence.date }}</td>
+          <td>{{ absence.reason.name|default:"—" }}</td>
+          <td class="text-muted-cell">{{ absence.employee_comment|default:"—" }}</td>
+          <td>{% if absence.justification_file %}<a href="{{ absence.justification_file.url }}" target="_blank" class="gp-row-link">Voir</a>{% else %}<span class="text-muted-cell">—</span>{% endif %}</td>
+          <td>
+            <div class="gp-table-actions">
+              <form method="post" action="{% url 'absences:review' absence.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-sm btn-success">Valider</button>
+              </form>
+              <form method="post" action="{% url 'absences:review' absence.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reject">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Rejeter</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="gp-table-empty">Aucun justificatif en attente.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
 {% endblock %}

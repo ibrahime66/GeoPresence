@@ -12,3 +12,7 @@ django-environ==0.14.0
 Pillow==12.3.0
 argon2-cffi==25.1.0
 cryptography==50.0.0
+
+# Exports (CDC §18.3) et import en masse d'employés (CDC §11.5).
+openpyxl==3.1.5
+reportlab==5.0.0

@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Nouvel employé — GeoPresence{% endblock %}
+{% block page_title %}Nouvel employé{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-8">
-    <h1 class="h4 mb-3">Nouvel employé</h1>
-    <p class="text-muted">Un compte est créé avec un mot de passe temporaire envoyé par e-mail ; un changement de mot de passe sera exigé à la première connexion.</p>
+<div class="gp-page-header">
+  <div>
+    <h1>Nouvel employé</h1>
+    <p>Un compte est créé avec un mot de passe temporaire envoyé par e-mail ; un changement de mot de passe sera exigé à la première connexion.</p>
+  </div>
+</div>
+<div class="gp-card gp-form-card" style="max-width: 900px;">
+  <div class="gp-card-body">
     <form method="post" novalidate>
       {% csrf_token %}
       {% if form.non_field_errors %}
@@ -12,15 +17,19 @@
       {% endif %}
       <div class="row g-3">
         {% for field in form %}
+        {% if field.name != "department" or departments_enabled %}
         <div class="col-12 col-sm-6">
           <label class="form-label">{{ field.label }}</label>
           {{ field }}
           {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
         </div>
+        {% endif %}
         {% endfor %}
       </div>
-      <button type="submit" class="btn btn-primary mt-4">Créer l'employé</button>
-      <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary mt-4">Annuler</a>
+      <div class="gp-form-actions">
+        <button type="submit" class="btn btn-primary">Créer l'employé</button>
+        <a href="{% url 'employees:list' %}" class="btn btn-outline-secondary">Annuler</a>
+      </div>
     </form>
   </div>
 </div>

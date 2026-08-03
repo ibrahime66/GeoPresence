@@ -1,0 +1,17 @@
+{% load gp_extras %}
+{% comment %}Pagination réutilisable — attend `page_obj`/`is_paginated` (contexte standard des ListView Django) et préserve les filtres déjà présents dans l'URL.{% endcomment %}
+{% if is_paginated %}
+<nav class="gp-pagination" aria-label="Pagination">
+  {% if page_obj.has_previous %}
+  <a href="{% paginate_url page_obj.previous_page_number %}">‹</a>
+  {% else %}
+  <span class="disabled">‹</span>
+  {% endif %}
+  <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a href="{% paginate_url page_obj.next_page_number %}">›</a>
+  {% else %}
+  <span class="disabled">›</span>
+  {% endif %}
+</nav>
+{% endif %}

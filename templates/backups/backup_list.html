@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Sauvegardes — GeoPresence{% endblock %}
+{% block page_title %}Sauvegardes{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Sauvegardes</h1>
+    <p>Sauvegardes complètes et chiffrées (AES-256) de la base de données, toutes organisations confondues.</p>
+  </div>
+</div>
+
+<div class="gp-card gp-form-card mb-4">
+  <div class="gp-card-body">
+    <form method="post" action="{% url 'backups:create' %}">
+      {% csrf_token %}
+      <div class="row g-2 align-items-end">
+        <div class="col">
+          <label class="form-label">Commentaire (optionnel)</label>
+          <input type="text" name="comment" class="form-control" placeholder="Ex. avant migration majeure">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">Lancer une sauvegarde manuelle</button>
+        </div>
+      </div>
+      <p class="text-muted small mt-2 mb-0">
+        Opération synchrone : la page attend la fin du dump avant de répondre — peut prendre plusieurs
+        secondes selon la taille de la base.
+      </p>
+    </form>
+  </div>
+</div>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead>
+        <tr>
+          <th>Date</th><th>Fichier</th><th>Type</th><th>Taille</th><th>Statut</th><th>Intégrité</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for backup in backups %}
+        <tr>
+          <td class="text-nowrap">{{ backup.created_at|date:"d/m/Y H:i" }}</td>
+          <td class="fw-semibold">{{ backup.filename }}{% if backup.comment %}<div class="text-muted-cell small">{{ backup.comment }}</div>{% endif %}</td>
+          <td>{% if backup.is_manual %}<span class="gp-badge info"><span class="dot"></span>Manuelle</span>{% else %}<span class="gp-badge neutral"><span class="dot"></span>Automatique</span>{% endif %}</td>
+          <td>{{ backup.size_bytes|filesizeformat }}</td>
+          <td>
+            {% if backup.status == "SUCCESS" %}<span class="gp-badge success"><span class="dot"></span>Réussie</span>
+            {% else %}<span class="gp-badge danger"><span class="dot"></span>Échouée</span>{% endif %}
+          </td>
+          <td>
+            {% if backup.last_verification_ok == True %}<span class="gp-badge success"><span class="dot"></span>Vérifiée</span>
+            {% elif backup.last_verification_ok == False %}<span class="gp-badge danger"><span class="dot"></span>Altérée</span>
+            {% else %}<span class="text-muted-cell">Non vérifiée</span>{% endif %}
+          </td>
+          <td>
+            {% if backup.status == "SUCCESS" %}
+            <a href="{% url 'backups:download' backup.pk %}" class="gp-row-link">Télécharger</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7"><div class="gp-table-empty">Aucune sauvegarde pour l'instant.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
+{% endblock %}

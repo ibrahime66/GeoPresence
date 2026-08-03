@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord — GeoPresence{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
+    <p>{{ user.get_role_display }}{% if user.tenant %} — {{ user.tenant.display_name }}{% endif %}</p>
+  </div>
+</div>
+
+{% if employee %}
+<div class="gp-card mb-4">
+  <div class="gp-card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      {% if today_status == "done" %}
+        <span class="gp-badge neutral mb-1"><span class="dot"></span>Journée terminée</span>
+      {% elif today_status == "present" %}
+        <span class="gp-badge success mb-1"><span class="dot"></span>Présent</span>
+      {% else %}
+        <span class="gp-badge warning mb-1"><span class="dot"></span>Pas encore pointé</span>
+      {% endif %}
+      <span class="text-muted small ms-2">Mon solde congés : {{ employee.leave_balance }} j</span>
+    </div>
+    <a href="{% url 'attendance:clock_page' %}" class="btn btn-primary">Pointer arrivée / départ</a>
+  </div>
+</div>
+{% endif %}
+
+{% if active_announcements %}
+<div class="gp-card mb-4">
+  <div class="gp-card-header">Annonces de l'organisation</div>
+  <div class="gp-card-body">
+    {% for a in active_announcements %}
+    <div class="{% if not forloop.last %}mb-3 pb-3 border-bottom{% endif %}">
+      <div class="fw-semibold">{{ a.title }}</div>
+      <p class="text-muted small mb-1">{{ a.content|linebreaksbr }}</p>
+      <span class="text-muted small">{{ a.publish_at|date:"d/m/Y" }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="gp-stat-grid">
+  <div class="gp-stat">
+    <div class="gp-stat-label">Membres de l'équipe</div>
+    <div class="gp-stat-value">{{ total_team }}</div>
+  </div>
+  <div class="gp-stat success">
+    <div class="gp-stat-label">Présents aujourd'hui</div>
+    <div class="gp-stat-value">{{ present_team_today }}</div>
+  </div>
+  <div class="gp-stat danger">
+    <div class="gp-stat-label">Absents aujourd'hui</div>
+    <div class="gp-stat-value">{{ absent_team_today }}</div>
+  </div>
+  <div class="gp-stat warning">
+    <div class="gp-stat-label">Retards aujourd'hui</div>
+    <div class="gp-stat-value">{{ late_team_today }}</div>
+  </div>
+</div>
+
+<div class="gp-page-header-actions mb-4">
+  <a href="{% url 'leaves:pending' %}" class="btn btn-outline-secondary">
+    Congés à valider {% if team_pending_leaves %}<span class="gp-badge warning">{{ team_pending_leaves }}</span>{% endif %}
+  </a>
+  <a href="{% url 'absences:pending' %}" class="btn btn-outline-secondary">
+    Justificatifs à valider {% if team_pending_absences %}<span class="gp-badge warning">{{ team_pending_absences }}</span>{% endif %}
+  </a>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="gp-card h-100">
+      <div class="gp-card-header">Présence de l'équipe — 7 derniers jours</div>
+      <div class="gp-card-body">
+        {% if total_team %}
+        <canvas id="teamTrendChart" height="140"></canvas>
+        {% else %}
+        <p class="text-muted small mb-0">Aucun membre dans l'équipe pour le moment.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="gp-table-card h-100">
+      <div class="gp-card-header">Planning de l'équipe (horaire affecté)</div>
+      <div class="gp-table-scroll">
+        <table class="gp-table">
+          <thead><tr><th>Employé</th><th>Horaire</th></tr></thead>
+          <tbody>
+            {% for row in team_rows %}
+            <tr>
+              <td class="fw-semibold">{{ row.employee.user.full_name|default:row.employee.user.email }}</td>
+              <td>
+                {% with sched=row.employee.schedule_assignments.first %}
+                  {% if sched %}{{ sched.schedule.name }} ({{ sched.schedule.get_schedule_type_display }}){% else %}<span class="text-muted-cell">Aucun horaire individuel</span>{% endif %}
+                {% endwith %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2"><div class="gp-table-empty">Aucun membre dans l'équipe.</div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="gp-table-card">
+  <div class="gp-card-header">Mon équipe — statut du jour</div>
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Employé</th><th>Département</th><th>Agence</th><th>Statut aujourd'hui</th><th>Heure</th></tr></thead>
+      <tbody>
+        {% for row in team_rows %}
+        <tr>
+          <td class="fw-semibold">{{ row.employee.user.full_name|default:row.employee.user.email }}</td>
+          <td>{{ row.employee.department|default:"—" }}</td>
+          <td>{{ row.employee.primary_agency }}</td>
+          <td>
+            {% if row.status == "LATE" %}<span class="gp-badge warning"><span class="dot"></span>Retard</span>
+            {% elif row.status %}<span class="gp-badge success"><span class="dot"></span>{{ row.arrival.get_status_display }}</span>
+            {% else %}<span class="gp-badge danger"><span class="dot"></span>Pas encore pointé</span>{% endif %}
+          </td>
+          <td>{% if row.arrival %}{{ row.arrival.server_time|date:"H:i" }}{% else %}—{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5"><div class="gp-table-empty">Aucun membre dans l'équipe.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ team_trend_labels|json_script:"team-trend-labels" }}
+{{ team_trend_values|json_script:"team-trend-values" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+(() => {
+  const canvas = document.getElementById("teamTrendChart");
+  if (!canvas) return;
+  const labels = JSON.parse(document.getElementById("team-trend-labels").textContent);
+  const values = JSON.parse(document.getElementById("team-trend-values").textContent);
+  new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Taux de présence (%)",
+        data: values,
+        borderColor: "#0B63F6",
+        backgroundColor: "rgba(11,99,246,0.08)",
+        tension: 0.25,
+        fill: true,
+        pointRadius: 0,
+      }],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + "%" } } },
+    },
+  });
+})();
+</script>
+{% endblock %}

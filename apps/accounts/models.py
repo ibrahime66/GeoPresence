@@ -57,9 +57,13 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
     class Role(models.TextChoices):
         SUPER_ADMIN = "SUPER_ADMIN", "Super Administrateur"
         ADMIN = "ADMIN", "Administrateur"
-        SUPERVISOR = "SUPERVISOR", "Superviseur"
         MANAGER = "MANAGER", "Manager"
         EMPLOYEE = "EMPLOYEE", "Employé"
+
+    class Language(models.TextChoices):
+        FR = "fr", "Français"
+        EN = "en", "English"
+        AR = "ar", "العربية"
 
     tenant = models.ForeignKey(
         "tenants.Organization",
@@ -81,10 +85,19 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
     # RM-AUTH-004 : verrouillage après N échecs (défaut 5 / 15 min, configurable par organisation).
     failed_login_attempts = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
+    # CDC §13.3.1 : blocage progressif — nombre de verrouillages consécutifs,
+    # utilisé pour faire croître la durée (15min/30min/1h/4h/24h). Remis à
+    # zéro à chaque connexion réussie.
+    lockout_count = models.PositiveSmallIntegerField(default=0)
 
     # RM-AUTH-006 : changement de mot de passe obligatoire à la première connexion.
     must_change_password = models.BooleanField(default=True)
     last_password_change = models.DateTimeField(null=True, blank=True)
+
+    # CDC §3.5.1/§24.2 : langue d'affichage — préférence personnelle, distincte
+    # de la langue par défaut de l'organisation (Organization.language, qui ne
+    # sert qu'à pré-remplir ce champ à la création du compte).
+    language = models.CharField(max_length=2, choices=Language.choices, default=Language.FR)
 
     objects = UserManager()
 
@@ -113,6 +126,46 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
             raise ValidationError("Le Super Administrateur ne doit être rattaché à aucune organisation.")
         if self.role != self.Role.SUPER_ADMIN and self.tenant_id is None:
             raise ValidationError("Un utilisateur non Super Administrateur doit appartenir à une organisation.")
+
+
+class UserSession(UUIDModel):
+    """CDC §5.6.2 : suivi des sessions actives d'un utilisateur, en plus de la
+    session Django elle-même (django.contrib.sessions.models.Session, qui ne
+    porte aucune info exploitable côté métier — juste une clé et un blob
+    opaque). Une ligne par session vivante ; supprimée à la déconnexion ou à
+    la révocation (et la Session Django sous-jacente est supprimée en même
+    temps pour invalider réellement l'accès, cf. apps.accounts.sessions)."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sessions")
+    session_key = models.CharField(max_length=40, unique=True)
+
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    device_type = models.CharField(max_length=20, blank=True)
+    browser = models.CharField(max_length=50, blank=True)
+    os = models.CharField(max_length=50, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-last_activity_at"]
+
+    def __str__(self):
+        return f"{self.user} — {self.browser}/{self.os} ({self.ip_address})"
+
+
+class PasswordHistory(UUIDModel):
+    """CDC §13.2.1 : conserve le hash des N derniers mots de passe d'un
+    compte pour empêcher leur réutilisation — jamais le mot de passe en clair."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_history")
+    hashed_password = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "password histories"
 
 
 class PasswordResetToken(UUIDModel):

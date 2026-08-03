@@ -1,60 +1,56 @@
 {% extends "base.html" %}
 {% block title %}Tableau de bord — GeoPresence{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
 {% block content %}
-<h1 class="h4">Bienvenue, {{ user.full_name|default:user.email }}</h1>
-<p class="text-muted mb-4">
-  Rôle : {{ user.get_role_display }}
-  {% if user.tenant %} — {{ user.tenant.display_name }}{% endif %}
-</p>
+<div class="gp-page-header">
+  <div>
+    <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
+    <p>{{ user.get_role_display }}{% if user.tenant %} — {{ user.tenant.display_name }}{% endif %}</p>
+  </div>
+</div>
 
 {% if not employee %}
   <div class="alert alert-warning">Aucun profil employé actif associé à votre compte.</div>
 {% else %}
 
-  <div class="border rounded p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-    <div>
-      {% if today_status == "done" %}
-        <span class="badge bg-secondary mb-1">Journée terminée</span>
-      {% elif today_status == "present" %}
-        <span class="badge bg-success mb-1">Présent</span>
-      {% else %}
-        <span class="badge bg-warning text-dark mb-1">Pas encore pointé</span>
-      {% endif %}
+  <div class="gp-card mb-4">
+    <div class="gp-card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
       <div>
-        {% for a in today_attendances %}
-          <span class="text-muted small me-3">{{ a.get_clock_type_display }} : {{ a.server_time|date:"H:i" }} ({{ a.get_status_display }})</span>
-        {% empty %}
-          <span class="text-muted small">Aucun pointage aujourd'hui.</span>
-        {% endfor %}
+        {% if today_status == "done" %}
+          <span class="gp-badge neutral mb-1"><span class="dot"></span>Journée terminée</span>
+        {% elif today_status == "present" %}
+          <span class="gp-badge success mb-1"><span class="dot"></span>Présent</span>
+        {% else %}
+          <span class="gp-badge warning mb-1"><span class="dot"></span>Pas encore pointé</span>
+        {% endif %}
+        <div class="mt-1">
+          {% for a in today_attendances %}
+            <span class="text-muted small me-3">{{ a.get_clock_type_display }} : {{ a.server_time|date:"H:i" }} ({{ a.get_status_display }})</span>
+          {% empty %}
+            <span class="text-muted small">Aucun pointage aujourd'hui.</span>
+          {% endfor %}
+        </div>
       </div>
+      <a href="{% url 'attendance:clock_page' %}" class="btn btn-primary">Pointer arrivée / départ</a>
     </div>
-    <a href="{% url 'attendance:clock_page' %}" class="btn btn-primary">Pointer arrivée / départ</a>
   </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-      <div class="border rounded p-3 h-100">
-        <div class="text-muted small">Jours présents (mois)</div>
-        <div class="fs-3 fw-bold" style="color:var(--gp-green)">{{ days_present_month }}</div>
-      </div>
+  <div class="gp-stat-grid">
+    <div class="gp-stat success">
+      <div class="gp-stat-label">Jours présents (mois)</div>
+      <div class="gp-stat-value">{{ days_present_month }}</div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="border rounded p-3 h-100">
-        <div class="text-muted small">Retards (mois)</div>
-        <div class="fs-3 fw-bold" style="color:#B7791F">{{ days_late_month }}</div>
-      </div>
+    <div class="gp-stat warning">
+      <div class="gp-stat-label">Retards (mois)</div>
+      <div class="gp-stat-value">{{ days_late_month }}</div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="border rounded p-3 h-100">
-        <div class="text-muted small">Solde congés</div>
-        <div class="fs-3 fw-bold" style="color:var(--gp-blue)">{{ employee.leave_balance }} j</div>
-      </div>
+    <div class="gp-stat info">
+      <div class="gp-stat-label">Solde congés</div>
+      <div class="gp-stat-value">{{ employee.leave_balance }} <span class="unit">j</span></div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="border rounded p-3 h-100">
-        <div class="text-muted small">Demandes en attente</div>
-        <div class="fs-3 fw-bold" style="color:var(--gp-navy)">{{ my_leaves_pending|add:my_absences_pending }}</div>
-      </div>
+    <div class="gp-stat">
+      <div class="gp-stat-label">Demandes en attente</div>
+      <div class="gp-stat-value">{{ my_leaves_pending|add:my_absences_pending }}</div>
     </div>
   </div>
 
@@ -62,33 +58,44 @@
     <a href="{% url 'leaves:my_leaves' %}" class="btn btn-outline-primary">Mes congés</a>
     <a href="{% url 'absences:my_absences' %}" class="btn btn-outline-primary">Mes absences</a>
   </div>
-{% endif %}
 
-{% if user.role == "MANAGER" or user.role == "SUPERVISOR" %}
-<h2 class="h6">Mon équipe</h2>
-<div class="d-flex flex-wrap gap-2 mb-4">
-  <a href="{% url 'leaves:pending' %}" class="btn btn-outline-secondary">Congés à valider</a>
-  <a href="{% url 'absences:pending' %}" class="btn btn-outline-secondary">Justificatifs à valider</a>
-</div>
+  {% if active_announcements %}
+  <div class="gp-card mb-4">
+    <div class="gp-card-header">Annonces de l'organisation</div>
+    <div class="gp-card-body">
+      {% for a in active_announcements %}
+      <div class="{% if not forloop.last %}mb-3 pb-3 border-bottom{% endif %}">
+        <div class="fw-semibold">{{ a.title }}</div>
+        <p class="text-muted small mb-1">{{ a.content|linebreaksbr }}</p>
+        <span class="text-muted small">{{ a.publish_at|date:"d/m/Y" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 {% endif %}
 
 {% if employee %}
-<h2 class="h6">Mes 10 derniers pointages</h2>
-<table class="table table-sm">
-  <thead><tr><th>Date</th><th>Type</th><th>Heure</th><th>Statut</th><th>Agence</th></tr></thead>
-  <tbody>
-    {% for a in recent_attendances %}
-    <tr>
-      <td>{{ a.clock_date }}</td>
-      <td>{{ a.get_clock_type_display }}</td>
-      <td>{{ a.server_time|date:"H:i" }}</td>
-      <td>{{ a.get_status_display }}</td>
-      <td>{{ a.agency.name }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="5" class="text-muted">Aucun pointage.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="gp-table-card">
+  <div class="gp-card-header">Mes 10 derniers pointages</div>
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Date</th><th>Type</th><th>Heure</th><th>Statut</th><th>Agence</th></tr></thead>
+      <tbody>
+        {% for a in recent_attendances %}
+        <tr>
+          <td class="fw-semibold">{{ a.clock_date }}</td>
+          <td>{{ a.get_clock_type_display }}</td>
+          <td>{{ a.server_time|date:"H:i" }}</td>
+          <td>{{ a.get_status_display }}</td>
+          <td>{{ a.agency.name }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5"><div class="gp-table-empty">Aucun pointage.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endif %}
 {% endblock %}

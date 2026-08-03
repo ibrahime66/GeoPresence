@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Modifier{% else %}Nouvelle{% endif %} annonce — GeoPresence{% endblock %}
+{% block page_title %}{% if object %}Modifier l'annonce{% else %}Nouvelle annonce{% endif %}{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div><h1>{% if object %}Modifier l'annonce{% else %}Nouvelle annonce{% endif %}</h1></div>
+</div>
+<div class="gp-card gp-form-card" style="max-width: 640px;">
+  <div class="gp-card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+      {% endif %}
+      {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <div class="gp-form-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="{% url 'announcements:list' %}" class="btn btn-outline-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

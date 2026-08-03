@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm
+from django.utils.translation import gettext_lazy as _
 
 
 class BootstrapFormMixin:
@@ -15,11 +16,11 @@ class BootstrapFormMixin:
 
 class LoginForm(BootstrapFormMixin, forms.Form):
     email = forms.EmailField(
-        label="E-mail",
+        label=_("E-mail"),
         widget=forms.EmailInput(attrs={"autofocus": True, "autocomplete": "email"}),
     )
     password = forms.CharField(
-        label="Mot de passe",
+        label=_("Mot de passe"),
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
     )
 
@@ -28,7 +29,7 @@ class LoginForm(BootstrapFormMixin, forms.Form):
 
 
 class PasswordResetRequestForm(BootstrapFormMixin, forms.Form):
-    email = forms.EmailField(label="E-mail", widget=forms.EmailInput(attrs={"autofocus": True}))
+    email = forms.EmailField(label=_("E-mail"), widget=forms.EmailInput(attrs={"autofocus": True}))
 
     def clean_email(self):
         return self.cleaned_data["email"].strip().lower()
@@ -40,3 +41,17 @@ class BootstrapSetPasswordForm(BootstrapFormMixin, SetPasswordForm):
 
 class BootstrapPasswordChangeForm(BootstrapFormMixin, PasswordChangeForm):
     pass
+
+
+class LanguageForm(forms.ModelForm):
+    """CDC §3.5.1 : langue d'affichage — self-service, tous rôles confondus."""
+
+    class Meta:
+        from .models import User
+
+        model = User
+        fields = ["language"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["language"].widget.attrs["class"] = "form-select"

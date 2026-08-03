@@ -1,57 +1,69 @@
 {% extends "base.html" %}
 {% block title %}Journal d'audit — GeoPresence{% endblock %}
+{% block page_title %}Journal d'audit{% endblock %}
 {% block content %}
-<h1 class="h4 mb-3">Journal d'audit global</h1>
-
-<form method="get" class="row g-2 mb-3">
-  <div class="col-auto">
-    <select name="tenant" class="form-select form-select-sm" onchange="this.form.submit()">
-      <option value="">Toutes les organisations</option>
-      {% for org in organizations %}
-      <option value="{{ org.pk }}" {% if selected_tenant == org.pk|stringformat:"s" %}selected{% endif %}>{{ org.display_name }}</option>
-      {% endfor %}
-    </select>
+<div class="gp-page-header">
+  <div>
+    <h1>Journal d'audit</h1>
+    <p>Toutes organisations confondues — écriture seule, non modifiable.</p>
   </div>
-  <div class="col-auto">
-    <select name="action" class="form-select form-select-sm" onchange="this.form.submit()">
-      <option value="">Toutes les actions</option>
-      {% for action in actions %}
-      <option value="{{ action }}" {% if selected_action == action %}selected{% endif %}>{{ action }}</option>
-      {% endfor %}
-    </select>
+  <div class="gp-page-header-actions">
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Exporter
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'superadmin:audit_log_export' 'csv' %}?{{ request.GET.urlencode }}">CSV</a></li>
+        <li><a class="dropdown-item" href="{% url 'superadmin:audit_log_export' 'xlsx' %}?{{ request.GET.urlencode }}">Excel (.xlsx)</a></li>
+      </ul>
+    </div>
   </div>
-</form>
+</div>
 
-<table class="table table-sm">
-  <thead><tr><th>Horodatage</th><th>Action</th><th>Résultat</th><th>Organisation</th><th>Utilisateur</th><th>Description</th><th>IP</th></tr></thead>
-  <tbody>
-    {% for log in logs %}
-    <tr>
-      <td class="text-nowrap">{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
-      <td>{{ log.action }}</td>
-      <td>{% if log.result == "SUCCESS" %}<span class="badge bg-success">OK</span>{% else %}<span class="badge bg-danger">Échec</span>{% endif %}</td>
-      <td>{{ log.tenant.display_name|default:"—" }}</td>
-      <td class="text-muted small">{{ log.user_email|default:"—" }}</td>
-      <td class="text-muted small">{{ log.description }}</td>
-      <td class="text-muted small">{{ log.ip_address|default:"—" }}</td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="7" class="text-muted">Aucun événement.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="gp-card mb-3">
+  <div class="gp-card-body py-3">
+    <form method="get" class="row g-2 align-items-center">
+      <div class="col-auto">
+        <select name="tenant" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">Toutes les organisations</option>
+          {% for org in organizations %}
+          <option value="{{ org.pk }}" {% if selected_tenant == org.pk|stringformat:"s" %}selected{% endif %}>{{ org.display_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <select name="action" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">Toutes les actions</option>
+          {% for action in actions %}
+          <option value="{{ action }}" {% if selected_action == action %}selected{% endif %}>{{ action }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+</div>
 
-{% if is_paginated %}
-<nav>
-  <ul class="pagination">
-    {% if page_obj.has_previous %}
-    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&tenant={{ selected_tenant }}&action={{ selected_action }}">Précédent</a></li>
-    {% endif %}
-    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
-    {% if page_obj.has_next %}
-    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&tenant={{ selected_tenant }}&action={{ selected_action }}">Suivant</a></li>
-    {% endif %}
-  </ul>
-</nav>
-{% endif %}
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Horodatage</th><th>Action</th><th>Résultat</th><th>Organisation</th><th>Utilisateur</th><th>Description</th><th>IP</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-nowrap">{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
+          <td class="fw-semibold">{{ log.action }}</td>
+          <td>{% if log.result == "SUCCESS" %}<span class="gp-badge success"><span class="dot"></span>OK</span>{% else %}<span class="gp-badge danger"><span class="dot"></span>Échec</span>{% endif %}</td>
+          <td>{{ log.tenant.display_name|default:"—" }}</td>
+          <td class="text-muted-cell">{{ log.user_email|default:"—" }}</td>
+          <td class="text-muted-cell">{{ log.description }}</td>
+          <td class="text-muted-cell">{{ log.ip_address|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7"><div class="gp-table-empty">Aucun événement.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
 {% endblock %}

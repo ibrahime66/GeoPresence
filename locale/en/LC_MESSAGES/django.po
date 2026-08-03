@@ -1,0 +1,275 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GeoPresence 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-02 00:00+0000\n"
+"PO-Revision-Date: 2026-08-02 00:00+0000\n"
+"Language: English\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "La présence de vos équipes, prouvée au mètre près."
+msgstr "Your teams' attendance, proven to the meter."
+
+msgid ""
+"Géolocalisation en temps réel et calcul automatique des retards — tout le "
+"suivi de présence, en un coup d'œil."
+msgstr ""
+"Real-time geolocation and automatic late-arrival calculation — all your "
+"attendance tracking, at a glance."
+
+msgid "Isolation stricte entre organisations"
+msgstr "Strict isolation between organizations"
+
+msgid "Historique complet et export"
+msgstr "Full history and export"
+
+msgid "Multi-site & multi-organisation"
+msgstr "Multi-site & multi-organization"
+
+msgid "Langue"
+msgstr "Language"
+
+msgid "Afficher le mot de passe"
+msgstr "Show password"
+
+msgid "Masquer le mot de passe"
+msgstr "Hide password"
+
+msgid "Connexion"
+msgstr "Sign in"
+
+msgid "Accédez à votre espace GeoPresence"
+msgstr "Access your GeoPresence workspace"
+
+msgid "Mot de passe oublié ?"
+msgstr "Forgot password?"
+
+msgid "Se connecter"
+msgstr "Sign in"
+
+msgid "Mot de passe oublié"
+msgstr "Forgot password"
+
+msgid ""
+"Indiquez votre e-mail : si un compte existe, un lien de réinitialisation "
+"vous sera envoyé."
+msgstr ""
+"Enter your email: if an account exists, a reset link will be sent to you."
+
+msgid "Envoyer le lien"
+msgstr "Send link"
+
+msgid "Retour à la connexion"
+msgstr "Back to sign in"
+
+msgid "Lien envoyé"
+msgstr "Link sent"
+
+msgid ""
+"Si un compte existe avec cette adresse, un e-mail contenant un lien de "
+"réinitialisation vient d'être envoyé. Le lien expire dans 30 minutes."
+msgstr ""
+"If an account exists with this address, an email with a reset link has just "
+"been sent. The link expires in 30 minutes."
+
+msgid "Nouveau mot de passe"
+msgstr "New password"
+
+msgid "Définir un nouveau mot de passe"
+msgstr "Set a new password"
+
+msgid "Choisissez un mot de passe robuste pour votre compte."
+msgstr "Choose a strong password for your account."
+
+msgid "Valider"
+msgstr "Confirm"
+
+msgid "Mot de passe mis à jour"
+msgstr "Password updated"
+
+msgid "Votre mot de passe a été mis à jour avec succès."
+msgstr "Your password has been updated successfully."
+
+msgid "Lien invalide"
+msgstr "Invalid link"
+
+msgid "Ce lien de réinitialisation est invalide, déjà utilisé ou expiré."
+msgstr "This reset link is invalid, already used, or expired."
+
+msgid "Demander un nouveau lien"
+msgstr "Request a new link"
+
+msgid "Changement de mot de passe"
+msgstr "Password change"
+
+msgid "Vous devez définir un nouveau mot de passe avant de continuer."
+msgstr "You must set a new password before continuing."
+
+msgid "Plateforme"
+msgstr "Platform"
+
+msgid "Tableau de bord"
+msgstr "Dashboard"
+
+msgid "Organisations"
+msgstr "Organizations"
+
+msgid "Journal d'audit"
+msgstr "Audit log"
+
+msgid "Sauvegardes"
+msgstr "Backups"
+
+msgid "Accueil"
+msgstr "Home"
+
+msgid "Mon espace"
+msgstr "My space"
+
+msgid "Pointer"
+msgstr "Clock in/out"
+
+msgid "Mes congés"
+msgstr "My leave"
+
+msgid "Mes absences"
+msgstr "My absences"
+
+msgid "Organisation"
+msgstr "Organization"
+
+msgid "Agences"
+msgstr "Agencies"
+
+msgid "Départements"
+msgstr "Departments"
+
+msgid "Postes"
+msgstr "Positions"
+
+msgid "Horaires"
+msgstr "Schedules"
+
+msgid "Employés"
+msgstr "Employees"
+
+msgid "Paramètres"
+msgstr "Settings"
+
+msgid "Validations"
+msgstr "Approvals"
+
+msgid "Congés à valider"
+msgstr "Leave to approve"
+
+msgid "Justificatifs à valider"
+msgstr "Justifications to approve"
+
+msgid "Mon profil"
+msgstr "My profile"
+
+msgid "Se déconnecter"
+msgstr "Sign out"
+
+msgid "Ouvrir le menu"
+msgstr "Open menu"
+
+msgid "Informations personnelles"
+msgstr "Personal information"
+
+msgid "Enregistrer"
+msgstr "Save"
+
+msgid "Langue d'affichage"
+msgstr "Display language"
+
+msgid "Changer la langue"
+msgstr "Change language"
+
+msgid "Sécurité"
+msgstr "Security"
+
+msgid "Date d'expiration du mot de passe inconnue."
+msgstr "Password expiration date unknown."
+
+msgid "Changer mon mot de passe"
+msgstr "Change my password"
+
+msgid "Sessions actives"
+msgstr "Active sessions"
+
+msgid "Appareil"
+msgstr "Device"
+
+msgid "Navigateur / OS"
+msgstr "Browser / OS"
+
+msgid "Adresse IP"
+msgstr "IP address"
+
+msgid "Connecté depuis"
+msgstr "Signed in since"
+
+msgid "Dernière activité"
+msgstr "Last activity"
+
+msgid "Cet appareil"
+msgstr "This device"
+
+msgid "Révoquer cette session ? Cet appareil sera déconnecté immédiatement."
+msgstr "Revoke this session? This device will be signed out immediately."
+
+msgid "Révoquer"
+msgstr "Revoke"
+
+msgid "Aucune session active."
+msgstr "No active sessions."
+
+msgid "E-mail"
+msgstr "Email"
+
+msgid "Mot de passe"
+msgstr "Password"
+
+msgid "Assistant IA"
+msgstr "AI assistant"
+
+msgid "Configuration IA"
+msgstr "AI configuration"
+
+msgid ""
+"Posez une question sur vos données de présence — les réponses se basent "
+"uniquement sur les données de votre périmètre."
+msgstr ""
+"Ask a question about your attendance data — answers are based only on data "
+"within your scope."
+
+msgid "Nouvelle conversation"
+msgstr "New conversation"
+
+msgid "Aucune conversation pour le moment."
+msgstr "No conversations yet."
+
+msgid "Posez votre première question à GeoIA."
+msgstr "Ask GeoIA your first question."
+
+msgid "Votre question…"
+msgstr "Your question…"
+
+msgid "Envoyer"
+msgstr "Send"
+
+msgid ""
+"Fournisseur, clé API et limites d'utilisation de l'assistant conversationnel"
+" (CDC §15.2)."
+msgstr "Provider, API key and usage limits for the conversational assistant."
+
+msgid "Accès et limites"
+msgstr "Access and limits"
+
+msgid "Votre mot de passe expire le <strong>%(date)s</strong>."
+msgstr "Your password expires on <strong>%(date)s</strong>."

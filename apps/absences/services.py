@@ -10,6 +10,13 @@ class AbsenceRejected(Exception):
         super().__init__(message)
 
 
+class AbsenceCancelled(Exception):
+    def __init__(self, message, code):
+        self.message = message
+        self.code = code
+        super().__init__(message)
+
+
 def submit_justification(employee, date, reason=None, comment="", file=None):
     """CDC §12.1.2. Fonctionne aussi bien pour justifier une absence détectée
     au préalable (get_or_create) que pour une absence signalée directement
@@ -30,6 +37,17 @@ def submit_justification(employee, date, reason=None, comment="", file=None):
     absence.status = Absence.Status.PENDING_REVIEW
     absence.full_clean()
     absence.save()
+    return absence
+
+
+def cancel_justification(absence):
+    """Retire un justificatif encore en attente de validation (erreur de
+    saisie, pièce jointe erronée...) — l'absence redevient non justifiée et
+    peut être resoumise via `submit_justification`."""
+    if absence.status != Absence.Status.PENDING_REVIEW:
+        raise AbsenceCancelled("Seul un justificatif en attente peut être annulé.", "invalid_state")
+    absence.status = Absence.Status.UNJUSTIFIED
+    absence.save(update_fields=["status"])
     return absence
 
 

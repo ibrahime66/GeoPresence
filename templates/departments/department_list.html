@@ -1,27 +1,53 @@
 {% extends "base.html" %}
 {% block title %}Départements — GeoPresence{% endblock %}
+{% block page_title %}Départements{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">Départements</h1>
-  <div class="d-flex gap-2">
+<div class="gp-page-header">
+  <div>
+    <h1>Départements</h1>
+    <p>Structure organisationnelle utilisée pour affecter employés, postes et horaires par défaut.</p>
+  </div>
+  <div class="gp-page-header-actions">
     <a href="{% url 'departments:position_list' %}" class="btn btn-outline-secondary">Voir les postes</a>
-    <a href="{% url 'departments:create' %}" class="btn btn-primary">Nouveau département</a>
+    <a href="{% url 'departments:create' %}" class="btn btn-primary">+ Nouveau département</a>
   </div>
 </div>
-<table class="table">
-  <thead><tr><th>Nom</th><th>Code</th><th>Horaire par défaut</th><th>Statut</th><th></th></tr></thead>
-  <tbody>
-    {% for dept in departments %}
-    <tr>
-      <td>{{ dept.name }}</td>
-      <td>{{ dept.code }}</td>
-      <td>{{ dept.default_schedule|default:"—" }}</td>
-      <td>{% if dept.is_active %}<span class="badge bg-success">Actif</span>{% else %}<span class="badge bg-secondary">Inactif</span>{% endif %}</td>
-      <td><a href="{% url 'departments:update' dept.pk %}">Modifier</a></td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="5" class="text-muted">Aucun département.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Nom</th><th>Code</th><th>Horaire par défaut</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for dept in departments %}
+        <tr>
+          <td class="fw-semibold">{{ dept.name }}</td>
+          <td class="text-muted-cell">{{ dept.code }}</td>
+          <td>{{ dept.default_schedule|default:"—" }}</td>
+          <td>
+            {% if dept.is_active %}<span class="gp-badge success"><span class="dot"></span>Actif</span>
+            {% else %}<span class="gp-badge neutral"><span class="dot"></span>Inactif</span>{% endif %}
+          </td>
+          <td>
+            <div class="gp-table-actions">
+              <a href="{% url 'departments:update' dept.pk %}" class="gp-row-link">Modifier</a>
+              <span class="gp-row-sep">·</span>
+              <form method="post" action="{% url 'departments:toggle_active' dept.pk %}">
+                {% csrf_token %}
+                {% if dept.is_active %}
+                <button type="submit" class="gp-row-action-btn danger" onclick="return confirm('Désactiver {{ dept.name|escapejs }} ?');">Désactiver</button>
+                {% else %}
+                <button type="submit" class="gp-row-action-btn">Activer</button>
+                {% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5"><div class="gp-table-empty">Aucun département.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
 {% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}GeoIA — GeoPresence{% endblock %}
+{% block page_title %}GeoIA{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>GeoIA</h1>
+    <p>{% trans "Posez une question sur vos données de présence — les réponses se basent uniquement sur les données de votre périmètre." %}</p>
+  </div>
+  <div class="gp-page-header-actions">
+    <a href="{% url 'ai:chat' %}" class="btn btn-outline-primary btn-sm">{% trans "Nouvelle conversation" %}</a>
+  </div>
+</div>
+
+<div class="gp-chat-shell">
+  <aside class="gp-chat-sidebar">
+    {% for c in conversations %}
+    <a href="{% url 'ai:chat_detail' c.pk %}" class="gp-chat-conv-link {% if conversation and conversation.pk == c.pk %}is-active{% endif %}">
+      {{ c.title|default:_("Nouvelle conversation") }}
+    </a>
+    {% empty %}
+    <p class="text-muted small px-2">{% trans "Aucune conversation pour le moment." %}</p>
+    {% endfor %}
+  </aside>
+
+  <div class="gp-chat-main">
+    <div class="gp-chat-thread" id="gpChatThread">
+      {% if not conversation %}
+      <div class="gp-empty">
+        <div class="gp-empty-icon">{% include "core/_icon.html" with icon="mail" size="22" %}</div>
+        <p>{% trans "Posez votre première question à GeoIA." %}</p>
+      </div>
+      {% endif %}
+      {% for m in messages_list %}
+      <div class="gp-chat-bubble {{ m.role|lower }}">{{ m.content }}</div>
+      {% endfor %}
+    </div>
+
+    {% if not conversation %}
+      {% if starter_suggestions %}
+      <div class="gp-chat-suggestions">
+        {% for s in starter_suggestions %}
+        <form method="post" action="{% url 'ai:chat' %}">
+          {% csrf_token %}
+          <input type="hidden" name="question" value="{{ s }}">
+          <button type="submit" class="gp-chat-suggestion-btn">{{ s }}</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      {% with last_msg=messages_list|last %}
+      {% if last_msg.role == "ASSISTANT" and last_msg.suggestions %}
+      <div class="gp-chat-suggestions">
+        {% for s in last_msg.suggestions %}
+        <form method="post" action="{% url 'ai:chat_detail' conversation.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="question" value="{{ s }}">
+          <button type="submit" class="gp-chat-suggestion-btn">{{ s }}</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+    {% endif %}
+
+    <form method="post" action="{% if conversation %}{% url 'ai:chat_detail' conversation.pk %}{% else %}{% url 'ai:chat' %}{% endif %}" class="gp-chat-form">
+      {% csrf_token %}
+      <textarea name="question" rows="1" placeholder="{% trans 'Votre question…' %}" required></textarea>
+      <button type="submit" class="btn btn-primary">{% trans "Envoyer" %}</button>
+    </form>
+  </div>
+</div>
+<script>
+  (() => {
+    const thread = document.getElementById("gpChatThread");
+    if (thread) thread.scrollTop = thread.scrollHeight;
+  })();
+</script>
+{% endblock %}

@@ -104,10 +104,13 @@ class Agency(TenantModel):
         """CDC §8.3/8.5 : vérifie un point GPS contre la zone principale ET les
         zones supplémentaires ; autorisé dès qu'une zone correspond.
         Retourne (autorisé, distance_min_m, zone_la_plus_proche)."""
+        from apps.tenants.org_settings import get_org_setting
+
+        tolerance_meters = get_org_setting(self.tenant, "gps_tolerance_meters")
         best = None
         for zone in self.zones():
             authorized, distance, radius = geofencing.check_point_in_zone(
-                lat, lon, zone["latitude"], zone["longitude"], zone["radius"], gps_accuracy
+                lat, lon, zone["latitude"], zone["longitude"], zone["radius"], gps_accuracy, tolerance_meters
             )
             if best is None or distance < best[1]:
                 best = (authorized, distance, zone)

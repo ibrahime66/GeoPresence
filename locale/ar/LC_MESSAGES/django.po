@@ -1,0 +1,277 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GeoPresence 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-02 00:00+0000\n"
+"PO-Revision-Date: 2026-08-02 00:00+0000\n"
+"Language: Arabic\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+
+msgid "La présence de vos équipes, prouvée au mètre près."
+msgstr "حضور فرقك، مثبت بدقة المتر."
+
+msgid ""
+"Géolocalisation en temps réel et calcul automatique des retards — tout le "
+"suivi de présence, en un coup d'œil."
+msgstr ""
+"تحديد الموقع الجغرافي في الوقت الفعلي وحساب تلقائي للتأخير — كل متابعة "
+"الحضور، في لمحة واحدة."
+
+msgid "Isolation stricte entre organisations"
+msgstr "عزل صارم بين المؤسسات"
+
+msgid "Historique complet et export"
+msgstr "سجل كامل وإمكانية التصدير"
+
+msgid "Multi-site & multi-organisation"
+msgstr "متعدد المواقع ومتعدد المؤسسات"
+
+msgid "Langue"
+msgstr "اللغة"
+
+msgid "Afficher le mot de passe"
+msgstr "إظهار كلمة المرور"
+
+msgid "Masquer le mot de passe"
+msgstr "إخفاء كلمة المرور"
+
+msgid "Connexion"
+msgstr "تسجيل الدخول"
+
+msgid "Accédez à votre espace GeoPresence"
+msgstr "ادخل إلى مساحة عمل GeoPresence الخاصة بك"
+
+msgid "Mot de passe oublié ?"
+msgstr "نسيت كلمة المرور؟"
+
+msgid "Se connecter"
+msgstr "تسجيل الدخول"
+
+msgid "Mot de passe oublié"
+msgstr "نسيت كلمة المرور"
+
+msgid ""
+"Indiquez votre e-mail : si un compte existe, un lien de réinitialisation "
+"vous sera envoyé."
+msgstr ""
+"أدخل بريدك الإلكتروني: إذا كان هناك حساب مطابق، سيُرسل إليك رابط لإعادة "
+"التعيين."
+
+msgid "Envoyer le lien"
+msgstr "إرسال الرابط"
+
+msgid "Retour à la connexion"
+msgstr "العودة إلى تسجيل الدخول"
+
+msgid "Lien envoyé"
+msgstr "تم إرسال الرابط"
+
+msgid ""
+"Si un compte existe avec cette adresse, un e-mail contenant un lien de "
+"réinitialisation vient d'être envoyé. Le lien expire dans 30 minutes."
+msgstr ""
+"إذا كان هناك حساب مرتبط بهذا العنوان، فقد تم للتو إرسال بريد إلكتروني يحتوي "
+"على رابط لإعادة التعيين. تنتهي صلاحية الرابط خلال 30 دقيقة."
+
+msgid "Nouveau mot de passe"
+msgstr "كلمة مرور جديدة"
+
+msgid "Définir un nouveau mot de passe"
+msgstr "تعيين كلمة مرور جديدة"
+
+msgid "Choisissez un mot de passe robuste pour votre compte."
+msgstr "اختر كلمة مرور قوية لحسابك."
+
+msgid "Valider"
+msgstr "تأكيد"
+
+msgid "Mot de passe mis à jour"
+msgstr "تم تحديث كلمة المرور"
+
+msgid "Votre mot de passe a été mis à jour avec succès."
+msgstr "تم تحديث كلمة المرور الخاصة بك بنجاح."
+
+msgid "Lien invalide"
+msgstr "رابط غير صالح"
+
+msgid "Ce lien de réinitialisation est invalide, déjà utilisé ou expiré."
+msgstr ""
+"رابط إعادة التعيين هذا غير صالح، أو تم استخدامه بالفعل، أو منتهي الصلاحية."
+
+msgid "Demander un nouveau lien"
+msgstr "طلب رابط جديد"
+
+msgid "Changement de mot de passe"
+msgstr "تغيير كلمة المرور"
+
+msgid "Vous devez définir un nouveau mot de passe avant de continuer."
+msgstr "يجب عليك تعيين كلمة مرور جديدة قبل المتابعة."
+
+msgid "Plateforme"
+msgstr "المنصة"
+
+msgid "Tableau de bord"
+msgstr "لوحة التحكم"
+
+msgid "Organisations"
+msgstr "المؤسسات"
+
+msgid "Journal d'audit"
+msgstr "سجل التدقيق"
+
+msgid "Sauvegardes"
+msgstr "النسخ الاحتياطية"
+
+msgid "Accueil"
+msgstr "الرئيسية"
+
+msgid "Mon espace"
+msgstr "مساحتي"
+
+msgid "Pointer"
+msgstr "تسجيل الحضور"
+
+msgid "Mes congés"
+msgstr "إجازاتي"
+
+msgid "Mes absences"
+msgstr "غياباتي"
+
+msgid "Organisation"
+msgstr "المؤسسة"
+
+msgid "Agences"
+msgstr "الوكالات"
+
+msgid "Départements"
+msgstr "الأقسام"
+
+msgid "Postes"
+msgstr "الوظائف"
+
+msgid "Horaires"
+msgstr "الجداول الزمنية"
+
+msgid "Employés"
+msgstr "الموظفون"
+
+msgid "Paramètres"
+msgstr "الإعدادات"
+
+msgid "Validations"
+msgstr "الموافقات"
+
+msgid "Congés à valider"
+msgstr "إجازات بانتظار الموافقة"
+
+msgid "Justificatifs à valider"
+msgstr "مبررات بانتظار الموافقة"
+
+msgid "Mon profil"
+msgstr "ملفي الشخصي"
+
+msgid "Se déconnecter"
+msgstr "تسجيل الخروج"
+
+msgid "Ouvrir le menu"
+msgstr "فتح القائمة"
+
+msgid "Informations personnelles"
+msgstr "المعلومات الشخصية"
+
+msgid "Enregistrer"
+msgstr "حفظ"
+
+msgid "Langue d'affichage"
+msgstr "لغة العرض"
+
+msgid "Changer la langue"
+msgstr "تغيير اللغة"
+
+msgid "Sécurité"
+msgstr "الأمان"
+
+msgid "Date d'expiration du mot de passe inconnue."
+msgstr "تاريخ انتهاء صلاحية كلمة المرور غير معروف."
+
+msgid "Changer mon mot de passe"
+msgstr "تغيير كلمة المرور الخاصة بي"
+
+msgid "Sessions actives"
+msgstr "الجلسات النشطة"
+
+msgid "Appareil"
+msgstr "الجهاز"
+
+msgid "Navigateur / OS"
+msgstr "المتصفح / نظام التشغيل"
+
+msgid "Adresse IP"
+msgstr "عنوان IP"
+
+msgid "Connecté depuis"
+msgstr "متصل منذ"
+
+msgid "Dernière activité"
+msgstr "آخر نشاط"
+
+msgid "Cet appareil"
+msgstr "هذا الجهاز"
+
+msgid "Révoquer cette session ? Cet appareil sera déconnecté immédiatement."
+msgstr "هل تريد إلغاء هذه الجلسة؟ سيتم تسجيل خروج هذا الجهاز فورًا."
+
+msgid "Révoquer"
+msgstr "إلغاء"
+
+msgid "Aucune session active."
+msgstr "لا توجد جلسات نشطة."
+
+msgid "E-mail"
+msgstr "البريد الإلكتروني"
+
+msgid "Mot de passe"
+msgstr "كلمة المرور"
+
+msgid "Assistant IA"
+msgstr "المساعد الذكي"
+
+msgid "Configuration IA"
+msgstr "إعدادات الذكاء الاصطناعي"
+
+msgid ""
+"Posez une question sur vos données de présence — les réponses se basent "
+"uniquement sur les données de votre périmètre."
+msgstr ""
+"اطرح سؤالاً حول بيانات الحضور الخاصة بك — تعتمد الإجابات فقط على البيانات "
+"ضمن نطاقك."
+
+msgid "Nouvelle conversation"
+msgstr "محادثة جديدة"
+
+msgid "Aucune conversation pour le moment."
+msgstr "لا توجد محادثات حتى الآن."
+
+msgid "Posez votre première question à GeoIA."
+msgstr "اطرح سؤالك الأول على GeoIA."
+
+msgid "Votre question…"
+msgstr "سؤالك…"
+
+msgid "Envoyer"
+msgstr "إرسال"
+
+msgid ""
+"Fournisseur, clé API et limites d'utilisation de l'assistant conversationnel"
+" (CDC §15.2)."
+msgstr "المزوّد، مفتاح API، وحدود الاستخدام للمساعد الحواري."
+
+msgid "Accès et limites"
+msgstr "الوصول والحدود"
+
+msgid "Votre mot de passe expire le <strong>%(date)s</strong>."
+msgstr "تنتهي صلاحية كلمة المرور الخاصة بك في <strong>%(date)s</strong>."

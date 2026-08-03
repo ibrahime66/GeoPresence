@@ -3,7 +3,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.accounts.mixins import RoleRequiredMixin
 from apps.accounts.models import User
-from apps.core.views import TenantFormMixin, TenantQuerysetMixin
+from apps.core.views import DEFAULT_PAGE_SIZE, TenantFormMixin, TenantQuerysetMixin, ToggleActiveView
 
 from .forms import DepartmentForm, PositionForm
 from .models import Department, Position
@@ -16,6 +16,7 @@ class DepartmentListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     model = Department
     template_name = "departments/department_list.html"
     context_object_name = "departments"
+    paginate_by = DEFAULT_PAGE_SIZE
 
 
 class DepartmentCreateView(RoleRequiredMixin, TenantFormMixin, CreateView):
@@ -34,11 +35,18 @@ class DepartmentUpdateView(RoleRequiredMixin, TenantFormMixin, UpdateView):
     success_url = reverse_lazy("departments:list")
 
 
+class DepartmentToggleActiveView(ToggleActiveView):
+    allowed_roles = ADMIN_ONLY
+    model = Department
+    success_url = reverse_lazy("departments:list")
+
+
 class PositionListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ADMIN_ONLY
     model = Position
     template_name = "departments/position_list.html"
     context_object_name = "positions"
+    paginate_by = DEFAULT_PAGE_SIZE
 
 
 class PositionCreateView(RoleRequiredMixin, TenantFormMixin, CreateView):
@@ -54,4 +62,10 @@ class PositionUpdateView(RoleRequiredMixin, TenantFormMixin, UpdateView):
     model = Position
     form_class = PositionForm
     template_name = "departments/position_form.html"
+    success_url = reverse_lazy("departments:position_list")
+
+
+class PositionToggleActiveView(ToggleActiveView):
+    allowed_roles = ADMIN_ONLY
+    model = Position
     success_url = reverse_lazy("departments:position_list")

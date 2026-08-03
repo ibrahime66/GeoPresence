@@ -1,56 +1,75 @@
 {% extends "base.html" %}
 {% block title %}Mes absences — GeoPresence{% endblock %}
+{% block page_title %}Mes absences{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-8">
-    {% if not employee %}
-      <div class="alert alert-warning">Aucun profil employé actif associé à votre compte.</div>
-    {% else %}
-      <h1 class="h4 mb-3">Mes absences</h1>
+{% if not employee %}
+  <div class="alert alert-warning">Aucun profil employé actif associé à votre compte.</div>
+{% else %}
+  <div class="gp-page-header">
+    <div><h1>Mes absences</h1></div>
+  </div>
 
-      <div class="card mb-4">
-        <div class="card-body">
-          <h2 class="h6">Justifier une absence</h2>
-          <form method="post" action="{% url 'absences:submit' %}" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="row g-2">
-              <div class="col-12 col-sm-4">
-                <label class="form-label">{{ form.date.label }}</label>
-                {{ form.date }}
-              </div>
-              <div class="col-12 col-sm-4">
-                <label class="form-label">{{ form.reason.label }}</label>
-                {{ form.reason }}
-              </div>
-              <div class="col-12 col-sm-4">
-                <label class="form-label">{{ form.file.label }}</label>
-                {{ form.file }}
-              </div>
-              <div class="col-12">
-                <label class="form-label">{{ form.comment.label }}</label>
-                {{ form.comment }}
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary mt-3">Soumettre</button>
-          </form>
+  <div class="gp-card gp-form-card mb-4">
+    <div class="gp-card-header">Justifier une absence</div>
+    <div class="gp-card-body">
+      <form method="post" action="{% url 'absences:submit' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-2">
+          <div class="col-12 col-sm-4">
+            <label class="form-label">{{ form.date.label }}</label>
+            {{ form.date }}
+          </div>
+          <div class="col-12 col-sm-4">
+            <label class="form-label">{{ form.reason.label }}</label>
+            {{ form.reason }}
+          </div>
+          <div class="col-12 col-sm-4">
+            <label class="form-label">{{ form.file.label }}</label>
+            {{ form.file }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">{{ form.comment.label }}</label>
+            {{ form.comment }}
+          </div>
         </div>
-      </div>
+        <div class="gp-form-actions">
+          <button type="submit" class="btn btn-primary">Soumettre</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-      <table class="table">
-        <thead><tr><th>Date</th><th>Motif</th><th>Statut</th></tr></thead>
+  <div class="gp-table-card">
+    <div class="gp-table-scroll">
+      <table class="gp-table">
+        <thead><tr><th>Date</th><th>Motif</th><th>Statut</th><th></th></tr></thead>
         <tbody>
           {% for absence in absences %}
           <tr>
-            <td>{{ absence.date }}</td>
+            <td class="fw-semibold">{{ absence.date }}</td>
             <td>{{ absence.reason.name|default:"—" }}</td>
-            <td>{{ absence.get_status_display }}</td>
+            <td>
+              {% if absence.status == "PENDING_REVIEW" %}<span class="gp-badge warning"><span class="dot"></span>En attente</span>
+              {% elif absence.status == "JUSTIFIED" %}<span class="gp-badge success"><span class="dot"></span>Justifiée</span>
+              {% elif absence.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>Rejetée</span>
+              {% else %}<span class="gp-badge neutral"><span class="dot"></span>Non justifiée</span>{% endif %}
+            </td>
+            <td>
+              {% if absence.status == "PENDING_REVIEW" %}
+              <form method="post" action="{% url 'absences:cancel' absence.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="gp-row-action-btn danger">Annuler</button>
+              </form>
+              {% endif %}
+            </td>
           </tr>
           {% empty %}
-          <tr><td colspan="3" class="text-muted">Aucune absence enregistrée.</td></tr>
+          <tr><td colspan="4"><div class="gp-table-empty">Aucune absence enregistrée.</div></td></tr>
           {% endfor %}
         </tbody>
       </table>
-    {% endif %}
+    </div>
   </div>
-</div>
+  {% include "_pagination.html" %}
+{% endif %}
 {% endblock %}

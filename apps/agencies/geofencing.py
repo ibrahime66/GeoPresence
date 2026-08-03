@@ -18,20 +18,21 @@ def haversine_distance_meters(lat1, lon1, lat2, lon2):
     return 2 * EARTH_RADIUS_METERS * math.asin(min(1, math.sqrt(a)))
 
 
-def effective_radius_meters(base_radius, gps_accuracy=None):
-    """Rayon effectif = rayon configuré + marge de tolérance (CDC §8.4).
-    Si la précision GPS fournie par le navigateur dépasse déjà la marge par
-    défaut, on l'ajoute intégralement plutôt que de refuser injustement un
-    pointage pris avec un GPS peu précis (l'anomalie est de toute façon
-    enregistrée séparément, cf. flag 'précision faible')."""
-    tolerance = GPS_TOLERANCE_METERS
-    if gps_accuracy and gps_accuracy > GPS_TOLERANCE_METERS:
-        tolerance += float(gps_accuracy) - GPS_TOLERANCE_METERS
+def effective_radius_meters(base_radius, gps_accuracy=None, tolerance_meters=GPS_TOLERANCE_METERS):
+    """Rayon effectif = rayon configuré + marge de tolérance (CDC §8.4,
+    §6.4.2 — `tolerance_meters` configurable par organisation, cf.
+    apps.tenants.org_settings). Si la précision GPS fournie par le navigateur
+    dépasse déjà la marge, on l'ajoute intégralement plutôt que de refuser
+    injustement un pointage pris avec un GPS peu précis (l'anomalie est de
+    toute façon enregistrée séparément, cf. flag 'précision faible')."""
+    tolerance = tolerance_meters
+    if gps_accuracy and gps_accuracy > tolerance_meters:
+        tolerance += float(gps_accuracy) - tolerance_meters
     return float(base_radius) + tolerance
 
 
-def check_point_in_zone(lat, lon, zone_lat, zone_lon, zone_radius, gps_accuracy=None):
+def check_point_in_zone(lat, lon, zone_lat, zone_lon, zone_radius, gps_accuracy=None, tolerance_meters=GPS_TOLERANCE_METERS):
     """Retourne (autorisé: bool, distance_m: float, rayon_effectif_m: float)."""
     distance = haversine_distance_meters(lat, lon, zone_lat, zone_lon)
-    radius = effective_radius_meters(zone_radius, gps_accuracy)
+    radius = effective_radius_meters(zone_radius, gps_accuracy, tolerance_meters)
     return distance <= radius, distance, radius

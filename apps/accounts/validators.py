@@ -1,5 +1,6 @@
 import re
 
+from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 
 
@@ -48,6 +49,27 @@ class SpecialCharacterValidator:
         return "Le mot de passe doit contenir au moins un caractère spécial (@, #, $, !, ...)."
 
 
+class OrgMinimumLengthValidator:
+    """CDC §6.4.3/§13.2.1 : longueur minimale — le plancher plateforme (8,
+    cf. MinimumLengthValidator dans AUTH_PASSWORD_VALIDATORS) ne peut être
+    qu'AUGMENTÉ par une organisation, jamais abaissé."""
+
+    def validate(self, password, user=None):
+        if user is None or user.pk is None:
+            return
+        from apps.tenants.org_settings import get_org_setting
+
+        min_length = get_org_setting(user.tenant, "password_min_length")
+        if len(password) < min_length:
+            raise ValidationError(
+                f"Le mot de passe doit contenir au moins {min_length} caractères pour cette organisation.",
+                code="password_too_short_for_org",
+            )
+
+    def get_help_text(self):
+        return "Votre organisation peut exiger un mot de passe plus long que le minimum de 8 caractères."
+
+
 class PersonalInfoValidator:
     """Interdit que le mot de passe contienne le prénom, le nom ou l'e-mail (CDC §13.2.1)."""
 
@@ -69,3 +91,29 @@ class PersonalInfoValidator:
 
     def get_help_text(self):
         return "Le mot de passe ne peut pas contenir votre nom, prénom ou e-mail."
+
+
+class PasswordHistoryValidator:
+    """CDC §13.2.1/§6.4.3 : le nouveau mot de passe ne peut pas être identique
+    à l'un des N derniers (N configurable par organisation, défaut 5) — y
+    compris le mot de passe actuel, déjà dans l'historique."""
+
+    def validate(self, password, user=None):
+        if user is None or user.pk is None:
+            return
+        from apps.tenants.org_settings import get_org_setting
+
+        from .models import PasswordHistory
+
+        count = get_org_setting(user.tenant, "password_history_count")
+        recent = PasswordHistory.objects.filter(user=user).order_by("-created_at")[:count]
+        for entry in recent:
+            if check_password(password, entry.hashed_password):
+                raise ValidationError(
+                    f"Ce mot de passe a déjà été utilisé récemment — choisissez-en un différent des "
+                    f"{count} derniers.",
+                    code="password_reused",
+                )
+
+    def get_help_text(self):
+        return "Le mot de passe ne peut pas être identique à l'un de vos 5 derniers mots de passe."

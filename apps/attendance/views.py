@@ -10,7 +10,6 @@ from apps.employees.services import get_active_employee
 from . import services
 from .forms import ClockForm
 from .models import Attendance
-from .photo import InvalidPhotoError, process_photo
 from .services import ClockRejected
 
 
@@ -31,9 +30,10 @@ class ClockPageView(LoginRequiredMixin, TemplateView):
         employee = get_active_employee(self.request.user)
         context["employee"] = employee
         if employee is not None:
-            clock_type, clock_date = services.get_clock_status(employee)
+            clock_type, clock_date, slot = services.get_clock_status(employee)
             context["next_clock_type"] = clock_type
             context["next_clock_date"] = clock_date
+            context["next_clock_slot"] = slot
             context["today_attendances"] = Attendance.objects.all_tenants().filter(
                 employee=employee, clock_date=clock_date
             ).order_by("server_time")
@@ -58,17 +58,9 @@ class ClockView(LoginRequiredMixin, View):
         # Vérif 5/6/7 — GPS/caméra : la présence des données dans la requête
         # EST la preuve que le navigateur les a fournies (impossibles à obtenir
         # sinon) ; leur absence est gérée par la validation du formulaire.
-        form = ClockForm(request.POST, request.FILES)
+        form = ClockForm(request.POST)
         if not form.is_valid():
             return JsonResponse({"error": "Données de pointage invalides.", "details": form.errors}, status=400)
-
-        try:
-            photo = process_photo(form.cleaned_data["photo"])
-        except InvalidPhotoError as exc:
-            audit.log_event(
-                request, audit.CLOCK_REJECTED, AuditLog.Result.FAILURE, user=request.user, error=str(exc)
-            )
-            return JsonResponse({"error": str(exc)}, status=400)
 
         user_agent = request.META.get("HTTP_USER_AGENT", "")
 
@@ -80,11 +72,11 @@ class ClockView(LoginRequiredMixin, View):
                 longitude=form.cleaned_data["longitude"],
                 gps_accuracy=form.cleaned_data.get("gps_accuracy"),
                 is_gps_mocked=form.cleaned_data.get("is_gps_mocked", False),
-                photo=photo,
                 ip_address=request.META.get("REMOTE_ADDR"),
                 user_agent=user_agent,
                 device_type=_detect_device_type(user_agent),
                 client_time=form.cleaned_data.get("client_time"),
+                mode=form.cleaned_data.get("mode") or Attendance.Mode.ONLINE,
             )
         except ClockRejected as exc:
             audit.log_event(

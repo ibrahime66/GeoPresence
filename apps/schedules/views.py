@@ -1,12 +1,13 @@
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView
 
 from apps.accounts.mixins import RoleRequiredMixin
 from apps.accounts.models import User
-from apps.core.views import TenantQuerysetMixin
+from apps.core.views import DEFAULT_PAGE_SIZE, TenantQuerysetMixin, ToggleActiveView
 
 from .forms import ScheduleForm, ScheduleSlotFormSet
 from .models import Schedule
@@ -19,6 +20,13 @@ class ScheduleListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     model = Schedule
     template_name = "schedules/schedule_list.html"
     context_object_name = "schedules"
+    paginate_by = DEFAULT_PAGE_SIZE
+
+
+class ScheduleToggleActiveView(ToggleActiveView):
+    allowed_roles = ADMIN_ONLY
+    model = Schedule
+    success_url = reverse_lazy("schedules:list")
 
 
 class ScheduleFormView(RoleRequiredMixin, View):

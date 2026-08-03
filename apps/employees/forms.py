@@ -11,11 +11,10 @@ from .models import Employee
 # Un Admin ne peut jamais créer de SUPER_ADMIN via ce formulaire (rôle plateforme uniquement).
 CREATABLE_ROLES = [
     (User.Role.EMPLOYEE, "Employé"),
-    (User.Role.SUPERVISOR, "Superviseur"),
     (User.Role.MANAGER, "Manager"),
     (User.Role.ADMIN, "Administrateur"),
 ]
-MANAGER_ROLES = (User.Role.MANAGER, User.Role.SUPERVISOR, User.Role.ADMIN)
+MANAGER_ROLES = (User.Role.MANAGER, User.Role.ADMIN)
 
 
 class EmployeeCreateForm(forms.Form):
@@ -56,6 +55,37 @@ class EmployeeCreateForm(forms.Form):
         if User.objects.filter(email=email).exists():
             raise ValidationError("Un compte existe déjà avec cet e-mail.")
         return email
+
+
+class EmployeeImportForm(forms.Form):
+    """CDC §11.5 : import en masse — CSV ou Excel, 10 Mo max."""
+
+    MAX_SIZE_BYTES = 10 * 1024 * 1024
+
+    file = forms.FileField(label="Fichier (.csv ou .xlsx)")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["file"].widget.attrs["class"] = "form-control"
+
+    def clean_file(self):
+        uploaded = self.cleaned_data["file"]
+        if uploaded.size > self.MAX_SIZE_BYTES:
+            raise ValidationError("Le fichier dépasse la taille maximale autorisée (10 Mo).")
+        if not uploaded.name.lower().endswith((".csv", ".xlsx")):
+            raise ValidationError("Format non supporté — utilisez un fichier .csv ou .xlsx.")
+        return uploaded
+
+
+class EmployeeSelfServiceForm(BootstrapModelFormMixin, forms.ModelForm):
+    """CDC §3.5.1 : un employé peut modifier certaines informations
+    personnelles lui-même — volontairement limité à la photo et aux
+    téléphones (tout le reste — poste, agence, contrat... — reste du ressort
+    exclusif de l'Administrateur, CDC §3.5.2)."""
+
+    class Meta:
+        model = Employee
+        fields = ["profile_photo", "personal_phone", "work_phone"]
 
 
 class EmployeeUpdateForm(BootstrapModelFormMixin, forms.ModelForm):

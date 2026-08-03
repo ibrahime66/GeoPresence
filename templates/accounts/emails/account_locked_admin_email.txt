@@ -1,0 +1,7 @@
+Bonjour,
+
+Le compte de {{ user.full_name|default:user.email }} ({{ user.email }}) vient d'être verrouillé pour la {{ lockout_count }}e fois consécutive suite à des tentatives de connexion échouées répétées.
+
+Durée du verrouillage en cours : {{ duration_minutes }} minutes.
+
+Il peut s'agir d'un oubli de mot de passe récurrent ou d'une tentative d'accès non autorisée — une vérification est recommandée.

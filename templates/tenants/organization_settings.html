@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Paramètres de l'organisation — GeoPresence{% endblock %}
+{% block page_title %}Paramètres{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Paramètres de l'organisation</h1>
+    <p>Tolérances de pointage et politique de sécurité — propres à {{ request.tenant.display_name }}.</p>
+  </div>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <div class="gp-card gp-form-card mb-4" style="max-width: none;">
+    <div class="gp-card-header">Modules</div>
+    <div class="gp-card-body">
+      <div class="row g-3">
+        {% for field in form %}
+          {% if field.name in "departments_enabled,multi_slot_attendance_enabled" %}
+          <div class="col-12 col-sm-6">
+            <div class="form-check form-switch">
+              {{ field }}
+              <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            </div>
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="gp-card gp-form-card mb-4" style="max-width: none;">
+    <div class="gp-card-header">Pointage & géolocalisation</div>
+    <div class="gp-card-body">
+      <div class="row g-3">
+        {% for field in form %}
+          {% if field.name in "gps_radius_default_meters,gps_tolerance_meters,late_tolerance_minutes,early_leave_tolerance_minutes,overtime_threshold_minutes,offline_sync_max_delay_hours" %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="gp-card gp-form-card mb-4" style="max-width: none;">
+    <div class="gp-card-header">Sécurité</div>
+    <div class="gp-card-body">
+      <div class="row g-3">
+        {% for field in form %}
+          {% if field.name in "max_failed_login_attempts,lockout_base_minutes,session_duration_admin_hours,session_duration_employee_hours,password_min_length,password_expiration_days,password_history_count" %}
+          <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="gp-form-actions">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

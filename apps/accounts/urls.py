@@ -16,4 +16,8 @@ urlpatterns = [
         name="password_reset_confirm",
     ),
     path("password-reset/termine/", views.PasswordResetCompleteView.as_view(), name="password_reset_complete"),
+    path("profil/", views.ProfileView.as_view(), name="profile"),
+    path("profil/modifier/", views.ProfileUpdateView.as_view(), name="profile_update"),
+    path("profil/sessions/<uuid:pk>/revoquer/", views.SessionRevokeView.as_view(), name="session_revoke"),
+    path("profil/langue/", views.LanguageUpdateView.as_view(), name="language_update"),
 ]

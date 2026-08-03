@@ -28,7 +28,10 @@ class TenantMiddleware:
             tenant = user.tenant
             if tenant is not None and tenant.status != Organization.Status.ACTIVE:
                 auth_logout(request)
-                messages.error(request, "Votre organisation est temporairement suspendue.")
+                if tenant.status == Organization.Status.DELETED:
+                    messages.error(request, "Cette organisation a été supprimée.")
+                else:
+                    messages.error(request, "Votre organisation est temporairement suspendue.")
                 return redirect("accounts:login")
 
         request.tenant = tenant
