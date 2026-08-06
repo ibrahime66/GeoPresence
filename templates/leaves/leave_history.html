@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Historique des congés — GeoPresence{% endblock %}
+{% block page_title %}Congés à valider{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Congés à valider</h1>
+    <p>Historique des demandes traitées{% if request.user.role == "MANAGER" %} pour votre équipe{% endif %}.</p>
+  </div>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link" href="{% url 'leaves:pending' %}">En attente</a></li>
+  <li class="nav-item"><a class="nav-link active" href="{% url 'leaves:history' %}">Historique</a></li>
+</ul>
+
+<form method="get" class="gp-card gp-form-card mb-3" style="max-width: none;">
+  <div class="gp-card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Employé</label>
+        <select name="employe" class="form-select form-select-sm">
+          <option value="">Tous</option>
+          {% for emp in employee_choices %}
+          <option value="{{ emp.id }}" {% if selected_employee == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Statut</label>
+        <select name="statut" class="form-select form-select-sm">
+          <option value="">Tous</option>
+          {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Du</label>
+        <input type="date" name="du" value="{{ selected_du }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Au</label>
+        <input type="date" name="au" value="{{ selected_au }}" class="form-control form-control-sm">
+      </div>
+    </div>
+    <div class="gp-form-actions mt-2">
+      <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
+      <a href="{% url 'leaves:history' %}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+    </div>
+  </div>
+</form>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Employé</th><th>Type</th><th>Du</th><th>Au</th><th>Jours</th><th>Statut</th><th>Décidé par</th><th>Décidé le</th><th>Commentaire</th></tr></thead>
+      <tbody>
+        {% for leave in leaves %}
+        <tr>
+          <td class="fw-semibold">{{ leave.employee }}</td>
+          <td>{{ leave.leave_type.name }}</td>
+          <td>{{ leave.start_date }}</td>
+          <td>{{ leave.end_date }}</td>
+          <td>{{ leave.working_days }}</td>
+          <td>
+            {% if leave.status == "APPROVED" %}<span class="gp-badge success"><span class="dot"></span>Approuvé</span>
+            {% elif leave.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>Rejeté</span>
+            {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ leave.get_status_display }}</span>{% endif %}
+          </td>
+          <td>{{ leave.reviewed_by|default:"—" }}</td>
+          <td>{{ leave.reviewed_at|date:"d/m/Y H:i"|default:"—" }}</td>
+          <td class="text-muted-cell">{{ leave.reviewer_comment|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9"><div class="gp-table-empty">Aucune demande traitée pour ces filtres.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
+{% endblock %}

@@ -17,6 +17,28 @@ from apps.employees.services import get_active_employee
 from apps.leaves.models import Leave
 from apps.tenants.models import Organization
 
+# Les suggestions générées par le modèle (cf. apps.ai.services) portent
+# parfois sur "comment faire X dans l'appli" plutôt que sur des chiffres —
+# sans ce mini-guide, GeoIA propose ces questions puis répond "je ne sais
+# pas", ce qui n'a aucun sens pour l'utilisateur. Chemins de menu exacts,
+# à tenir à jour si la navigation change.
+APP_HELP_FAQ = (
+    "Aide sur l'utilisation de GeoPresence (aide-toi de ceci pour les "
+    "questions sur COMMENT faire quelque chose dans l'application, en plus "
+    "des données ci-dessus) :\n"
+    "- Pointer son arrivée/départ : menu « Pointer », autoriser la "
+    "géolocalisation, puis appuyer sur le bouton d'arrivée ou de départ affiché.\n"
+    "- Demander un congé : menu « Mes congés » > carte « Nouvelle demande » > "
+    "remplir le formulaire > bouton « Soumettre ». La demande part ensuite à "
+    "son manager pour validation.\n"
+    "- Justifier une absence : menu « Mes absences » > carte « Justifier une "
+    "absence » > remplir le formulaire > bouton « Soumettre ».\n"
+    "- Consulter son solde de congés : visible sur le tableau de bord et "
+    "dans « Mes congés ».\n"
+    "- Changer sa langue d'affichage : menu « Mon profil » > « Langue d'affichage ».\n"
+    "- Voir ou révoquer ses sessions actives : menu « Mon profil » > « Sessions actives »."
+)
+
 
 def _presence_rate(tenant, date, total_employees):
     if total_employees == 0:
@@ -135,11 +157,14 @@ def build_super_admin_context():
 
 
 def build_context(user):
-    """Point d'entrée unique — renvoie (contexte_texte, autorisé)."""
+    """Point d'entrée unique — renvoie le texte de contexte (données du rôle
+    + aide de navigation, cf. APP_HELP_FAQ)."""
     if user.role == "SUPER_ADMIN":
-        return build_super_admin_context()
-    if user.role == "ADMIN":
-        return build_admin_context(user)
-    if user.role == "MANAGER":
-        return build_manager_context(user)
-    return build_employee_context(user)
+        data = build_super_admin_context()
+    elif user.role == "ADMIN":
+        data = build_admin_context(user)
+    elif user.role == "MANAGER":
+        data = build_manager_context(user)
+    else:
+        data = build_employee_context(user)
+    return f"{data}\n\n{APP_HELP_FAQ}"

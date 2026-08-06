@@ -39,52 +39,71 @@ class Employee(TenantModel):
 
     user = models.OneToOneField("accounts.User", on_delete=models.CASCADE, related_name="employee_profile")
 
-    matricule = models.CharField(max_length=30, blank=True)
+    matricule = models.CharField("matricule", max_length=30, blank=True)
     preferred_name = models.CharField("nom d'usage", max_length=150, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=15, choices=Gender.choices, default=Gender.UNSPECIFIED)
-    nationality = models.CharField(max_length=100, blank=True)
+    birth_date = models.DateField("date de naissance", null=True, blank=True)
+    gender = models.CharField("genre", max_length=15, choices=Gender.choices, default=Gender.UNSPECIFIED)
+    nationality = models.CharField("nationalité", max_length=100, blank=True)
     # RM-SEC-004 : chiffré au repos (numéro de carte d'identité / passeport).
-    id_number = EncryptedCharField(blank=True)
+    id_number = EncryptedCharField("numéro de pièce d'identité", blank=True)
 
-    profile_photo = models.ImageField(upload_to=employee_photo_path, blank=True, null=True, max_length=255)
+    profile_photo = models.ImageField(
+        "photo de profil", upload_to=employee_photo_path, blank=True, null=True, max_length=255
+    )
 
-    personal_email = models.EmailField(blank=True)
-    work_phone = models.CharField(max_length=30, blank=True)
-    personal_phone = models.CharField(max_length=30, blank=True)
-    home_address = models.TextField(blank=True)
+    personal_email = models.EmailField("e-mail personnel", blank=True)
+    work_phone = models.CharField("téléphone professionnel", max_length=30, blank=True)
+    personal_phone = models.CharField("téléphone personnel", max_length=30, blank=True)
+    home_address = models.TextField("adresse personnelle", blank=True)
 
-    emergency_contact_name = models.CharField(max_length=255, blank=True)
-    emergency_contact_phone = models.CharField(max_length=30, blank=True)
+    emergency_contact_name = models.CharField("contact d'urgence — nom", max_length=255, blank=True)
+    emergency_contact_phone = models.CharField("contact d'urgence — téléphone", max_length=30, blank=True)
 
     department = models.ForeignKey(
-        "departments.Department", on_delete=models.PROTECT, null=True, blank=True, related_name="employees"
+        "departments.Department",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="employees",
+        verbose_name="département",
     )
     position = models.ForeignKey(
-        "departments.Position", on_delete=models.PROTECT, null=True, blank=True, related_name="employees"
+        "departments.Position",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="employees",
+        verbose_name="poste",
     )
     primary_agency = models.ForeignKey(
-        "agencies.Agency", on_delete=models.PROTECT, related_name="employees_primary"
+        "agencies.Agency", on_delete=models.PROTECT, related_name="employees_primary", verbose_name="agence principale"
     )
     secondary_agencies = models.ManyToManyField(
-        "agencies.Agency", blank=True, related_name="employees_secondary"
+        "agencies.Agency", blank=True, related_name="employees_secondary", verbose_name="agences secondaires"
     )
 
-    contract_type = models.CharField(max_length=15, choices=ContractType.choices, default=ContractType.CDI)
-    hire_date = models.DateField()
-    contract_end_date = models.DateField(null=True, blank=True)
+    contract_type = models.CharField(
+        "type de contrat", max_length=15, choices=ContractType.choices, default=ContractType.CDI
+    )
+    hire_date = models.DateField("date d'entrée")
+    contract_end_date = models.DateField("date de fin de contrat", null=True, blank=True)
 
     # NOTE : l'horaire affecté (CDC §10.3, priorité employé > poste > département
     # > agence) rejoindra ce modèle avec l'app `schedules`.
 
     manager = models.ForeignKey(
-        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="direct_reports"
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="direct_reports",
+        verbose_name="manager",
     )
 
     annual_leave_days = models.DecimalField("droit aux congés (j/an)", max_digits=5, decimal_places=1, default=0)
     leave_balance = models.DecimalField("solde congés (j)", max_digits=5, decimal_places=1, default=0)
 
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
+    status = models.CharField("statut", max_length=10, choices=Status.choices, default=Status.ACTIVE)
 
     class Meta:
         ordering = ["matricule"]

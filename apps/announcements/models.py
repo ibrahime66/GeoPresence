@@ -13,14 +13,20 @@ class Announcement(TenantModel):
     title = models.CharField("titre", max_length=255)
     content = models.TextField("contenu")
     created_by = models.ForeignKey(
-        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+", verbose_name="créée par"
     )
 
     # Une annonce sans aucune cible (agences/départements/employés tous vides)
     # est visible par tout le monde — cf. apps.announcements.services.
-    agencies = models.ManyToManyField("agencies.Agency", blank=True, related_name="announcements")
-    departments = models.ManyToManyField("departments.Department", blank=True, related_name="announcements")
-    employees = models.ManyToManyField("employees.Employee", blank=True, related_name="announcements")
+    agencies = models.ManyToManyField(
+        "agencies.Agency", blank=True, related_name="announcements", verbose_name="agences"
+    )
+    departments = models.ManyToManyField(
+        "departments.Department", blank=True, related_name="announcements", verbose_name="départements"
+    )
+    employees = models.ManyToManyField(
+        "employees.Employee", blank=True, related_name="announcements", verbose_name="employés"
+    )
 
     # "Programmer la publication et l'expiration" (CDC §3.2.5) — publish_at
     # dans le futur = brouillon programmé, pas encore visible.

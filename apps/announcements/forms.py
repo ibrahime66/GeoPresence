@@ -1,7 +1,7 @@
 from django import forms
 
 from apps.agencies.models import Agency
-from apps.core.forms import BootstrapModelFormMixin
+from apps.core.forms import BootstrapModelFormMixin, apply_module_gating
 from apps.departments.models import Department
 from apps.employees.models import Employee
 
@@ -41,8 +41,4 @@ class AnnouncementForm(BootstrapModelFormMixin, forms.ModelForm):
         self.fields["employees"].queryset = (
             Employee.objects.all_tenants().filter(tenant=tenant, status=Employee.Status.ACTIVE).select_related("user")
         )
-
-        from apps.tenants.org_settings import get_org_setting
-
-        if not get_org_setting(tenant, "departments_enabled"):
-            del self.fields["departments"]
+        apply_module_gating(self, tenant, {"departments": "departments_enabled"})

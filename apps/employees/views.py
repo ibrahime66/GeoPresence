@@ -69,8 +69,12 @@ class EmployeeCreateView(RoleRequiredMixin, View):
         employee = Employee(
             tenant=request.tenant,
             user=user,
-            department=form.cleaned_data["department"],
-            position=form.cleaned_data["position"],
+            # .get() plutôt que [...] : ces deux champs sont retirés du
+            # formulaire (apply_module_gating) quand le module Départements/
+            # Postes est désactivé pour l'organisation — absents de
+            # cleaned_data dans ce cas, pas juste vides.
+            department=form.cleaned_data.get("department"),
+            position=form.cleaned_data.get("position"),
             primary_agency=form.cleaned_data["primary_agency"],
             manager=form.cleaned_data["manager"],
             contract_type=form.cleaned_data["contract_type"],

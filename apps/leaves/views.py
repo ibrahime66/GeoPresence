@@ -85,6 +85,57 @@ class PendingLeavesView(RoleRequiredMixin, TemplateView):
         return context
 
 
+class LeaveHistoryView(RoleRequiredMixin, TemplateView):
+    """Demandes déjà traitées (approuvées/rejetées/annulées) — pendant
+    longtemps la seule vue admin/manager était PendingLeavesView, filtrée sur
+    le statut EN ATTENTE : une fois une demande traitée, elle disparaissait
+    purement et simplement du champ de vision de l'admin, sans aucun moyen de
+    la retrouver ensuite (hors accès direct à la base). Cette vue comble ce
+    trou — mêmes règles de périmètre que PendingLeavesView (un Manager ne voit
+    que son équipe)."""
+
+    allowed_roles = APPROVER_ROLES
+    template_name = "leaves/leave_history.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        qs = Leave.objects.all_tenants().filter(
+            tenant=self.request.user.tenant
+        ).exclude(status=Leave.Status.PENDING).select_related("employee__user", "leave_type", "reviewed_by")
+        if self.request.user.role == User.Role.MANAGER:
+            qs = qs.filter(employee__manager=self.request.user)
+
+        status = self.request.GET.get("statut", "")
+        if status:
+            qs = qs.filter(status=status)
+        employee_id = self.request.GET.get("employe", "")
+        if employee_id:
+            qs = qs.filter(employee_id=employee_id)
+        date_from = self.request.GET.get("du", "")
+        if date_from:
+            qs = qs.filter(start_date__gte=date_from)
+        date_to = self.request.GET.get("au", "")
+        if date_to:
+            qs = qs.filter(end_date__lte=date_to)
+
+        qs = qs.order_by("-reviewed_at", "-start_date")
+        context.update(paginate_queryset(self.request, qs))
+        context["leaves"] = context["page_obj"].object_list
+        context["status_choices"] = [c for c in Leave.Status.choices if c[0] != Leave.Status.PENDING]
+
+        from apps.employees.models import Employee
+
+        employees_qs = Employee.objects.all_tenants().filter(tenant=self.request.user.tenant).select_related("user")
+        if self.request.user.role == User.Role.MANAGER:
+            employees_qs = employees_qs.filter(manager=self.request.user)
+        context["employee_choices"] = employees_qs.order_by("user__first_name", "user__last_name")
+        context["selected_status"] = status
+        context["selected_employee"] = employee_id
+        context["selected_du"] = date_from
+        context["selected_au"] = date_to
+        return context
+
+
 class ReviewLeaveView(RoleRequiredMixin, View):
     allowed_roles = APPROVER_ROLES
 

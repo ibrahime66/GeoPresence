@@ -9,5 +9,6 @@ urlpatterns = [
     path("conges/soumettre/", views.SubmitLeaveView.as_view(), name="submit"),
     path("conges/<uuid:pk>/annuler/", views.CancelLeaveView.as_view(), name="cancel"),
     path("conges/en-attente/", views.PendingLeavesView.as_view(), name="pending"),
+    path("conges/historique/", views.LeaveHistoryView.as_view(), name="history"),
     path("conges/<uuid:pk>/traiter/", views.ReviewLeaveView.as_view(), name="review"),
 ]

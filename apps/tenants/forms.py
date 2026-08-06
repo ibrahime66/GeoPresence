@@ -14,6 +14,10 @@ class OrganizationSettingsForm(BootstrapModelFormMixin, forms.Form):
         label="Départements activés", required=False,
         help_text="Désactiver masque le menu Départements — utile pour une structure organisationnelle plate.",
     )
+    positions_enabled = forms.BooleanField(
+        label="Postes activés", required=False,
+        help_text="Désactiver masque le menu Postes et le champ « Poste » sur la fiche employé.",
+    )
     multi_slot_attendance_enabled = forms.BooleanField(
         label="Pointage multi-créneaux", required=False,
         help_text="Autorise plusieurs arrivées/départs par jour, un par créneau d'horaire (ex. enseignants).",
@@ -25,7 +29,7 @@ class OrganizationSettingsForm(BootstrapModelFormMixin, forms.Form):
     )
     gps_tolerance_meters = forms.IntegerField(
         label="Marge de tolérance GPS (m)", min_value=0, max_value=500,
-        help_text="Ajoutée au rayon de chaque agence pour absorber l'imprécision GPS des smartphones (CDC §8.4).",
+        help_text="Ajoutée au rayon de chaque agence pour absorber l'imprécision GPS des smartphones.",
     )
     late_tolerance_minutes = forms.IntegerField(label="Tolérance de retard (min)", min_value=0, max_value=120)
     early_leave_tolerance_minutes = forms.IntegerField(

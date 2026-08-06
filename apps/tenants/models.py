@@ -58,32 +58,36 @@ class Organization(UUIDModel, TimeStampedModel):
 
     legal_name = models.CharField("nom légal", max_length=255)
     display_name = models.CharField("nom commercial", max_length=255)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField("identifiant (slug)", unique=True)
 
-    org_type = models.CharField(max_length=20, choices=OrgType.choices, default=OrgType.OTHER)
+    org_type = models.CharField("type d'organisation", max_length=20, choices=OrgType.choices, default=OrgType.OTHER)
     sector = models.CharField("secteur d'activité", max_length=255, blank=True)
 
-    country = models.CharField(max_length=100)
-    city = models.CharField(max_length=100)
-    address = models.TextField(blank=True)
-    postal_code = models.CharField(max_length=20, blank=True)
-    phone = models.CharField(max_length=30, blank=True)
-    email = models.EmailField()
-    website = models.URLField(blank=True)
+    country = models.CharField("pays", max_length=100)
+    city = models.CharField("ville", max_length=100)
+    address = models.TextField("adresse", blank=True)
+    postal_code = models.CharField("code postal", max_length=20, blank=True)
+    phone = models.CharField("téléphone", max_length=30, blank=True)
+    email = models.EmailField("e-mail")
+    website = models.URLField("site web", blank=True)
     employee_count_range = models.CharField(
-        max_length=10, choices=EmployeeCountRange.choices, blank=True
+        "effectif", max_length=10, choices=EmployeeCountRange.choices, blank=True
     )
 
-    timezone = models.CharField(max_length=64, default="UTC")
-    language = models.CharField(max_length=2, choices=Language.choices, default=Language.FR)
-    date_format = models.CharField(max_length=10, choices=DateFormat.choices, default=DateFormat.DMY)
-    time_format = models.CharField(max_length=3, choices=TimeFormat.choices, default=TimeFormat.H24)
+    timezone = models.CharField("fuseau horaire", max_length=64, default="UTC")
+    language = models.CharField("langue", max_length=2, choices=Language.choices, default=Language.FR)
+    date_format = models.CharField("format de date", max_length=10, choices=DateFormat.choices, default=DateFormat.DMY)
+    time_format = models.CharField("format d'heure", max_length=3, choices=TimeFormat.choices, default=TimeFormat.H24)
 
-    logo = models.ImageField(upload_to=organization_logo_path, blank=True, null=True, max_length=255)
-    primary_color = models.CharField(max_length=7, default="#0D2137", validators=[HEX_COLOR_VALIDATOR])
-    secondary_color = models.CharField(max_length=7, default="#1565C0", validators=[HEX_COLOR_VALIDATOR])
+    logo = models.ImageField("logo", upload_to=organization_logo_path, blank=True, null=True, max_length=255)
+    primary_color = models.CharField(
+        "couleur principale", max_length=7, default="#0D2137", validators=[HEX_COLOR_VALIDATOR]
+    )
+    secondary_color = models.CharField(
+        "couleur secondaire", max_length=7, default="#1565C0", validators=[HEX_COLOR_VALIDATOR]
+    )
 
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
+    status = models.CharField("statut", max_length=10, choices=Status.choices, default=Status.ACTIVE)
 
     # Paramètres de pointage/sécurité/etc. non encore structurés en champs dédiés
     # (tolérance retard, rayon GPS par défaut, durée de session...) — CDC §6.4.

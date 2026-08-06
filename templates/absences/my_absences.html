@@ -12,7 +12,7 @@
   <div class="gp-card gp-form-card mb-4">
     <div class="gp-card-header">Justifier une absence</div>
     <div class="gp-card-body">
-      <form method="post" action="{% url 'absences:submit' %}" enctype="multipart/form-data">
+      <form method="post" action="{% url 'absences:submit' %}">
         {% csrf_token %}
         <div class="row g-2">
           <div class="col-12 col-sm-4">
@@ -23,9 +23,9 @@
             <label class="form-label">{{ form.reason.label }}</label>
             {{ form.reason }}
           </div>
-          <div class="col-12 col-sm-4">
-            <label class="form-label">{{ form.file.label }}</label>
-            {{ form.file }}
+          <div class="col-12 col-sm-4" id="custom-reason-wrap" style="display: none;">
+            <label class="form-label">{{ form.custom_reason.label }}</label>
+            {{ form.custom_reason }}
           </div>
           <div class="col-12">
             <label class="form-label">{{ form.comment.label }}</label>
@@ -47,7 +47,7 @@
           {% for absence in absences %}
           <tr>
             <td class="fw-semibold">{{ absence.date }}</td>
-            <td>{{ absence.reason.name|default:"—" }}</td>
+            <td>{{ absence.display_reason|default:"—" }}</td>
             <td>
               {% if absence.status == "PENDING_REVIEW" %}<span class="gp-badge warning"><span class="dot"></span>En attente</span>
               {% elif absence.status == "JUSTIFIED" %}<span class="gp-badge success"><span class="dot"></span>Justifiée</span>
@@ -71,5 +71,18 @@
     </div>
   </div>
   {% include "_pagination.html" %}
+  <script>
+    (function () {
+      var reasonSelect = document.getElementById("id_reason");
+      var wrap = document.getElementById("custom-reason-wrap");
+      if (!reasonSelect || !wrap) return;
+      function toggle() {
+        var selected = reasonSelect.options[reasonSelect.selectedIndex];
+        wrap.style.display = selected && selected.textContent.trim() === "Autre" ? "" : "none";
+      }
+      reasonSelect.addEventListener("change", toggle);
+      toggle();
+    })();
+  </script>
 {% endif %}
 {% endblock %}

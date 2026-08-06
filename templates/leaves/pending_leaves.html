@@ -9,6 +9,11 @@
   </div>
 </div>
 
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link active" href="{% url 'leaves:pending' %}">En attente</a></li>
+  <li class="nav-item"><a class="nav-link" href="{% url 'leaves:history' %}">Historique</a></li>
+</ul>
+
 <div class="gp-table-card">
   <div class="gp-table-scroll">
     <table class="gp-table">

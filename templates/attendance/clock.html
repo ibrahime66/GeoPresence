@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static gp_extras %}
 {% block title %}Pointage — GeoPresence{% endblock %}
 {% block page_title %}Pointage{% endblock %}
 {% block content %}
@@ -54,6 +54,9 @@
           <div id="clock-map-wrap" class="text-center" hidden>
             <div id="clock-map" class="rounded mb-2" style="height:280px;"></div>
             <p id="clock-accuracy-text" class="text-muted small mb-3">Précision : —</p>
+            <button type="button" id="btn-recenter" class="btn btn-sm btn-outline-secondary mb-2">
+              {% include "core/_icon.html" with icon="target" size="16" %} Recentrer sur ma position
+            </button>
             <div class="d-flex gap-2 justify-content-center">
               <button id="btn-cancel" class="btn btn-outline-secondary" style="min-height:44px;">Annuler</button>
               <button id="btn-confirm" class="btn btn-success" style="min-height:44px;">Pointer ici</button>
@@ -70,10 +73,11 @@
         {
           "apiUrl": "{% url 'attendance:clock_api' %}",
           "nextClockType": {% if next_clock_type %}"{{ next_clock_type }}"{% else %}null{% endif %},
-          "csrfToken": "{{ csrf_token }}"
+          "csrfToken": "{{ csrf_token }}",
+          "zones": {{ agency_zones_json|default:"[]"|safe }}
         }
       </script>
-      <script src="{% static 'js/attendance/clock.js' %}"></script>
+      <script src="{% static_v 'js/attendance/clock.js' %}"></script>
     {% endif %}
 
   </div>

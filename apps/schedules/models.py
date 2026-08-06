@@ -31,14 +31,22 @@ class Schedule(TenantModel):
         CUSTOM = "CUSTOM", "Personnalisé"
         TEACHER = "TEACHER", "Enseignant"
 
-    name = models.CharField(max_length=255)
-    schedule_type = models.CharField(max_length=10, choices=ScheduleType.choices, default=ScheduleType.FIXED)
-    is_active = models.BooleanField(default=True)
+    name = models.CharField("nom", max_length=255)
+    schedule_type = models.CharField(
+        "type d'horaire", max_length=10, choices=ScheduleType.choices, default=ScheduleType.FIXED
+    )
+    is_active = models.BooleanField("actif", default=True)
 
     # Surchargent les paramètres par défaut de l'organisation si renseignés (CDC §10.2.1).
-    late_tolerance_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
-    early_leave_tolerance_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
-    overtime_threshold_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
+    late_tolerance_minutes = models.PositiveSmallIntegerField(
+        "tolérance de retard (min)", null=True, blank=True
+    )
+    early_leave_tolerance_minutes = models.PositiveSmallIntegerField(
+        "tolérance de départ anticipé (min)", null=True, blank=True
+    )
+    overtime_threshold_minutes = models.PositiveSmallIntegerField(
+        "seuil d'heures supplémentaires (min)", null=True, blank=True
+    )
 
     class Meta:
         ordering = ["name"]
@@ -54,26 +62,34 @@ class Schedule(TenantModel):
 
 
 class ScheduleSlot(TenantModel):
-    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="slots")
-    weekday = models.IntegerField(choices=Weekday.choices)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    break_start_time = models.TimeField(null=True, blank=True)
-    break_end_time = models.TimeField(null=True, blank=True)
+    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="slots", verbose_name="horaire")
+    weekday = models.IntegerField("jour de la semaine", choices=Weekday.choices)
+    start_time = models.TimeField("heure de début")
+    end_time = models.TimeField("heure de fin")
+    break_start_time = models.TimeField("début de pause", null=True, blank=True)
+    break_end_time = models.TimeField("fin de pause", null=True, blank=True)
 
     # Fenêtres de pointage : minutes avant/après l'heure officielle où le
     # pointage est accepté (CDC §10.2.1).
-    clock_in_window_before_minutes = models.PositiveSmallIntegerField(default=30)
-    clock_in_window_after_minutes = models.PositiveSmallIntegerField(default=120)
-    clock_out_window_before_minutes = models.PositiveSmallIntegerField(default=30)
-    clock_out_window_after_minutes = models.PositiveSmallIntegerField(default=180)
+    clock_in_window_before_minutes = models.PositiveSmallIntegerField(
+        "fenêtre d'arrivée avant (min)", default=30
+    )
+    clock_in_window_after_minutes = models.PositiveSmallIntegerField(
+        "fenêtre d'arrivée après (min)", default=120
+    )
+    clock_out_window_before_minutes = models.PositiveSmallIntegerField(
+        "fenêtre de départ avant (min)", default=30
+    )
+    clock_out_window_after_minutes = models.PositiveSmallIntegerField(
+        "fenêtre de départ après (min)", default=180
+    )
 
     # Spécifique aux créneaux enseignants (CDC §10.2.4) — laissés vides pour les
     # autres types d'horaires.
     subject = models.CharField("matière", max_length=255, blank=True)
     room = models.CharField("salle", max_length=100, blank=True)
     group_label = models.CharField("groupe", max_length=100, blank=True)
-    is_cancelled = models.BooleanField(default=False)
+    is_cancelled = models.BooleanField("annulé", default=False)
 
     class Meta:
         ordering = ["weekday", "start_time"]
@@ -103,11 +119,13 @@ class EmployeeScheduleAssignment(TenantModel):
     priorité 1 (le plus fort) dans la hiérarchie CDC §10.3."""
 
     employee = models.ForeignKey(
-        "employees.Employee", on_delete=models.CASCADE, related_name="schedule_assignments"
+        "employees.Employee", on_delete=models.CASCADE, related_name="schedule_assignments", verbose_name="employé"
     )
-    schedule = models.ForeignKey(Schedule, on_delete=models.PROTECT, related_name="employee_assignments")
-    valid_from = models.DateField()
-    valid_until = models.DateField(null=True, blank=True)
+    schedule = models.ForeignKey(
+        Schedule, on_delete=models.PROTECT, related_name="employee_assignments", verbose_name="horaire"
+    )
+    valid_from = models.DateField("valide à partir du")
+    valid_until = models.DateField("valide jusqu'au", null=True, blank=True)
 
     class Meta:
         ordering = ["-valid_from"]

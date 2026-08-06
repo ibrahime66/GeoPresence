@@ -3,8 +3,10 @@ from django.core.exceptions import ValidationError
 
 from apps.accounts.models import User
 from apps.agencies.models import Agency
-from apps.core.forms import BootstrapModelFormMixin
+from apps.core.forms import BootstrapModelFormMixin, apply_module_gating
 from apps.departments.models import Department, Position
+
+MODULE_GATED_FIELDS = {"department": "departments_enabled", "position": "positions_enabled"}
 
 from .models import Employee
 
@@ -47,6 +49,7 @@ class EmployeeCreateForm(forms.Form):
         self.fields["position"].queryset = Position.objects.all_tenants().filter(tenant=tenant, is_active=True)
         self.fields["primary_agency"].queryset = Agency.objects.all_tenants().filter(tenant=tenant, is_active=True)
         self.fields["manager"].queryset = User.objects.filter(tenant=tenant, role__in=MANAGER_ROLES)
+        apply_module_gating(self, tenant, MODULE_GATED_FIELDS)
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
@@ -109,3 +112,4 @@ class EmployeeUpdateForm(BootstrapModelFormMixin, forms.ModelForm):
         self.fields["primary_agency"].queryset = Agency.objects.all_tenants().filter(tenant=tenant, is_active=True)
         self.fields["manager"].queryset = User.objects.filter(tenant=tenant, role__in=MANAGER_ROLES)
         self.fields["manager"].required = False
+        apply_module_gating(self, tenant, MODULE_GATED_FIELDS)

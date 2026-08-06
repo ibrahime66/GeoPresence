@@ -9,18 +9,22 @@
   </div>
 </div>
 
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link active" href="{% url 'absences:pending' %}">En attente</a></li>
+  <li class="nav-item"><a class="nav-link" href="{% url 'absences:history' %}">Historique</a></li>
+</ul>
+
 <div class="gp-table-card">
   <div class="gp-table-scroll">
     <table class="gp-table">
-      <thead><tr><th>Employé</th><th>Date</th><th>Motif</th><th>Commentaire</th><th>Justificatif</th><th></th></tr></thead>
+      <thead><tr><th>Employé</th><th>Date</th><th>Motif</th><th>Commentaire</th><th></th></tr></thead>
       <tbody>
         {% for absence in absences %}
         <tr>
           <td class="fw-semibold">{{ absence.employee }}</td>
           <td>{{ absence.date }}</td>
-          <td>{{ absence.reason.name|default:"—" }}</td>
+          <td>{{ absence.display_reason|default:"—" }}</td>
           <td class="text-muted-cell">{{ absence.employee_comment|default:"—" }}</td>
-          <td>{% if absence.justification_file %}<a href="{{ absence.justification_file.url }}" target="_blank" class="gp-row-link">Voir</a>{% else %}<span class="text-muted-cell">—</span>{% endif %}</td>
           <td>
             <div class="gp-table-actions">
               <form method="post" action="{% url 'absences:review' absence.pk %}">
@@ -37,7 +41,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6"><div class="gp-table-empty">Aucun justificatif en attente.</div></td></tr>
+        <tr><td colspan="5"><div class="gp-table-empty">Aucun justificatif en attente.</div></td></tr>
         {% endfor %}
       </tbody>
     </table>

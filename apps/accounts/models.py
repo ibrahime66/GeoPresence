@@ -74,10 +74,10 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
         help_text="Vide uniquement pour le Super Administrateur (CDC §2.3.3).",
     )
 
-    email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.EMPLOYEE)
+    email = models.EmailField("e-mail", unique=True)
+    first_name = models.CharField("prénom", max_length=150, blank=True)
+    last_name = models.CharField("nom", max_length=150, blank=True)
+    role = models.CharField("rôle", max_length=20, choices=Role.choices, default=Role.EMPLOYEE)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -97,7 +97,7 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
     # CDC §3.5.1/§24.2 : langue d'affichage — préférence personnelle, distincte
     # de la langue par défaut de l'organisation (Organization.language, qui ne
     # sert qu'à pré-remplir ce champ à la création du compte).
-    language = models.CharField(max_length=2, choices=Language.choices, default=Language.FR)
+    language = models.CharField("langue", max_length=2, choices=Language.choices, default=Language.FR)
 
     objects = UserManager()
 

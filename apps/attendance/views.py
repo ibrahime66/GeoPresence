@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.views import View
@@ -37,6 +39,21 @@ class ClockPageView(LoginRequiredMixin, TemplateView):
             context["today_attendances"] = Attendance.objects.all_tenants().filter(
                 employee=employee, clock_date=clock_date
             ).order_by("server_time")
+            # json.dumps plutôt qu'une interpolation directe de gabarit : les
+            # DecimalField latitude/longitude s'afficheraient avec le
+            # séparateur décimal localisé (virgule en fr-FR) via {{ }}, ce qui
+            # casserait le JSON produit pour clock.js.
+            context["agency_zones_json"] = json.dumps(
+                [
+                    {
+                        "label": zone["label"],
+                        "latitude": float(zone["latitude"]),
+                        "longitude": float(zone["longitude"]),
+                        "radius": zone["radius"],
+                    }
+                    for zone in employee.primary_agency.zones()
+                ]
+            )
         return context
 
 

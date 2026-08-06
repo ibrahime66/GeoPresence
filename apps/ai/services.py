@@ -36,8 +36,10 @@ SYSTEM_PROMPT_HEADER = (
     "figure pas, dis-le clairement plutôt que de deviner. Sois concis. "
     "Réponds dans la langue suivante : {language}.\n\n"
     "Termine TOUJOURS ta réponse par la ligne exacte {marker} suivie d'un "
-    "tableau JSON (et rien d'autre après) de 3 courtes questions de suivi "
-    "pertinentes que l'utilisateur pourrait poser ensuite, dans la même langue. "
+    "tableau JSON (et rien d'autre après) de 3 courtes questions de suivi, "
+    "dans la même langue. RÈGLE IMPORTANTE : ces questions doivent être des "
+    "questions auxquelles TU peux répondre avec les données ci-dessous — "
+    "jamais une question à laquelle tu répondrais toi-même que tu ne sais pas. "
     'Exemple de fin : {marker}\n["Question 1 ?", "Question 2 ?", "Question 3 ?"]'
     "\n\n--- Données ---\n{context}"
 )

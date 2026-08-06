@@ -39,7 +39,7 @@ class SubmitJustificationView(LoginRequiredMixin, View):
             messages.error(request, "Aucun profil employé actif associé à ce compte.")
             return redirect("absences:my_absences")
 
-        form = JustificationForm(request.POST, request.FILES, tenant=employee.tenant)
+        form = JustificationForm(request.POST, tenant=employee.tenant)
         if not form.is_valid():
             messages.error(request, "Formulaire invalide — vérifiez les champs.")
             return redirect("absences:my_absences")
@@ -50,7 +50,7 @@ class SubmitJustificationView(LoginRequiredMixin, View):
                 form.cleaned_data["date"],
                 reason=form.cleaned_data["reason"],
                 comment=form.cleaned_data["comment"],
-                file=form.cleaned_data["file"] or None,
+                custom_reason=form.cleaned_data["custom_reason"],
             )
             messages.success(request, "Justificatif soumis.")
         except (AbsenceRejected, ValidationError) as exc:
@@ -84,6 +84,54 @@ class PendingAbsencesView(RoleRequiredMixin, TemplateView):
             qs = qs.filter(employee__manager=self.request.user)
         context.update(paginate_queryset(self.request, qs))
         context["absences"] = context["page_obj"].object_list
+        return context
+
+
+class AbsenceHistoryView(RoleRequiredMixin, TemplateView):
+    """Justificatifs déjà traités — comble le même trou que LeaveHistoryView
+    côté congés : PendingAbsencesView filtre sur EN ATTENTE DE VALIDATION,
+    donc une fois traité un justificatif disparaissait sans aucune trace côté
+    admin/manager."""
+
+    allowed_roles = APPROVER_ROLES
+    template_name = "absences/absence_history.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        qs = Absence.objects.all_tenants().filter(
+            tenant=self.request.user.tenant
+        ).exclude(status=Absence.Status.PENDING_REVIEW).select_related("employee__user", "reason", "reviewed_by")
+        if self.request.user.role == User.Role.MANAGER:
+            qs = qs.filter(employee__manager=self.request.user)
+
+        status = self.request.GET.get("statut", "")
+        if status:
+            qs = qs.filter(status=status)
+        employee_id = self.request.GET.get("employe", "")
+        if employee_id:
+            qs = qs.filter(employee_id=employee_id)
+        date_from = self.request.GET.get("du", "")
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        date_to = self.request.GET.get("au", "")
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+
+        qs = qs.order_by("-reviewed_at", "-date")
+        context.update(paginate_queryset(self.request, qs))
+        context["absences"] = context["page_obj"].object_list
+        context["status_choices"] = [c for c in Absence.Status.choices if c[0] != Absence.Status.PENDING_REVIEW]
+
+        from apps.employees.models import Employee
+
+        employees_qs = Employee.objects.all_tenants().filter(tenant=self.request.user.tenant).select_related("user")
+        if self.request.user.role == User.Role.MANAGER:
+            employees_qs = employees_qs.filter(manager=self.request.user)
+        context["employee_choices"] = employees_qs.order_by("user__first_name", "user__last_name")
+        context["selected_status"] = status
+        context["selected_employee"] = employee_id
+        context["selected_du"] = date_from
+        context["selected_au"] = date_to
         return context
 
 

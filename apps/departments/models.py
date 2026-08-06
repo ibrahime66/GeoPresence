@@ -8,14 +8,19 @@ class Department(TenantModel):
     """CDC §3.2.2. Structure organisationnelle simple pour l'instant (nom,
     code, statut) — suffisant pour affecter employés et postes."""
 
-    name = models.CharField(max_length=255)
-    code = models.CharField(max_length=20, blank=True)
-    description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
+    name = models.CharField("nom", max_length=255)
+    code = models.CharField("code", max_length=20, blank=True)
+    description = models.TextField("description", blank=True)
+    is_active = models.BooleanField("actif", default=True)
 
     # CDC §10.3 : horaire par défaut du département — niveau de priorité 3.
     default_schedule = models.ForeignKey(
-        "schedules.Schedule", on_delete=models.SET_NULL, null=True, blank=True, related_name="departments"
+        "schedules.Schedule",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="departments",
+        verbose_name="horaire par défaut",
     )
 
     class Meta:
@@ -38,13 +43,18 @@ class Position(TenantModel):
 
     title = models.CharField("intitulé", max_length=255)
     department = models.ForeignKey(
-        Department, on_delete=models.SET_NULL, null=True, blank=True, related_name="positions"
+        Department, on_delete=models.SET_NULL, null=True, blank=True, related_name="positions", verbose_name="département"
     )
-    description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
+    description = models.TextField("description", blank=True)
+    is_active = models.BooleanField("actif", default=True)
 
     default_schedule = models.ForeignKey(
-        "schedules.Schedule", on_delete=models.SET_NULL, null=True, blank=True, related_name="positions"
+        "schedules.Schedule",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="positions",
+        verbose_name="horaire par défaut",
     )
 
     class Meta:

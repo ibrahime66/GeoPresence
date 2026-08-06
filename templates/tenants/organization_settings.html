@@ -20,7 +20,7 @@
     <div class="gp-card-body">
       <div class="row g-3">
         {% for field in form %}
-          {% if field.name in "departments_enabled,multi_slot_attendance_enabled" %}
+          {% if field.name in "departments_enabled,positions_enabled,multi_slot_attendance_enabled" %}
           <div class="col-12 col-sm-6">
             <div class="form-check form-switch">
               {{ field }}

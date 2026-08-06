@@ -5,8 +5,8 @@ from .models import LeaveType
 
 class LeaveRequestForm(forms.Form):
     leave_type = forms.ModelChoiceField(queryset=LeaveType.objects.none(), label="Type de congé")
-    start_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
-    end_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+    start_date = forms.DateField(label="Date de début", widget=forms.DateInput(attrs={"type": "date"}))
+    end_date = forms.DateField(label="Date de fin", widget=forms.DateInput(attrs={"type": "date"}))
     comment = forms.CharField(label="Commentaire", required=False, widget=forms.Textarea(attrs={"rows": 2}))
 
     def __init__(self, *args, tenant=None, **kwargs):

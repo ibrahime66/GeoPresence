@@ -9,6 +9,8 @@ l'ancienne constante codée en dur qu'elle remplace (comportement inchangé
 tant qu'aucune organisation ne surcharge la valeur).
 """
 
+from django.utils.translation import gettext_lazy as _
+
 DEFAULTS = {
     # CDC §6.4.2 — pointage.
     "gps_radius_default_meters": 200,
@@ -24,6 +26,7 @@ DEFAULTS = {
     # fait que pré-cocher une valeur par défaut sensée à la création (cf.
     # apps.superadmin.forms.OrganizationCreateForm), l'Admin garde la main.
     "departments_enabled": True,
+    "positions_enabled": True,
     "multi_slot_attendance_enabled": False,
     # CDC §6.4.3 — sécurité.
     "max_failed_login_attempts": 5,
@@ -45,10 +48,38 @@ LOCKOUT_MULTIPLIERS = [1, 2, 4, 16, 96]
 # ensuite depuis Paramètres. Un type absent de ce dict garde les DEFAULTS
 # plateforme (aucune suggestion particulière).
 TYPE_DEFAULTS = {
-    "PHARMACY": {"departments_enabled": False},
+    "PHARMACY": {"departments_enabled": False, "positions_enabled": False},
+    "RESTAURANT": {"positions_enabled": False},
+    "ASSOCIATION": {"positions_enabled": False},
+    "NGO": {"positions_enabled": False},
     "SCHOOL": {"multi_slot_attendance_enabled": True},
     "UNIVERSITY": {"multi_slot_attendance_enabled": True},
 }
+
+
+# Registre central des modules optionnels qui masquent un lien de menu ET un
+# ou plusieurs champs de formulaire selon le réglage. Pour ajouter un nouveau
+# module de ce type : UNE seule entrée ici (plutôt que de toucher séparément
+# le processeur de contexte, la sidebar et chaque formulaire concerné). Le
+# blocage des champs de formulaire reste déclaré dans chaque formulaire via
+# `apps.core.forms.apply_module_gating` (les noms de champs varient d'un
+# formulaire à l'autre pour un même module).
+MODULES = [
+    {
+        "key": "departments_enabled",
+        "sidebar_label": _("Départements"),
+        "sidebar_icon": "building",
+        "sidebar_url": "departments:list",
+        "sidebar_match_namespace": "departments",
+    },
+    {
+        "key": "positions_enabled",
+        "sidebar_label": _("Postes"),
+        "sidebar_icon": "briefcase",
+        "sidebar_url": "departments:position_list",
+        "sidebar_match_url_name": "position_list",
+    },
+]
 
 
 def initial_settings_for_type(org_type):

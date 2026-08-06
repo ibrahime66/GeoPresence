@@ -1,6 +1,6 @@
 from django import forms
 
-from apps.core.forms import BootstrapModelFormMixin
+from apps.core.forms import BootstrapModelFormMixin, apply_module_gating
 from apps.schedules.models import Schedule
 
 from .models import Department, Position
@@ -30,3 +30,4 @@ class PositionForm(BootstrapModelFormMixin, forms.ModelForm):
         self.fields["department"].required = False
         self.fields["default_schedule"].queryset = Schedule.objects.all_tenants().filter(tenant=tenant, is_active=True)
         self.fields["default_schedule"].required = False
+        apply_module_gating(self, tenant, {"department": "departments_enabled"})

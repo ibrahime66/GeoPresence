@@ -27,13 +27,15 @@ class Agency(TenantModel):
 
     name = models.CharField("nom", max_length=255)
     code = models.CharField("code", max_length=20)
-    agency_type = models.CharField(max_length=20, choices=AgencyType.choices, default=AgencyType.BRANCH)
+    agency_type = models.CharField(
+        "type d'agence", max_length=20, choices=AgencyType.choices, default=AgencyType.BRANCH
+    )
 
-    address = models.TextField(blank=True)
-    city = models.CharField(max_length=100)
-    country = models.CharField(max_length=100)
-    phone = models.CharField(max_length=30, blank=True)
-    email = models.EmailField(blank=True)
+    address = models.TextField("adresse", blank=True)
+    city = models.CharField("ville", max_length=100)
+    country = models.CharField("pays", max_length=100)
+    phone = models.CharField("téléphone", max_length=30, blank=True)
+    email = models.EmailField("e-mail", blank=True)
 
     responsible = models.ForeignKey(
         "accounts.User",
@@ -41,6 +43,7 @@ class Agency(TenantModel):
         null=True,
         blank=True,
         related_name="agencies_managed",
+        verbose_name="responsable",
     )
 
     # CDC §7.2 : décimale, 6 décimales minimum. DecimalField évite les erreurs
@@ -60,22 +63,28 @@ class Agency(TenantModel):
     # {"label": str, "latitude": float, "longitude": float, "radius": int}.
     extra_zones = models.JSONField(default=list, blank=True)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField("active", default=True)
     allow_offline_clocking = models.BooleanField(
         "pointage hors ligne autorisé", default=True, help_text="Surcharge le paramètre par défaut de l'organisation."
     )
 
-    photo = models.ImageField(upload_to=agency_photo_path, blank=True, null=True, max_length=255)
-    notes = models.TextField(blank=True)
+    photo = models.ImageField("photo", upload_to=agency_photo_path, blank=True, null=True, max_length=255)
+    notes = models.TextField("notes", blank=True)
 
     # CDC §10.3 : horaire par défaut de l'agence — niveau de priorité 4 (le plus
     # faible) dans la hiérarchie d'affectation employé > poste > département > agence.
     default_schedule = models.ForeignKey(
-        "schedules.Schedule", on_delete=models.SET_NULL, null=True, blank=True, related_name="agencies"
+        "schedules.Schedule",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="agencies",
+        verbose_name="horaire par défaut",
     )
 
     class Meta:
-        verbose_name_plural = "agencies"
+        verbose_name = "agence"
+        verbose_name_plural = "agences"
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(fields=["tenant", "code"], name="agencies_agency_tenant_code_uniq"),

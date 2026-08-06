@@ -2,10 +2,11 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.models import Count, Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views import View
@@ -30,6 +31,34 @@ def paginate_queryset(request, queryset, page_size=DEFAULT_PAGE_SIZE):
     avec templates/_pagination.html."""
     page_obj = Paginator(queryset, page_size).get_page(request.GET.get("page"))
     return {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()}
+
+
+def health_check(request):
+    """Endpoint public sans authentification (pas de tenant à résoudre) —
+    utilisé par Nginx/Uptime Robot pour vérifier que la base et le cache
+    répondent. Ne jamais exposer d'information interne dans la réponse."""
+    checks = {}
+    overall_ok = True
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+        overall_ok = False
+
+    try:
+        cache.set("health_check", "ok", 5)
+        checks["cache"] = "ok" if cache.get("health_check") == "ok" else "error"
+        if checks["cache"] != "ok":
+            overall_ok = False
+    except Exception:
+        checks["cache"] = "error"
+        overall_ok = False
+
+    status = "healthy" if overall_ok else "unhealthy"
+    return JsonResponse({"status": status, "checks": checks}, status=200 if overall_ok else 503)
 
 
 class ServiceWorkerView(View):

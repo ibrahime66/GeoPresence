@@ -1,4 +1,18 @@
 -r base.txt
 
-# Dépendances de production — ajoutées au sprint dédié au déploiement
-# (gunicorn, whitenoise, sentry-sdk, redis, celery, etc.)
+# Serveur d'application WSGI (remplace `manage.py runserver`, incapable de
+# gérer plusieurs requêtes en parallèle) et fichiers statiques compressés
+# servis directement par Django/Gunicorn sans dépendre de Nginx pour ça.
+gunicorn==23.0.0
+whitenoise==6.11.0
+
+# Cache partagé entre les workers Gunicorn (rate limiting et déclenchement du
+# CAPTCHA, cf. apps/security/ratelimit.py et apps/security/captcha.py, sont
+# faux en production sans ça : chaque worker aurait son propre compteur en
+# mémoire au lieu d'un compteur commun).
+redis==5.2.1
+django-redis==5.4.0
+
+# Suivi des erreurs en production — inactif tant que SENTRY_DSN est vide
+# (cf. config/settings/production.py).
+sentry-sdk==2.19.2

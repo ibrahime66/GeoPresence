@@ -6,7 +6,7 @@
  * interceptée (le pointage POST passe toujours par le réseau ou par la file
  * d'attente IndexedDB gérée dans clock.js, jamais par ce cache HTTP).
  */
-const CACHE_NAME = "geopresence-shell-v3";
+const CACHE_NAME = "geopresence-shell-v14";
 const OFFLINE_FALLBACK_URL = "/static/offline.html";
 const SHELL_ASSETS = [
   "/static/css/main.css",

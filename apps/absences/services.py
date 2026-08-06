@@ -17,7 +17,7 @@ class AbsenceCancelled(Exception):
         super().__init__(message)
 
 
-def submit_justification(employee, date, reason=None, comment="", file=None):
+def submit_justification(employee, date, reason=None, comment="", custom_reason=""):
     """CDC §12.1.2. Fonctionne aussi bien pour justifier une absence détectée
     au préalable (get_or_create) que pour une absence signalée directement
     par l'employé sans détection automatique préalable."""
@@ -31,9 +31,8 @@ def submit_justification(employee, date, reason=None, comment="", file=None):
         raise AbsenceRejected("Cette absence est déjà justifiée.", "already_justified")
 
     absence.reason = reason
+    absence.custom_reason = custom_reason
     absence.employee_comment = comment
-    if file is not None:
-        absence.justification_file = file
     absence.status = Absence.Status.PENDING_REVIEW
     absence.full_clean()
     absence.save()

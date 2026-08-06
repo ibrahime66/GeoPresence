@@ -1,0 +1,16 @@
+[Unit]
+Description=GeoPresence Gunicorn
+After=network.target mysql.service redis-server.service
+
+[Service]
+Type=simple
+User=geopresence
+Group=geopresence
+WorkingDirectory=/home/geopresence/app
+EnvironmentFile=/home/geopresence/app/.env
+ExecStart=/home/geopresence/app/venv/bin/gunicorn config.wsgi:application -c deploy/gunicorn.conf.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -9,9 +9,9 @@ class Holiday(TenantModel):
     `date` sert alors uniquement de référence mois/jour, l'année est ignorée
     au moment du calcul (cf. apps.leaves.services.get_holiday_dates)."""
 
-    name = models.CharField(max_length=255)
-    date = models.DateField()
-    is_recurring = models.BooleanField(default=True)
+    name = models.CharField("nom", max_length=255)
+    date = models.DateField("date")
+    is_recurring = models.BooleanField("récurrent", default=True)
 
     class Meta:
         ordering = ["date"]
@@ -27,11 +27,11 @@ class LeaveType(TenantModel):
     """CDC §12.3.1 : types de congés configurables par organisation (congé
     annuel payé, RTT, sans solde, maladie, ...) — pas une liste figée."""
 
-    name = models.CharField(max_length=255)
+    name = models.CharField("nom", max_length=255)
     # Ex. congé annuel payé -> True ; congé sans solde / maladie -> généralement False.
-    deducts_from_balance = models.BooleanField(default=True)
-    requires_justification = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
+    deducts_from_balance = models.BooleanField("déduit du solde", default=True)
+    requires_justification = models.BooleanField("justificatif requis", default=False)
+    is_active = models.BooleanField("actif", default=True)
 
     class Meta:
         ordering = ["name"]
@@ -53,20 +53,27 @@ class Leave(TenantModel):
         REJECTED = "REJECTED", "Rejeté"
         CANCELLED = "CANCELLED", "Annulé"
 
-    employee = models.ForeignKey("employees.Employee", on_delete=models.CASCADE, related_name="leaves")
-    leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT, related_name="leaves")
-
-    start_date = models.DateField()
-    end_date = models.DateField()
-    working_days = models.DecimalField(max_digits=5, decimal_places=1)
-
-    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
-    employee_comment = models.TextField(blank=True)
-    reviewer_comment = models.TextField(blank=True)
-    reviewed_by = models.ForeignKey(
-        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="leaves_reviewed"
+    employee = models.ForeignKey(
+        "employees.Employee", on_delete=models.CASCADE, related_name="leaves", verbose_name="employé"
     )
-    reviewed_at = models.DateTimeField(null=True, blank=True)
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT, related_name="leaves", verbose_name="type de congé")
+
+    start_date = models.DateField("date de début")
+    end_date = models.DateField("date de fin")
+    working_days = models.DecimalField("jours ouvrés", max_digits=5, decimal_places=1)
+
+    status = models.CharField("statut", max_length=10, choices=Status.choices, default=Status.PENDING)
+    employee_comment = models.TextField("commentaire de l'employé", blank=True)
+    reviewer_comment = models.TextField("commentaire du valideur", blank=True)
+    reviewed_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="leaves_reviewed",
+        verbose_name="validé par",
+    )
+    reviewed_at = models.DateTimeField("validé le", null=True, blank=True)
 
     class Meta:
         ordering = ["-start_date"]

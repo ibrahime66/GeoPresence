@@ -7,6 +7,17 @@
   "use strict";
 
   const config = JSON.parse(document.getElementById("clock-config").textContent);
+
+  // Icônes hébergées localement plutôt que sur cdn.jsdelivr.net : la
+  // Content-Security-Policy (img-src) n'autorise que 'self'/data:/tuiles
+  // OpenStreetMap, un CDN d'icônes supplémentaire n'apporterait rien.
+  // L.Icon.Default préfixe toujours iconUrl/shadowUrl par `imagePath` (auto-
+  // détecté depuis l'URL du CSS Leaflet, ici cdn.jsdelivr.net) — il faut donc
+  // remplacer imagePath lui-même, pas seulement les noms de fichiers.
+  if (typeof L !== "undefined") {
+    L.Icon.Default.imagePath = "/static/img/leaflet/";
+  }
+
   const DB_NAME = "geopresence-offline";
   const STORE_NAME = "pending_clocks";
 
@@ -18,6 +29,7 @@
     mapWrap: document.getElementById("clock-map-wrap"),
     map: document.getElementById("clock-map"),
     accuracyText: document.getElementById("clock-accuracy-text"),
+    recenterBtn: document.getElementById("btn-recenter"),
     cancelBtn: document.getElementById("btn-cancel"),
     confirmBtn: document.getElementById("btn-confirm"),
     result: document.getElementById("clock-result"),
@@ -178,6 +190,7 @@
   els.startBtn.addEventListener("click", startClockFlow);
   els.cancelBtn.addEventListener("click", resetToIdle);
   els.confirmBtn.addEventListener("click", submitClock);
+  if (els.recenterBtn) els.recenterBtn.addEventListener("click", recenterMap);
 
   updatePendingBadge();
   syncPendingClocks();
@@ -249,6 +262,11 @@
     resetToIdle();
   }
 
+  function recenterMap() {
+    if (!leafletMap || !gpsData) return;
+    leafletMap.setView([gpsData.latitude, gpsData.longitude], 17);
+  }
+
   function initMap(lat, lon, accuracy) {
     if (typeof L === "undefined") return;
     if (leafletMap) {
@@ -262,6 +280,26 @@
       attribution: "&copy; contributeurs OpenStreetMap",
     }).addTo(leafletMap);
 
+    // Zone(s) de pointage autorisée(s) de l'agence — affichées à titre
+    // indicatif pour que l'employé voie s'il est dans le périmètre, sans
+    // pouvoir les déplacer (lecture seule).
+    const zones = config.zones || [];
+    const zoneBounds = [];
+    zones.forEach((zone) => {
+      const zoneLatLng = [zone.latitude, zone.longitude];
+      L.circle(zoneLatLng, {
+        radius: zone.radius,
+        color: "#16a34a",
+        fillColor: "#16a34a",
+        fillOpacity: 0.08,
+        weight: 1.5,
+        dashArray: "6 4",
+      })
+        .addTo(leafletMap)
+        .bindTooltip(zone.label, { permanent: false });
+      zoneBounds.push(zoneLatLng);
+    });
+
     // Pas d'option "draggable" : le marqueur reflète uniquement la position
     // GPS réelle de l'appareil, jamais un point choisi manuellement.
     marker = L.marker(latLng).addTo(leafletMap);
@@ -273,6 +311,10 @@
       weight: 1.5,
     }).addTo(leafletMap);
     els.accuracyText.textContent = `Précision : ±${Math.round(accuracy || 0)} m`;
+
+    if (zoneBounds.length) {
+      leafletMap.fitBounds([latLng, ...zoneBounds], { padding: [30, 30], maxZoom: 18 });
+    }
 
     setTimeout(() => leafletMap.invalidateSize(), 100);
   }

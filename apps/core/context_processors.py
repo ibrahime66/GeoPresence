@@ -34,14 +34,34 @@ def org_modules(request):
     Départements masqué pour une structure plate (pharmacie...). Le type
     d'organisation ne fait que suggérer une valeur par défaut à la création
     (cf. apps.tenants.org_settings.TYPE_DEFAULTS), ce réglage reste modifiable
-    ensuite depuis Paramètres."""
+    ensuite depuis Paramètres.
+
+    Généré à partir de `apps.tenants.org_settings.MODULES` : ajouter un futur
+    module qui masque un lien de menu + un champ de formulaire ne demande
+    qu'une entrée dans ce registre, pas une modification ici ni dans
+    base.html — cf. le commentaire en tête de MODULES."""
+    from apps.tenants.org_settings import MODULES
+
     user = getattr(request, "user", None)
-    if not user or not user.is_authenticated or user.tenant is None:
-        return {"departments_enabled": True}
+    authenticated_tenant = user.tenant if (user and user.is_authenticated) else None
 
     from apps.tenants.org_settings import get_org_setting
 
-    return {"departments_enabled": get_org_setting(user.tenant, "departments_enabled")}
+    enabled = {module["key"]: get_org_setting(authenticated_tenant, module["key"]) for module in MODULES}
+
+    sidebar_links = [
+        {
+            "enabled": enabled[module["key"]],
+            "label": module["sidebar_label"],
+            "icon": module["sidebar_icon"],
+            "url_name": module["sidebar_url"],
+            "match_namespace": module.get("sidebar_match_namespace"),
+            "match_url_name": module.get("sidebar_match_url_name"),
+        }
+        for module in MODULES
+    ]
+
+    return {**enabled, "module_sidebar_links": sidebar_links}
 
 
 def ai_sidebar(request):
