@@ -27,18 +27,24 @@
             {% if dept.is_active %}<span class="gp-badge success"><span class="dot"></span>Actif</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>Inactif</span>{% endif %}
           </td>
-          <td>
-            <div class="gp-table-actions">
-              <a href="{% url 'departments:update' dept.pk %}" class="gp-row-link">Modifier</a>
-              <span class="gp-row-sep">·</span>
-              <form method="post" action="{% url 'departments:toggle_active' dept.pk %}">
-                {% csrf_token %}
-                {% if dept.is_active %}
-                <button type="submit" class="gp-row-action-btn danger" onclick="return confirm('Désactiver {{ dept.name|escapejs }} ?');">Désactiver</button>
-                {% else %}
-                <button type="submit" class="gp-row-action-btn">Activer</button>
-                {% endif %}
-              </form>
+          <td class="gp-row-menu">
+            <div class="dropdown">
+              <button class="gp-row-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions">
+                {% include "core/_icon.html" with icon="dots" size="18" %}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'departments:update' dept.pk %}">Modifier</a></li>
+                <li>
+                  <form method="post" action="{% url 'departments:toggle_active' dept.pk %}">
+                    {% csrf_token %}
+                    {% if dept.is_active %}
+                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Désactiver {{ dept.name|escapejs }} ?');">Désactiver</button>
+                    {% else %}
+                    <button type="submit" class="dropdown-item">Activer</button>
+                    {% endif %}
+                  </form>
+                </li>
+              </ul>
             </div>
           </td>
         </tr>

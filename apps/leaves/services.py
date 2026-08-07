@@ -6,7 +6,6 @@ from django.utils import timezone
 
 from apps.employees.models import Employee
 
-from .constants import MIN_ADVANCE_NOTICE_DAYS
 from .models import Holiday, Leave
 
 
@@ -65,11 +64,6 @@ def submit_leave(employee, leave_type, start_date, end_date, comment="", now=Non
 
     if end_date < start_date:
         raise LeaveRejected("La date de fin doit être postérieure ou égale à la date de début.", "invalid_dates")
-
-    if (start_date - now.date()).days < MIN_ADVANCE_NOTICE_DAYS:
-        raise LeaveRejected(
-            f"La demande doit être soumise au moins {MIN_ADVANCE_NOTICE_DAYS} jours à l'avance.", "too_late"
-        )
 
     if _has_overlap(employee, start_date, end_date):
         raise LeaveRejected("Chevauchement avec une demande de congé existante.", "overlap")

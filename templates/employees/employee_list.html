@@ -23,6 +23,23 @@
   </div>
 </div>
 
+<form method="get" class="gp-table-toolbar">
+  <div class="gp-search-field">
+    {% include "core/_icon.html" with icon="search" size="18" %}
+    <input type="text" name="q" value="{{ selected_q }}" placeholder="Rechercher par nom, matricule ou e-mail…">
+  </div>
+  <select name="statut" onchange="this.form.submit()">
+    <option value="">Tous les statuts</option>
+    {% for value, label in status_choices %}
+    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+  {% if selected_q or selected_status %}
+  <a href="{% url 'employees:list' %}" class="gp-toolbar-reset">Réinitialiser</a>
+  {% endif %}
+</form>
+
 <div class="gp-table-card">
   <div class="gp-table-scroll">
     <table class="gp-table">
@@ -42,38 +59,49 @@
             {% elif employee.status == "SUSPENDED" %}<span class="gp-badge warning"><span class="dot"></span>Suspendu</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>Archivé</span>{% endif %}
           </td>
-          <td>
-            <div class="gp-table-actions">
-              <a href="{% url 'employees:update' employee.pk %}" class="gp-row-link">Modifier</a>
-              {% if employee.status != "ARCHIVED" %}
-              <span class="gp-row-sep">·</span>
-              <form method="post" action="{% url 'employees:revoke_sessions' employee.pk %}" onsubmit="return confirm('Déconnecter {{ employee.user.full_name|escapejs }} de tous ses appareils ?');">
-                {% csrf_token %}
-                <button type="submit" class="gp-row-action-btn">Sessions</button>
-              </form>
-              <span class="gp-row-sep">·</span>
-              {% if employee.status == "SUSPENDED" %}
-              <form method="post" action="{% url 'employees:status_change' employee.pk 'activate' %}">
-                {% csrf_token %}
-                <button type="submit" class="gp-row-action-btn">Réactiver</button>
-              </form>
-              {% else %}
-              <form method="post" action="{% url 'employees:status_change' employee.pk 'suspend' %}">
-                {% csrf_token %}
-                <button type="submit" class="gp-row-action-btn danger" onclick="return confirm('Suspendre {{ employee.user.full_name|escapejs }} ? Il ne pourra plus se connecter.');">Suspendre</button>
-              </form>
-              {% endif %}
-              <span class="gp-row-sep">·</span>
-              <form method="post" action="{% url 'employees:status_change' employee.pk 'archive' %}">
-                {% csrf_token %}
-                <button type="submit" class="gp-row-action-btn danger" onclick="return confirm('Archiver {{ employee.user.full_name|escapejs }} ? Cette action correspond à un départ de l\'organisation.');">Archiver</button>
-              </form>
-              {% endif %}
+          <td class="gp-row-menu">
+            <div class="dropdown">
+              <button class="gp-row-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Actions">
+                {% include "core/_icon.html" with icon="dots" size="18" %}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'employees:update' employee.pk %}">Modifier</a></li>
+                {% if employee.status != "ARCHIVED" %}
+                <li>
+                  <form method="post" action="{% url 'employees:revoke_sessions' employee.pk %}" onsubmit="return confirm('Déconnecter {{ employee.user.full_name|escapejs }} de tous ses appareils ?');">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item">Déconnecter les sessions</button>
+                  </form>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                {% if employee.status == "SUSPENDED" %}
+                <li>
+                  <form method="post" action="{% url 'employees:status_change' employee.pk 'activate' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item">Réactiver</button>
+                  </form>
+                </li>
+                {% else %}
+                <li>
+                  <form method="post" action="{% url 'employees:status_change' employee.pk 'suspend' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Suspendre {{ employee.user.full_name|escapejs }} ? Il ne pourra plus se connecter.');">Suspendre</button>
+                  </form>
+                </li>
+                {% endif %}
+                <li>
+                  <form method="post" action="{% url 'employees:status_change' employee.pk 'archive' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Archiver {{ employee.user.full_name|escapejs }} ? Cette action correspond à un départ de l\'organisation.');">Archiver</button>
+                  </form>
+                </li>
+                {% endif %}
+              </ul>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="{% if departments_enabled %}8{% else %}7{% endif %}"><div class="gp-table-empty">Aucun employé.</div></td></tr>
+        <tr><td colspan="{% if departments_enabled %}8{% else %}7{% endif %}"><div class="gp-table-empty">{% if selected_q or selected_status %}Aucun employé ne correspond à ces filtres.{% else %}Aucun employé.{% endif %}</div></td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -37,18 +37,22 @@
 
   <div class="gp-stat-grid">
     <div class="gp-stat success">
+      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="check" size="18" %}</div>
       <div class="gp-stat-label">Jours présents (mois)</div>
       <div class="gp-stat-value">{{ days_present_month }}</div>
     </div>
     <div class="gp-stat warning">
+      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="clock" size="18" %}</div>
       <div class="gp-stat-label">Retards (mois)</div>
       <div class="gp-stat-value">{{ days_late_month }}</div>
     </div>
     <div class="gp-stat info">
+      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="calendar" size="18" %}</div>
       <div class="gp-stat-label">Solde congés</div>
       <div class="gp-stat-value">{{ employee.leave_balance }} <span class="unit">j</span></div>
     </div>
     <div class="gp-stat">
+      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="clipboard" size="18" %}</div>
       <div class="gp-stat-label">Demandes en attente</div>
       <div class="gp-stat-value">{{ my_leaves_pending|add:my_absences_pending }}</div>
     </div>

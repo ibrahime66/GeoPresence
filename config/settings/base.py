@@ -82,7 +82,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:dashboard"
-LOGOUT_REDIRECT_URL = "accounts:login"
+LOGOUT_REDIRECT_URL = "core:home"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -126,6 +126,7 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
                 "apps.core.context_processors.sidebar_counts",
                 "apps.core.context_processors.org_modules",
+                "apps.core.context_processors.org_branding",
                 "apps.core.context_processors.ai_sidebar",
             ],
         },

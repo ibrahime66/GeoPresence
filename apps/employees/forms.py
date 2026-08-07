@@ -82,13 +82,13 @@ class EmployeeImportForm(forms.Form):
 
 class EmployeeSelfServiceForm(BootstrapModelFormMixin, forms.ModelForm):
     """CDC §3.5.1 : un employé peut modifier certaines informations
-    personnelles lui-même — volontairement limité à la photo et aux
-    téléphones (tout le reste — poste, agence, contrat... — reste du ressort
-    exclusif de l'Administrateur, CDC §3.5.2)."""
+    personnelles lui-même — volontairement limité aux téléphones (tout le
+    reste — poste, agence, contrat... — reste du ressort exclusif de
+    l'Administrateur, CDC §3.5.2)."""
 
     class Meta:
         model = Employee
-        fields = ["profile_photo", "personal_phone", "work_phone"]
+        fields = ["personal_phone", "work_phone"]
 
 
 class EmployeeUpdateForm(BootstrapModelFormMixin, forms.ModelForm):

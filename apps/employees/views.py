@@ -3,6 +3,7 @@ import secrets
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -35,7 +36,26 @@ class EmployeeListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     paginate_by = DEFAULT_PAGE_SIZE
 
     def get_queryset(self):
-        return super().get_queryset().select_related("user", "department", "position", "primary_agency")
+        qs = super().get_queryset().select_related("user", "department", "position", "primary_agency")
+        query = self.request.GET.get("q", "").strip()
+        if query:
+            qs = qs.filter(
+                Q(matricule__icontains=query)
+                | Q(user__first_name__icontains=query)
+                | Q(user__last_name__icontains=query)
+                | Q(user__email__icontains=query)
+            )
+        status = self.request.GET.get("statut", "")
+        if status:
+            qs = qs.filter(status=status)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["selected_q"] = self.request.GET.get("q", "")
+        context["selected_status"] = self.request.GET.get("statut", "")
+        context["status_choices"] = Employee.Status.choices
+        return context
 
 
 class EmployeeCreateView(RoleRequiredMixin, View):

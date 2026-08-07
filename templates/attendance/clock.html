@@ -23,7 +23,7 @@
           <ul class="list-group mb-3">
             {% for a in today_attendances %}
             <li class="list-group-item d-flex justify-content-between">
-              <span>{{ a.get_clock_type_display }}{% if a.schedule_slot.subject %} — {{ a.schedule_slot.subject }}{% endif %}</span>
+              <span>{{ a.get_clock_type_display }}</span>
               <span>{{ a.server_time|date:"H:i" }} — {{ a.get_status_display }}</span>
             </li>
             {% endfor %}
@@ -35,7 +35,6 @@
               {% if next_clock_slot %}
               <p class="text-muted small mb-2">
                 {{ next_clock_slot.start_time|time:"H:i" }}–{{ next_clock_slot.end_time|time:"H:i" }}
-                {% if next_clock_slot.subject %} — {{ next_clock_slot.subject }}{% endif %}
               </p>
               {% endif %}
               <button id="btn-start-clock" class="btn btn-primary btn-lg w-100" style="min-height:44px;">

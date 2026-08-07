@@ -220,7 +220,7 @@ class LogoutView(LoginRequiredMixin, View):
         UserSession.objects.filter(session_key=request.session.session_key).delete()
         auth_logout(request)
         messages.success(request, "Vous avez été déconnecté.")
-        return redirect("accounts:login")
+        return redirect("core:home")
 
 
 class ForcePasswordChangeView(LoginRequiredMixin, FormView):
@@ -404,7 +404,7 @@ class ProfileUpdateView(LoginRequiredMixin, View):
             messages.error(request, "Aucun profil employé actif associé à ce compte.")
             return redirect("accounts:profile")
 
-        form = EmployeeSelfServiceForm(request.POST, request.FILES, instance=employee)
+        form = EmployeeSelfServiceForm(request.POST, instance=employee)
         if form.is_valid():
             form.save()
             messages.success(request, "Profil mis à jour.")

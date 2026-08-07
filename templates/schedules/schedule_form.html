@@ -39,41 +39,60 @@
         <div class="alert alert-danger">{% for e in formset.non_form_errors %}<div>{{ e }}</div>{% endfor %}</div>
       {% endif %}
 
-      <div class="table-responsive">
-        <table class="table table-sm align-middle">
+      <div class="table-responsive gp-slot-table-wrap">
+        <table class="table table-sm align-middle gp-slot-table">
           <thead>
             <tr>
               <th>Jour</th><th>Début</th><th>Fin</th><th>Pause déb.</th><th>Pause fin</th>
-              <th>Arrivée −</th><th>Arrivée +</th><th>Départ −</th><th>Départ +</th>
-              <th>Matière</th><th>Salle</th><th>Groupe</th><th>Annulé</th><th>Suppr.</th>
+              <th title="Minutes acceptées avant l'heure de début pour pointer l'arrivée.">Arrivée −</th>
+              <th title="Minutes acceptées après l'heure de début pour pointer l'arrivée.">Arrivée +</th>
+              <th title="Minutes acceptées avant l'heure de fin pour pointer le départ.">Départ −</th>
+              <th title="Minutes acceptées après l'heure de fin pour pointer le départ.">Départ +</th>
+              <th>Annulé</th><th>Suppr.</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="slot-rows">
             {% for slot_form in formset %}
             <tr>
-              {% for hidden in slot_form.hidden_fields %}{{ hidden }}{% endfor %}
-              <td>{{ slot_form.weekday }}</td>
+              <td>{% for hidden in slot_form.hidden_fields %}{{ hidden }}{% endfor %}{{ slot_form.weekday }}</td>
               <td>{{ slot_form.start_time }}</td>
               <td>{{ slot_form.end_time }}</td>
               <td>{{ slot_form.break_start_time }}</td>
               <td>{{ slot_form.break_end_time }}</td>
-              <td>{{ slot_form.clock_in_window_before_minutes }}</td>
-              <td>{{ slot_form.clock_in_window_after_minutes }}</td>
-              <td>{{ slot_form.clock_out_window_before_minutes }}</td>
-              <td>{{ slot_form.clock_out_window_after_minutes }}</td>
-              <td>{{ slot_form.subject }}</td>
-              <td>{{ slot_form.room }}</td>
-              <td>{{ slot_form.group_label }}</td>
+              <td class="gp-slot-num-cell">{{ slot_form.clock_in_window_before_minutes }}</td>
+              <td class="gp-slot-num-cell">{{ slot_form.clock_in_window_after_minutes }}</td>
+              <td class="gp-slot-num-cell">{{ slot_form.clock_out_window_before_minutes }}</td>
+              <td class="gp-slot-num-cell">{{ slot_form.clock_out_window_after_minutes }}</td>
               <td class="text-center">{{ slot_form.is_cancelled }}</td>
               <td class="text-center">{% if slot_form.instance.pk %}{{ slot_form.DELETE }}{% endif %}</td>
             </tr>
             {% if slot_form.non_field_errors %}
-            <tr><td colspan="14"><div class="text-danger small">{{ slot_form.non_field_errors }}</div></td></tr>
+            <tr><td colspan="11"><div class="text-danger small">{{ slot_form.non_field_errors }}</div></td></tr>
             {% endif %}
             {% endfor %}
           </tbody>
         </table>
       </div>
+
+      <button type="button" id="add-slot-row" class="btn btn-sm btn-outline-primary mt-2">+ Ajouter un créneau</button>
+
+      <table style="display:none">
+        <tbody id="slot-row-template">
+          <tr>
+            <td>{% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}{{ formset.empty_form.weekday }}</td>
+            <td>{{ formset.empty_form.start_time }}</td>
+            <td>{{ formset.empty_form.end_time }}</td>
+            <td>{{ formset.empty_form.break_start_time }}</td>
+            <td>{{ formset.empty_form.break_end_time }}</td>
+            <td class="gp-slot-num-cell">{{ formset.empty_form.clock_in_window_before_minutes }}</td>
+            <td class="gp-slot-num-cell">{{ formset.empty_form.clock_in_window_after_minutes }}</td>
+            <td class="gp-slot-num-cell">{{ formset.empty_form.clock_out_window_before_minutes }}</td>
+            <td class="gp-slot-num-cell">{{ formset.empty_form.clock_out_window_after_minutes }}</td>
+            <td class="text-center">{{ formset.empty_form.is_cancelled }}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -82,4 +101,22 @@
     <a href="{% url 'schedules:list' %}" class="btn btn-outline-secondary">Annuler</a>
   </div>
 </form>
+
+<script>
+  (function () {
+    var addBtn = document.getElementById("add-slot-row");
+    var rows = document.getElementById("slot-rows");
+    var template = document.getElementById("slot-row-template");
+    var totalForms = document.querySelector('input[name="slots-TOTAL_FORMS"]');
+    if (!addBtn || !rows || !template || !totalForms) return;
+
+    addBtn.addEventListener("click", function () {
+      var index = parseInt(totalForms.value, 10);
+      var newRow = template.querySelector("tr").cloneNode(true);
+      newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, index);
+      rows.appendChild(newRow);
+      totalForms.value = index + 1;
+    });
+  })();
+</script>
 {% endblock %}

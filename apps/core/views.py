@@ -87,6 +87,18 @@ class HomeView(TemplateView):
         return super().get(request, *args, **kwargs)
 
 
+class PrivacyView(TemplateView):
+    template_name = "core/privacy.html"
+
+
+class TermsView(TemplateView):
+    template_name = "core/terms.html"
+
+
+class FaqView(TemplateView):
+    template_name = "core/faq.html"
+
+
 class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
     """Point d'atterrissage post-login. Le Super Admin n'appartenant à aucun
     tenant (CDC §2.3.3), il est redirigé vers sa propre console — évite de

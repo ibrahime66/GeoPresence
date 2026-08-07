@@ -6,7 +6,16 @@
 <div class="gp-page-header">
   <div>
     <h1>{% trans "Mon profil" %}</h1>
-    <p>{{ user.full_name|default:user.email }} — {{ user.get_role_display }}</p>
+    <p>{% trans "Gérez vos informations personnelles, votre langue d'affichage et la sécurité de votre compte." %}</p>
+  </div>
+</div>
+
+<div class="gp-card gp-profile-card mb-4">
+  <div class="gp-profile-avatar">{{ user.first_name|slice:":1"|upper|default:user.email|slice:":1"|upper }}</div>
+  <div class="gp-profile-info">
+    <div class="gp-profile-name">{{ user.full_name|default:user.email }}</div>
+    <div class="gp-profile-email">{{ user.email }}</div>
+    <span class="gp-badge info"><span class="dot"></span>{{ user.get_role_display }}</span>
   </div>
 </div>
 
@@ -14,21 +23,15 @@
 <div class="gp-card gp-form-card mb-4">
   <div class="gp-card-header">{% trans "Informations personnelles" %}</div>
   <div class="gp-card-body">
-    <form method="post" action="{% url 'accounts:profile_update' %}" enctype="multipart/form-data" novalidate>
+    <form method="post" action="{% url 'accounts:profile_update' %}" novalidate>
       {% csrf_token %}
       {% if form.non_field_errors %}
         <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
       {% endif %}
-      {% if employee.profile_photo %}
-      <img src="{{ employee.profile_photo.url }}" alt="" class="rounded-circle mb-3" style="width:72px;height:72px;object-fit:cover;">
-      {% endif %}
-      {% for field in form %}
-      <div class="mb-3">
-        <label class="form-label">{{ field.label }}</label>
-        {{ field }}
-        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      <div class="row g-3">
+        {% include "core/_form_field.html" with field=form.personal_phone col="col-12 col-sm-6" %}
+        {% include "core/_form_field.html" with field=form.work_phone col="col-12 col-sm-6" %}
       </div>
-      {% endfor %}
       <div class="gp-form-actions">
         <button type="submit" class="btn btn-primary">{% trans "Enregistrer" %}</button>
       </div>

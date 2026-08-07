@@ -6,7 +6,7 @@ from .models import EmployeeScheduleAssignment, Schedule, ScheduleSlot
 class ScheduleSlotInline(admin.TabularInline):
     model = ScheduleSlot
     extra = 1
-    fields = ("weekday", "start_time", "end_time", "break_start_time", "break_end_time", "subject", "room", "group_label")
+    fields = ("weekday", "start_time", "end_time", "break_start_time", "break_end_time")
 
 
 @admin.register(Schedule)

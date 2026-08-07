@@ -31,7 +31,7 @@
             {{ form.end_date }}
           </div>
           <div class="col-12">
-            <label class="form-label">{{ form.comment.label }}</label>
+            <label class="form-label" id="leave-comment-label">{{ form.comment.label }}</label>
             {{ form.comment }}
           </div>
         </div>
@@ -41,6 +41,22 @@
       </form>
     </div>
   </div>
+  <script>
+    (function () {
+      var typeSelect = document.getElementById("id_leave_type");
+      var label = document.getElementById("leave-comment-label");
+      var commentField = document.getElementById("id_comment");
+      if (!typeSelect || !label || !commentField) return;
+      function toggle() {
+        var selected = typeSelect.options[typeSelect.selectedIndex];
+        var isOther = selected && selected.textContent.trim() === "Autre";
+        label.textContent = isOther ? "Commentaire — précisez le motif" : "Commentaire";
+        commentField.placeholder = isOther ? "Précisez le motif de ce congé…" : "";
+      }
+      typeSelect.addEventListener("change", toggle);
+      toggle();
+    })();
+  </script>
 
   <div class="gp-table-card">
     <div class="gp-table-scroll">

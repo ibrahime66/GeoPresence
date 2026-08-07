@@ -12,6 +12,13 @@
   --gp-amber-bg: #FFFAEB;
   --gp-red: #DC2626;
   --gp-red-bg: #FEF2F2;
+  /* Accent réservé aux actions importantes / indicateurs clés qui demandent
+     une action (ex. badge "à valider") — jamais utilisé pour du décoratif,
+     et distinct de l'ambre (--gp-amber) qui reste la couleur d'avertissement
+     neutre (ex. "Retard"). */
+  --gp-orange: #F97316;
+  --gp-orange-deep: #C2410C;
+  --gp-orange-bg: #FFF7ED;
 
   --gp-ink: #101828;
   --gp-gray-700: #344054;
@@ -25,11 +32,48 @@
   --gp-radius: 12px;
   --gp-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.10);
   --gp-shadow-lg: 0 8px 24px rgba(10, 30, 69, 0.12);
+  --gp-focus-ring: 0 0 0 3px rgba(11, 99, 246, 0.35);
+}
+
+/* Palette sombre — définie mais NON activée (aucune règle n'applique encore
+   data-theme="dark" à <html>). Sert de fondation prête à l'emploi pour une
+   future bascule mode sombre, sans risquer de casser un écran non encore
+   vérifié en contraste sombre. */
+[data-theme="dark"] {
+  --gp-navy: #E4E9F5;
+  --gp-navy-deep: #FFFFFF;
+  --gp-ink: #F1F4F9;
+  --gp-gray-700: #D0D5DD;
+  --gp-gray-600: #98A2B3;
+  --gp-gray-400: #667085;
+  --gp-gray-200: #2A3350;
+  --gp-gray-100: #1B2340;
+  --gp-gray-50: #141A33;
+  --gp-white: #0E1330;
+  --gp-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 3px rgba(0, 0, 0, 0.32);
+  --gp-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--gp-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Anneau de focus clavier cohérent (WCAG 2.2 §2.4.11) — remplace le contour
+   par défaut, très inégal d'un navigateur à l'autre, sur tous les éléments
+   interactifs custom qui n'ont pas déjà leur propre style de focus. */
+.gp-btn:focus-visible,
+.gp-sidebar-link:focus-visible,
+.gp-row-action-btn:focus-visible,
+.gp-row-link:focus-visible,
+.gp-chat-suggestion-btn:focus-visible,
+.gp-pagination a:focus-visible,
+.gp-footer-col a:focus-visible {
+  outline: none;
+  box-shadow: var(--gp-focus-ring);
+  border-radius: 6px;
 }
 
 /* ---------- Navbar applicative (pages internes) ---------- */
@@ -336,9 +380,13 @@ a {
   border: 1px solid var(--gp-gray-200);
   border-radius: var(--gp-radius);
   padding: 1.5rem;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
-.gp-card:hover { box-shadow: var(--gp-shadow-lg); transform: translateY(-2px); }
+/* Le survol "carte qui se soulève" reste réservé à la vitrine publique (page
+   d'accueil) où c'est un choix éditorial délibéré — appliqué globalement, il
+   ferait aussi bouger les cartes de contenu statique du dashboard/formulaires
+   (pas cliquables), ce qui distrait sans raison (cf. consigne micro-interactions). */
+.gp-features .gp-card { transition: box-shadow 0.15s ease, transform 0.15s ease; }
+.gp-features .gp-card:hover { box-shadow: var(--gp-shadow-lg); transform: translateY(-2px); }
 .gp-card-icon {
   width: 42px; height: 42px;
   border-radius: 10px;
@@ -400,20 +448,55 @@ a {
 /* ---------- Footer ---------- */
 .gp-footer {
   border-top: 1px solid var(--gp-gray-200);
-  padding: 2.5rem 1.5rem;
+  padding: 3rem 1.5rem 2rem;
 }
 .gp-footer-inner {
   max-width: 1180px;
   margin: 0 auto;
+}
+.gp-footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 2rem;
+  padding-bottom: 2rem;
+}
+.gp-footer-brand { display: flex; align-items: center; gap: 0.5rem; color: var(--gp-navy); font-weight: 700; }
+.gp-footer-brand img { height: 22px; }
+.gp-footer-tagline { color: var(--gp-gray-400); font-size: 0.9rem; margin: 0.75rem 0 0; max-width: 26rem; }
+.gp-footer-col h4 { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-navy); margin-bottom: 0.9rem; }
+.gp-footer-col { display: flex; flex-direction: column; gap: 0.6rem; }
+.gp-footer-col a { color: var(--gp-gray-400); font-size: 0.9rem; text-decoration: none; }
+.gp-footer-col a:hover { color: var(--gp-navy); }
+.gp-footer-bottom {
+  border-top: 1px solid var(--gp-gray-200);
+  padding-top: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
 }
-.gp-footer-brand { display: flex; align-items: center; gap: 0.5rem; color: var(--gp-navy); font-weight: 700; }
-.gp-footer-brand img { height: 22px; }
-.gp-footer-inner p { color: var(--gp-gray-400); font-size: 0.85rem; margin: 0; }
+.gp-footer-bottom p { color: var(--gp-gray-400); font-size: 0.85rem; margin: 0; }
+@media (max-width: 720px) {
+  .gp-footer-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- Pages légales / FAQ (contenu texte simple) ---------- */
+.gp-legal {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 4rem;
+  color: var(--gp-gray-600);
+  line-height: 1.7;
+}
+.gp-legal h1 { color: var(--gp-navy); font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+.gp-legal .gp-legal-updated { color: var(--gp-gray-400); font-size: 0.9rem; margin-bottom: 2.5rem; }
+.gp-legal h2 { color: var(--gp-navy); font-size: 1.25rem; font-weight: 700; margin: 2rem 0 0.75rem; }
+.gp-legal p, .gp-legal li { margin-bottom: 0.75rem; }
+.gp-legal ul { padding-left: 1.25rem; }
+.gp-faq-item { border-bottom: 1px solid var(--gp-gray-200); padding: 1.5rem 0; }
+.gp-faq-item:first-child { padding-top: 0; }
+.gp-faq-item h2 { margin: 0 0 0.6rem; font-size: 1.05rem; }
 
 /* ================= Pages d'authentification (login, reset...) ================= */
 
@@ -667,17 +750,31 @@ a {
 }
 .gp-sidebar-link svg { flex: none; opacity: 0.85; }
 .gp-sidebar-link:hover { background: rgba(255, 255, 255, 0.06); color: var(--gp-white); }
-.gp-sidebar-link.is-active { background: rgba(47, 140, 255, 0.16); color: var(--gp-white); }
+.gp-sidebar-link.is-active { background: color-mix(in srgb, var(--gp-blue-bright) 16%, transparent); color: var(--gp-white); }
 .gp-sidebar-link.is-active svg { color: var(--gp-blue-bright); opacity: 1; }
 .gp-sidebar-badge {
   margin-left: auto;
-  background: var(--gp-green);
+  background: var(--gp-orange);
   color: var(--gp-white);
   font-size: 0.72rem; font-weight: 700;
   border-radius: 999px;
   padding: 0.05rem 0.45rem;
   line-height: 1.4;
 }
+
+.gp-profile-card {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: 1.5rem;
+}
+.gp-profile-avatar {
+  flex: none; width: 68px; height: 68px; border-radius: 50%;
+  background: var(--gp-blue); color: var(--gp-white);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 800;
+}
+.gp-profile-info { min-width: 0; }
+.gp-profile-name { font-size: 1.15rem; font-weight: 800; color: var(--gp-navy); }
+.gp-profile-email { color: var(--gp-gray-600); font-size: 0.9rem; margin-bottom: 0.5rem; }
 
 .gp-sidebar-foot {
   flex: none;
@@ -756,13 +853,25 @@ a {
 .gp-card-header { padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--gp-gray-200); font-weight: 700; color: var(--gp-navy); font-size: 0.98rem; }
 
 /* ---------- Statistiques (KPI) ---------- */
-.gp-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.gp-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 1.75rem; }
 @media (max-width: 900px) { .gp-stat-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .gp-stat-grid { grid-template-columns: 1fr; } }
 
-.gp-stat { background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: var(--gp-radius); padding: 1.1rem 1.25rem; box-shadow: var(--gp-shadow); }
-.gp-stat-label { font-size: 0.8rem; color: var(--gp-gray-600); font-weight: 600; margin-bottom: 0.4rem; }
-.gp-stat-value { font-size: 1.65rem; font-weight: 800; color: var(--gp-navy); line-height: 1.2; }
+.gp-stat { position: relative; background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: var(--gp-radius); padding: 1.25rem 1.4rem; box-shadow: var(--gp-shadow); }
+.gp-stat-icon {
+  position: absolute; top: 1.15rem; right: 1.15rem;
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gp-gray-100); color: var(--gp-gray-400);
+}
+[dir="rtl"] .gp-stat-icon { right: auto; left: 1.15rem; }
+.gp-stat.success .gp-stat-icon { background: #F0FDF4; color: var(--gp-green-deep); }
+.gp-stat.danger .gp-stat-icon { background: var(--gp-red-bg); color: var(--gp-red); }
+.gp-stat.warning .gp-stat-icon { background: var(--gp-amber-bg); color: var(--gp-amber); }
+.gp-stat.info .gp-stat-icon { background: #EFF6FF; color: var(--gp-blue); }
+.gp-stat-label { font-size: 0.8rem; color: var(--gp-gray-600); font-weight: 600; margin-bottom: 0.5rem; padding-right: 2.6rem; }
+[dir="rtl"] .gp-stat-label { padding-right: 0; padding-left: 2.6rem; }
+.gp-stat-value { font-size: 1.75rem; font-weight: 800; color: var(--gp-navy); line-height: 1.2; }
 .gp-stat-value .unit { font-size: 0.95rem; font-weight: 600; color: var(--gp-gray-400); }
 .gp-stat-sub { font-size: 0.78rem; color: var(--gp-gray-600); margin-top: 0.25rem; }
 .gp-stat.success .gp-stat-value { color: var(--gp-green-deep); }
@@ -773,9 +882,36 @@ a {
 .gp-stat-trend.up { color: var(--gp-green-deep); }
 .gp-stat-trend.down { color: var(--gp-red); }
 
+/* ---------- Barre de recherche / filtres au-dessus d'un tableau ---------- */
+.gp-table-toolbar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.gp-search-field { position: relative; flex: 1 1 260px; min-width: 200px; }
+.gp-search-field svg { position: absolute; top: 50%; left: 0.8rem; transform: translateY(-50%); color: var(--gp-gray-400); pointer-events: none; }
+.gp-search-field input {
+  width: 100%; padding: 0.55rem 0.85rem 0.55rem 2.5rem;
+  border: 1.5px solid var(--gp-gray-200); border-radius: 8px; font-size: 0.9rem;
+  background: var(--gp-white); transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.gp-search-field input:focus { outline: none; border-color: var(--gp-blue); box-shadow: 0 0 0 3px rgba(11, 99, 246, 0.12); }
+[dir="rtl"] .gp-search-field svg { left: auto; right: 0.8rem; }
+[dir="rtl"] .gp-search-field input { padding: 0.55rem 2.5rem 0.55rem 0.85rem; }
+.gp-table-toolbar select {
+  border: 1.5px solid var(--gp-gray-200); border-radius: 8px; padding: 0.55rem 2rem 0.55rem 0.85rem;
+  font-size: 0.9rem; background: var(--gp-white); color: var(--gp-gray-700);
+}
+.gp-table-toolbar select:focus { outline: none; border-color: var(--gp-blue); box-shadow: 0 0 0 3px rgba(11, 99, 246, 0.12); }
+.gp-table-toolbar .gp-toolbar-reset { color: var(--gp-gray-400); font-size: 0.85rem; text-decoration: none; white-space: nowrap; }
+.gp-table-toolbar .gp-toolbar-reset:hover { color: var(--gp-navy); text-decoration: underline; }
+
 /* ---------- Tableaux ---------- */
 .gp-table-card { background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: var(--gp-radius); box-shadow: var(--gp-shadow); overflow: hidden; }
 .gp-table-scroll { overflow-x: auto; }
+
+.gp-slot-table th, .gp-slot-table td { vertical-align: middle; }
+.gp-slot-table thead th { font-size: 0.78rem; white-space: nowrap; }
+.gp-slot-table .gp-slot-num-cell input {
+  width: 56px; padding-left: 0.35rem; padding-right: 0.35rem; text-align: center;
+}
+.gp-slot-table td select { width: 92px; }
 table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0.89rem; }
 .gp-table thead th {
   background: var(--gp-gray-50); color: var(--gp-gray-600);
@@ -791,6 +927,25 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 .gp-table-empty { padding: 2.5rem 1.5rem; text-align: center; color: var(--gp-gray-600); font-size: 0.9rem; }
 
 .gp-table-actions { display: flex; gap: 0.55rem; align-items: center; justify-content: flex-end; white-space: nowrap; }
+
+/* Menu d'actions discret (⋮) — remplace une liste d'actions séparées par
+   des "·" qui forçait un défilement horizontal important sur les tableaux
+   de gestion (ex. Suspendre/Archiver/Sessions sur la liste des employés). */
+.gp-row-menu { text-align: right; }
+.gp-row-menu-btn {
+  background: transparent; border: none; padding: 0.4rem;
+  border-radius: 6px; color: var(--gp-gray-400); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.gp-row-menu-btn:hover, .gp-row-menu-btn:focus { background: var(--gp-gray-100); color: var(--gp-gray-700); }
+.gp-row-menu-btn::after { display: none; }
+.gp-row-menu .dropdown-menu { min-width: 11rem; padding: 0.4rem; border-color: var(--gp-gray-200); box-shadow: var(--gp-shadow-lg); }
+.gp-row-menu .dropdown-item { border-radius: 6px; font-size: 0.88rem; padding: 0.5rem 0.7rem; }
+.gp-row-menu .dropdown-item:hover, .gp-row-menu .dropdown-item:focus { background: var(--gp-gray-50); }
+.gp-row-menu .dropdown-item.text-danger:hover, .gp-row-menu .dropdown-item.text-danger:focus { background: var(--gp-red-bg); }
+.gp-row-menu form { margin: 0; }
+.gp-row-menu form button.dropdown-item { width: 100%; text-align: left; background: none; border: none; }
+[dir="rtl"] .gp-row-menu form button.dropdown-item { text-align: right; }
 .gp-row-link { color: var(--gp-blue); font-weight: 600; text-decoration: none; font-size: 0.85rem; }
 .gp-row-link:hover { text-decoration: underline; }
 .gp-row-action-btn { background: none; border: none; padding: 0; font: inherit; cursor: pointer; color: var(--gp-blue); font-weight: 600; font-size: 0.85rem; }
@@ -809,6 +964,17 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 
 /* ---------- Formulaires internes ---------- */
 .gp-form-card { max-width: 720px; }
+
+/* Regroupement logique des champs sur les formulaires longs — remplace le
+   "mur de champs" par des sections nommées, plus faciles à parcourir et à
+   comprendre en un coup d'œil (ex. superadmin/organization_form.html). */
+.gp-form-section { padding: 1.6rem 0; border-bottom: 1px solid var(--gp-gray-100); }
+.gp-form-section:first-child { padding-top: 0; }
+.gp-form-section:last-of-type { border-bottom: none; padding-bottom: 0; }
+.gp-form-section-head { margin-bottom: 1.1rem; }
+.gp-form-section-head h3 { font-size: 0.95rem; font-weight: 700; color: var(--gp-navy); margin: 0 0 0.2rem; }
+.gp-form-section-head p { font-size: 0.82rem; color: var(--gp-gray-400); margin: 0; }
+
 .gp-form-card .form-label { font-size: 0.85rem; font-weight: 600; color: var(--gp-gray-700); }
 .gp-form-card .form-control, .gp-form-card .form-select {
   border: 1.5px solid var(--gp-gray-200); border-radius: 8px; padding: 0.5rem 0.8rem;

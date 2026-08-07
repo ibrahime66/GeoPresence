@@ -12,7 +12,7 @@ TIMEZONE_CHOICES = [(tz, tz) for tz in sorted(zoneinfo.available_timezones()) if
 ORG_FIELDS = [
     "legal_name", "display_name", "slug", "org_type", "country", "city", "address",
     "phone", "email", "website", "timezone", "language", "date_format", "time_format",
-    "primary_color", "secondary_color", "logo",
+    "primary_color", "secondary_color",
 ]
 
 ORG_WIDGETS = {

@@ -64,6 +64,20 @@ def org_modules(request):
     return {**enabled, "module_sidebar_links": sidebar_links}
 
 
+def org_branding(request):
+    """Couleurs de marque (superadmin:organization_form, section « Apparence »)
+    appliquées à l'interface de l'organisation courante (menu latéral,
+    éléments actifs) — aucune couleur pour le Super Admin (pas de tenant)."""
+    user = getattr(request, "user", None)
+    tenant = user.tenant if (user and user.is_authenticated) else None
+    if tenant is None:
+        return {}
+    return {
+        "org_primary_color": tenant.primary_color,
+        "org_secondary_color": tenant.secondary_color,
+    }
+
+
 def ai_sidebar(request):
     """CDC §15.3.3 : le lien "Assistant IA" n'apparaît dans la sidebar que si
     l'organisation (ou la plateforme, pour le Super Admin) a activé l'IA pour

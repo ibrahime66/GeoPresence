@@ -11,6 +11,8 @@ HEX_COLOR_VALIDATOR = RegexValidator(
 
 
 def organization_logo_path(instance, filename):
+    # Champ `logo` supprimé (2026-08-07) — fonction conservée car référencée
+    # directement (import de module, pas chaîne) par la migration 0003.
     return f"organizations/{instance.id}/logo/{generate_upload_filename(filename)}"
 
 
@@ -79,7 +81,6 @@ class Organization(UUIDModel, TimeStampedModel):
     date_format = models.CharField("format de date", max_length=10, choices=DateFormat.choices, default=DateFormat.DMY)
     time_format = models.CharField("format d'heure", max_length=3, choices=TimeFormat.choices, default=TimeFormat.H24)
 
-    logo = models.ImageField("logo", upload_to=organization_logo_path, blank=True, null=True, max_length=255)
     primary_color = models.CharField(
         "couleur principale", max_length=7, default="#0D2137", validators=[HEX_COLOR_VALIDATOR]
     )

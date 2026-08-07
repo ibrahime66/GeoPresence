@@ -47,10 +47,6 @@ class Employee(TenantModel):
     # RM-SEC-004 : chiffré au repos (numéro de carte d'identité / passeport).
     id_number = EncryptedCharField("numéro de pièce d'identité", blank=True)
 
-    profile_photo = models.ImageField(
-        "photo de profil", upload_to=employee_photo_path, blank=True, null=True, max_length=255
-    )
-
     personal_email = models.EmailField("e-mail personnel", blank=True)
     work_phone = models.CharField("téléphone professionnel", max_length=30, blank=True)
     personal_phone = models.CharField("téléphone personnel", max_length=30, blank=True)

@@ -1,0 +1,74 @@
+{% extends "core/_landing_base.html" %}
+{% block title %}Politique de confidentialité — GeoPresence{% endblock %}
+{% block content %}
+<div class="gp-legal">
+  <h1>Politique de confidentialité</h1>
+  <p class="gp-legal-updated">Dernière mise à jour : {% now "d F Y" %}</p>
+
+  <p>
+    GeoPresence est une plateforme de gestion de présence utilisée par des organisations
+    (« le client ») pour gérer les pointages, horaires, congés et absences de leurs employés.
+    Cette page explique quelles données sont collectées lors de l'utilisation de la plateforme,
+    pourquoi, et comment elles sont protégées.
+  </p>
+
+  <h2>1. Quelles données sont collectées</h2>
+  <ul>
+    <li>Informations de compte : nom, prénom, e-mail, rôle.</li>
+    <li>Informations RH transmises par votre organisation : matricule, poste, service, agence de rattachement, horaires.</li>
+    <li>Données de pointage : date, heure et position GPS au moment de l'arrivée et du départ.</li>
+    <li>Demandes de congé et d'absence, avec leur motif et leur statut de validation.</li>
+    <li>Journal de connexion et d'activité (à des fins de sécurité et de traçabilité).</li>
+  </ul>
+
+  <h2>2. Pourquoi ces données sont collectées</h2>
+  <p>
+    Ces données servent exclusivement à la gestion de la présence et des ressources humaines par
+    votre organisation : vérifier qu'un pointage a bien lieu sur le site attendu, calculer les
+    retards et heures supplémentaires, et instruire les demandes de congé ou d'absence.
+  </p>
+
+  <h2>3. Qui a accès à ces données</h2>
+  <p>
+    Chaque organisation cliente de GeoPresence est isolée des autres : les données d'une
+    organisation ne sont jamais visibles par une autre. Au sein d'une même organisation, seuls les
+    administrateurs et managers habilités par cette organisation peuvent consulter les données des
+    employés qu'ils encadrent.
+  </p>
+
+  <h2>4. Durée de conservation</h2>
+  <p>
+    Les données sont conservées pendant la durée de la relation entre l'employé et l'organisation
+    cliente, puis pendant la durée additionnelle nécessaire au respect des obligations légales
+    applicables (notamment en matière de droit du travail). Une organisation peut demander la
+    suppression des données d'un compte après son départ.
+  </p>
+
+  <h2>5. Sécurité</h2>
+  <ul>
+    <li>Les mots de passe sont stockés de façon sécurisée, jamais en clair.</li>
+    <li>Les échanges avec la plateforme sont chiffrés (HTTPS).</li>
+    <li>Les données sensibles sont chiffrées au repos.</li>
+    <li>Chaque connexion et chaque action sensible sont tracées dans un journal d'audit non modifiable.</li>
+  </ul>
+
+  <h2>6. Vos droits</h2>
+  <p>
+    Vous pouvez demander l'accès, la rectification ou la suppression de vos données personnelles en
+    contactant l'administrateur de votre organisation, ou directement l'éditeur de la plateforme à
+    l'adresse indiquée ci-dessous.
+  </p>
+
+  <h2>7. Cookies</h2>
+  <p>
+    GeoPresence utilise uniquement un cookie de session strictement nécessaire au fonctionnement de
+    la connexion — aucun cookie publicitaire ou de suivi tiers n'est utilisé.
+  </p>
+
+  <h2>8. Contact</h2>
+  <p>
+    Pour toute question relative à cette politique de confidentialité, contactez-nous à
+    <a href="mailto:ibrahimebarry683@gmail.com">ibrahimebarry683@gmail.com</a>.
+  </p>
+</div>
+{% endblock %}

@@ -84,11 +84,6 @@ class ScheduleSlot(TenantModel):
         "fenêtre de départ après (min)", default=180
     )
 
-    # Spécifique aux créneaux enseignants (CDC §10.2.4) — laissés vides pour les
-    # autres types d'horaires.
-    subject = models.CharField("matière", max_length=255, blank=True)
-    room = models.CharField("salle", max_length=100, blank=True)
-    group_label = models.CharField("groupe", max_length=100, blank=True)
     is_cancelled = models.BooleanField("annulé", default=False)
 
     class Meta:

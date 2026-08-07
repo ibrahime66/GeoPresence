@@ -18,7 +18,7 @@
 {# user.is_authenticated est donc toujours vrai ici ; pas de variante "visiteur" à gérer. #}
 <div class="gp-shell">
     <div class="gp-sidebar-backdrop" id="gpSidebarBackdrop"></div>
-    <aside class="gp-sidebar" id="gpSidebar">
+    <aside class="gp-sidebar" id="gpSidebar"{% if org_primary_color %} style="--gp-navy: {{ org_primary_color }}; --gp-blue-bright: {{ org_secondary_color }};"{% endif %}>
         <a class="gp-sidebar-brand" href="{% url 'core:dashboard' %}">
             <img src="{% static 'img/logo-mark.png' %}" alt="">
             <span>GeoPresence</span>
@@ -153,6 +153,14 @@
     })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // positionnement en "fixed" (par rapport à la fenêtre, pas au parent) :
+    // sans ça, un menu ⋮ ouvert dans une cellule de tableau à défilement
+    // horizontal (.gp-table-scroll) serait rogné par ce défilement.
+    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach((el) => {
+        new bootstrap.Dropdown(el, { popperConfig: { strategy: "fixed" } });
+    });
+</script>
 <script>
     if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

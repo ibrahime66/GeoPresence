@@ -25,7 +25,7 @@ class ScheduleSlotForm(BootstrapModelFormMixin, forms.ModelForm):
             "weekday", "start_time", "end_time", "break_start_time", "break_end_time",
             "clock_in_window_before_minutes", "clock_in_window_after_minutes",
             "clock_out_window_before_minutes", "clock_out_window_after_minutes",
-            "subject", "room", "group_label", "is_cancelled",
+            "is_cancelled",
         ]
         widgets = {
             "start_time": forms.TimeInput(attrs={"type": "time"}),
