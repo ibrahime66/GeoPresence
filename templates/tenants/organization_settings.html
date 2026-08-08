@@ -5,7 +5,7 @@
 <div class="gp-page-header">
   <div>
     <h1>Paramètres de l'organisation</h1>
-    <p>Tolérances de pointage et politique de sécurité — propres à {{ request.tenant.display_name }}.</p>
+    <p>Tolérances de pointage et politique de sécurité propres à {{ request.tenant.display_name }}.</p>
   </div>
 </div>
 
@@ -31,6 +31,16 @@
           {% endif %}
         {% endfor %}
       </div>
+    </div>
+  </div>
+
+  <div class="gp-card gp-form-card mb-4" style="max-width: none;">
+    <div class="gp-card-header">Congés</div>
+    <div class="gp-card-body">
+      <label class="form-label">{{ form.rest_weekdays.label }}</label>
+      <div class="gp-checkbox-list">{{ form.rest_weekdays }}</div>
+      {% if form.rest_weekdays.help_text %}<div class="form-text">{{ form.rest_weekdays.help_text }}</div>{% endif %}
+      {% for error in form.rest_weekdays.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
     </div>
   </div>
 

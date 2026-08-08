@@ -69,7 +69,7 @@ def parse_upload(uploaded_file):
                 continue
             result.append({headers[i]: values[i] for i in range(len(headers)) if i < len(values)})
         return result
-    raise ImportFileError("Format non supporté — utilisez un fichier .csv ou .xlsx.")
+    raise ImportFileError("Format non supporté, utilisez un fichier .csv ou .xlsx.")
 
 
 def _parse_date(value):

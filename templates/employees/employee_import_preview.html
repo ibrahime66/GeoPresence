@@ -5,13 +5,13 @@
 <div class="gp-page-header">
   <div>
     <h1>Aperçu de l'import</h1>
-    <p>{{ total }} ligne(s) analysée(s) — {{ valid_rows|length }} valide(s), {{ invalid_rows|length }} en erreur.</p>
+    <p>{{ total }} ligne(s) analysée(s) : {{ valid_rows|length }} valide(s), {{ invalid_rows|length }} en erreur.</p>
   </div>
 </div>
 
 {% if invalid_rows %}
 <div class="gp-card mb-4">
-  <div class="gp-card-header">Lignes en erreur — ne seront pas importées</div>
+  <div class="gp-card-header">Lignes en erreur (ne seront pas importées)</div>
   <div class="gp-table-scroll">
     <table class="gp-table">
       <thead><tr><th>Ligne</th><th>E-mail</th><th>Erreurs</th></tr></thead>

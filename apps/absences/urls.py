@@ -10,5 +10,6 @@ urlpatterns = [
     path("absences/<uuid:pk>/annuler/", views.CancelJustificationView.as_view(), name="cancel"),
     path("absences/en-attente/", views.PendingAbsencesView.as_view(), name="pending"),
     path("absences/historique/", views.AbsenceHistoryView.as_view(), name="history"),
+    path("absences/historique/export/<str:fmt>/", views.AbsenceHistoryExportView.as_view(), name="history_export"),
     path("absences/<uuid:pk>/traiter/", views.ReviewAbsenceView.as_view(), name="review"),
 ]

@@ -6,7 +6,7 @@
 <div class="gp-page-header">
   <div>
     <h1>GeoIA</h1>
-    <p>{% trans "Posez une question sur vos données de présence — les réponses se basent uniquement sur les données de votre périmètre." %}</p>
+    <p>{% trans "Posez une question sur vos données de présence : les réponses se basent uniquement sur les données de votre périmètre." %}</p>
   </div>
   <div class="gp-page-header-actions">
     <a href="{% url 'ai:chat' %}" class="btn btn-outline-primary btn-sm">{% trans "Nouvelle conversation" %}</a>
@@ -66,7 +66,7 @@
     "csrfToken": "{{ csrf_token }}",
     "conversationId": {% if conversation %}"{{ conversation.pk }}"{% else %}null{% endif %},
     "genericError": "{% trans 'Une erreur est survenue.' %}",
-    "networkError": "{% trans 'Impossible de contacter GeoIA — vérifiez votre connexion.' %}",
+    "networkError": "{% trans 'Impossible de contacter GeoIA, vérifiez votre connexion.' %}",
     "newConversationLabel": "{% trans 'Nouvelle conversation' %}"
   }
 </script>

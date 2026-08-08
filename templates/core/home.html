@@ -9,8 +9,8 @@
       <span class="gp-eyebrow"><span class="dot"></span> Multi-site &amp; multi-organisation</span>
       <h1>Le pointage qui prouve <span class="accent">où</span> vos équipes travaillent.</h1>
       <p class="lead">
-        Géolocalisation en temps réel et calcul automatique des retards et heures
-        supplémentaires — une seule plateforme pour piloter la présence de vos équipes, sur un ou
+        Géolocalisation en temps réel, calcul automatique des retards et des heures
+        supplémentaires : une seule plateforme pour piloter la présence de vos équipes, sur un ou
         plusieurs sites.
       </p>
       <div class="gp-hero-ctas">
@@ -42,28 +42,57 @@
     </div>
   </section>
 
+  <!-- ============ APERÇU DU PRODUIT ============ -->
+  <section class="gp-section pt-0">
+    <div class="gp-section-head">
+      <span class="gp-kicker">Aperçu</span>
+      <h2>Le tableau de bord qui vous dit tout, d'un coup d'œil</h2>
+      <p>Présences, retards, congés en attente : l'essentiel de votre organisation sur un seul écran.</p>
+    </div>
+    <div class="gp-preview-frame">
+      <div class="gp-preview-bar">
+        <span class="gp-preview-dot"></span>
+        <span class="gp-preview-dot"></span>
+        <span class="gp-preview-dot"></span>
+      </div>
+      <img
+        src="{% static 'img/dashboard-preview.png' %}"
+        alt="Tableau de bord GeoPresence affichant les présences du jour, le taux de présence sur 30 jours, les retards et l'activité récente."
+        class="gp-preview-img" loading="lazy" width="1560" height="1080">
+    </div>
+  </section>
+
   <!-- ============ COMMENT ÇA MARCHE ============ -->
   <section class="gp-section" id="comment-ca-marche">
     <div class="gp-section-head">
       <span class="gp-kicker">Comment ça marche</span>
       <h2>Trois vérifications, en moins d'une seconde</h2>
-      <p>Le pointage est revalidé côté serveur à chaque étape — jamais seulement côté téléphone.</p>
+      <p>Le pointage est revalidé côté serveur à chaque étape, jamais seulement côté téléphone.</p>
     </div>
-    <div class="gp-steps">
-      <div class="gp-step">
-        <div class="gp-step-num">1</div>
-        <h3>L'employé pointe</h3>
-        <p>Depuis son téléphone, en un geste : position GPS haute précision affichée en direct sur une carte interactive.</p>
+    <div class="gp-how-grid">
+      <div class="gp-steps">
+        <div class="gp-step">
+          <div class="gp-step-num">1</div>
+          <h3>L'employé pointe</h3>
+          <p>Depuis son téléphone, en un geste : position GPS haute précision affichée en direct sur une carte interactive.</p>
+        </div>
+        <div class="gp-step">
+          <div class="gp-step-num">2</div>
+          <h3>Le système vérifie</h3>
+          <p>Zone GPS autorisée, horaire attendu, absence de doublon, cohérence de la séquence arrivée/départ.</p>
+        </div>
+        <div class="gp-step">
+          <div class="gp-step-num">3</div>
+          <h3>Le statut est calculé</h3>
+          <p>À l'heure, retard, départ anticipé ou heures supplémentaires : calculés automatiquement, sans ressaisie.</p>
+        </div>
       </div>
-      <div class="gp-step">
-        <div class="gp-step-num">2</div>
-        <h3>Le système vérifie</h3>
-        <p>Zone GPS autorisée, horaire attendu, absence de doublon, cohérence de la séquence arrivée/départ.</p>
-      </div>
-      <div class="gp-step">
-        <div class="gp-step-num">3</div>
-        <h3>Le statut est calculé</h3>
-        <p>À l'heure, retard, départ anticipé ou heures supplémentaires — automatiquement, sans ressaisie.</p>
+      <div class="gp-phone-frame">
+        <span class="gp-phone-notch"></span>
+        <img
+          src="{% static 'img/clock-mobile-preview.png' %}"
+          alt="Écran de pointage GeoPresence sur mobile, avec la carte GPS et la zone autorisée de l'employé."
+          class="gp-phone-img" loading="lazy" width="390" height="844">
       </div>
     </div>
   </section>
@@ -84,17 +113,17 @@
       <div class="gp-card">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="target" %}</div>
         <h3>Position vérifiée en direct</h3>
-        <p>Carte GPS interactive et détection de position simulée — impossible de pointer sans être réellement sur place.</p>
+        <p>Carte GPS interactive et détection de position simulée : impossible de pointer sans être réellement sur place.</p>
       </div>
       <div class="gp-card">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="building" %}</div>
         <h3>Multi-site &amp; multi-organisation</h3>
-        <p>Une organisation, plusieurs agences — et une isolation stricte des données entre chaque client de la plateforme.</p>
+        <p>Une organisation, plusieurs agences, et une isolation stricte des données entre chaque client de la plateforme.</p>
       </div>
       <div class="gp-card">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="calendar" %}</div>
         <h3>Horaires flexibles</h3>
-        <p>Fixes, en rotation, personnalisés ou par créneau — avec gestion automatique des équipes de nuit à cheval sur minuit.</p>
+        <p>Fixes, en rotation, personnalisés ou par créneau, avec gestion automatique des équipes de nuit à cheval sur minuit.</p>
       </div>
       <div class="gp-card">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="clipboard" %}</div>
@@ -104,7 +133,7 @@
       <div class="gp-card">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="shield" %}</div>
         <h3>Journal d'audit inaltérable</h3>
-        <p>Chaque connexion, chaque pointage, chaque modification est tracée — en écriture seule, sans exception.</p>
+        <p>Chaque connexion, chaque pointage, chaque modification est tracée, en écriture seule, sans exception.</p>
       </div>
     </div>
   </section>
@@ -134,10 +163,10 @@
       <div class="gp-security-grid">
         <div>
           <span class="gp-kicker">Sécurité</span>
-          <h2 class="mt-2 mb-3" style="font-size:2rem;font-weight:800;color:var(--gp-navy);">Conçu pour résister, pas seulement pour fonctionner</h2>
+          <h2 class="mt-2 mb-3" style="font-size:2rem;font-weight:800;color:var(--gp-navy);">La sécurité au cœur de la plateforme</h2>
           <p style="color:var(--gp-gray-600);">
-            La sécurité n'est pas une option ajoutée après coup : isolation des données, chiffrement
-            et traçabilité sont au cœur de l'architecture, dès la première ligne de code.
+            Isolation des données, chiffrement et traçabilité font partie de l'architecture de GeoPresence
+            depuis le premier jour, pas ajoutés après coup.
           </p>
         </div>
         <ul>
@@ -145,7 +174,7 @@
           <li>{% include "core/_icon.html" with icon="check" %} Verrouillage automatique après plusieurs échecs de connexion</li>
           <li>{% include "core/_icon.html" with icon="check" %} Isolation stricte des données entre organisations, fail-secure par défaut</li>
           <li>{% include "core/_icon.html" with icon="check" %} Numéros d'identité et données sensibles chiffrés au repos</li>
-          <li>{% include "core/_icon.html" with icon="check" %} Journal d'audit en écriture seule, non modifiable — même par un administrateur</li>
+          <li>{% include "core/_icon.html" with icon="check" %} Journal d'audit en écriture seule, non modifiable, même par un administrateur</li>
         </ul>
       </div>
     </div>

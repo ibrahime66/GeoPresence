@@ -284,7 +284,7 @@ def clock(
     if is_gps_mocked:
         # Un GPS simulé n'est jamais toléré, même en synchronisation hors ligne
         # (RM-POINT-009 : c'est un signal de fraude, pas un problème réseau).
-        raise ClockRejected("Position GPS simulée détectée — pointage refusé.", "gps_mocked")
+        raise ClockRejected("Position GPS simulée détectée, pointage refusé.", "gps_mocked")
 
     is_offline = mode == Attendance.Mode.OFFLINE
     pending_reason = ""

@@ -1,11 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.mixins import RoleRequiredMixin
 from apps.accounts.models import User
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
+from apps.core import exports
 from apps.core.views import paginate_queryset
 from apps.employees.services import get_active_employee
 
@@ -14,6 +19,31 @@ from .models import Leave
 from .services import LeaveRejected, approve_leave, cancel_leave, reject_leave, submit_leave
 
 APPROVER_ROLES = (User.Role.MANAGER, User.Role.ADMIN)
+
+
+def _filtered_history_queryset(request):
+    """Filtres partagés par LeaveHistoryView et LeaveHistoryExportView —
+    l'export doit toujours refléter exactement ce que l'écran affiche."""
+    qs = Leave.objects.all_tenants().filter(
+        tenant=request.user.tenant
+    ).exclude(status=Leave.Status.PENDING).select_related("employee__user", "leave_type", "reviewed_by")
+    if request.user.role == User.Role.MANAGER:
+        qs = qs.filter(employee__manager=request.user)
+
+    status = request.GET.get("statut", "")
+    if status:
+        qs = qs.filter(status=status)
+    employee_id = request.GET.get("employe", "")
+    if employee_id:
+        qs = qs.filter(employee_id=employee_id)
+    date_from = request.GET.get("du", "")
+    if date_from:
+        qs = qs.filter(start_date__gte=date_from)
+    date_to = request.GET.get("au", "")
+    if date_to:
+        qs = qs.filter(end_date__lte=date_to)
+
+    return qs.order_by("-reviewed_at", "-start_date")
 
 
 class MyLeavesView(LoginRequiredMixin, TemplateView):
@@ -40,7 +70,7 @@ class SubmitLeaveView(LoginRequiredMixin, View):
 
         form = LeaveRequestForm(request.POST, tenant=employee.tenant)
         if not form.is_valid():
-            messages.error(request, "Formulaire invalide — vérifiez les champs.")
+            messages.error(request, "Formulaire invalide, vérifiez les champs.")
             return redirect("leaves:my_leaves")
 
         try:
@@ -99,26 +129,11 @@ class LeaveHistoryView(RoleRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        qs = Leave.objects.all_tenants().filter(
-            tenant=self.request.user.tenant
-        ).exclude(status=Leave.Status.PENDING).select_related("employee__user", "leave_type", "reviewed_by")
-        if self.request.user.role == User.Role.MANAGER:
-            qs = qs.filter(employee__manager=self.request.user)
-
+        qs = _filtered_history_queryset(self.request)
         status = self.request.GET.get("statut", "")
-        if status:
-            qs = qs.filter(status=status)
         employee_id = self.request.GET.get("employe", "")
-        if employee_id:
-            qs = qs.filter(employee_id=employee_id)
         date_from = self.request.GET.get("du", "")
-        if date_from:
-            qs = qs.filter(start_date__gte=date_from)
         date_to = self.request.GET.get("au", "")
-        if date_to:
-            qs = qs.filter(end_date__lte=date_to)
-
-        qs = qs.order_by("-reviewed_at", "-start_date")
         context.update(paginate_queryset(self.request, qs))
         context["leaves"] = context["page_obj"].object_list
         context["status_choices"] = [c for c in Leave.Status.choices if c[0] != Leave.Status.PENDING]
@@ -159,3 +174,48 @@ class ReviewLeaveView(RoleRequiredMixin, View):
         except LeaveRejected as exc:
             messages.error(request, exc.message)
         return redirect("leaves:pending")
+
+
+class LeaveHistoryExportView(RoleRequiredMixin, View):
+    """Export de l'historique des congés (CSV/Excel/PDF) — mêmes filtres que
+    LeaveHistoryView."""
+
+    allowed_roles = APPROVER_ROLES
+
+    HEADERS = ["Employé", "Type", "Du", "Au", "Jours", "Statut", "Décidé par", "Décidé le", "Commentaire"]
+
+    def get(self, request, fmt):
+        leaves = _filtered_history_queryset(request)
+        rows = [
+            [
+                str(leave.employee),
+                leave.leave_type.name,
+                leave.start_date.isoformat(),
+                leave.end_date.isoformat(),
+                leave.working_days,
+                leave.get_status_display(),
+                str(leave.reviewed_by) if leave.reviewed_by else "",
+                timezone.localtime(leave.reviewed_at).strftime("%d/%m/%Y %H:%M") if leave.reviewed_at else "",
+                leave.reviewer_comment,
+            ]
+            for leave in leaves
+        ]
+        filename_base = f"conges_{request.tenant.slug}_{timezone.localdate().isoformat()}"
+
+        if fmt == "csv":
+            response = exports.export_csv(f"{filename_base}.csv", self.HEADERS, rows)
+        elif fmt == "xlsx":
+            response = exports.export_xlsx(f"{filename_base}.xlsx", self.HEADERS, rows, sheet_title="Congés")
+        elif fmt == "pdf":
+            response = exports.export_pdf(
+                f"{filename_base}.pdf", "Historique des congés", self.HEADERS, rows,
+                subtitle=f"{request.tenant.display_name} · {timezone.localdate():%d/%m/%Y}",
+            )
+        else:
+            raise Http404("Format d'export inconnu.")
+
+        audit.log_event(
+            request, audit.EXPORT_DATA, AuditLog.Result.SUCCESS, user=request.user,
+            description=f"Export congés ({fmt}, {len(rows)} lignes)",
+        )
+        return response

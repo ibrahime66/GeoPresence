@@ -5,7 +5,7 @@
 <div class="gp-page-header">
   <div>
     <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
-    <p>{{ user.get_role_display }}{% if user.tenant %} — {{ user.tenant.display_name }}{% endif %}</p>
+    <p>{{ user.get_role_display }}{% if user.tenant %} · {{ user.tenant.display_name }}{% endif %}</p>
   </div>
 </div>
 
@@ -77,7 +77,7 @@
 <div class="row g-4 mb-4">
   <div class="col-12 col-lg-6">
     <div class="gp-card h-100">
-      <div class="gp-card-header">Présence de l'équipe — 7 derniers jours</div>
+      <div class="gp-card-header">Présence de l'équipe · 7 derniers jours</div>
       <div class="gp-card-body">
         {% if total_team %}
         <canvas id="teamTrendChart" height="140"></canvas>
@@ -114,7 +114,7 @@
 </div>
 
 <div class="gp-table-card">
-  <div class="gp-card-header">Mon équipe — statut du jour</div>
+  <div class="gp-card-header">Mon équipe · statut du jour</div>
   <div class="gp-table-scroll">
     <table class="gp-table">
       <thead><tr><th>Employé</th><th>Département</th><th>Agence</th><th>Statut aujourd'hui</th><th>Heure</th></tr></thead>

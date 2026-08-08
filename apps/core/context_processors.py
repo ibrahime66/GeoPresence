@@ -64,18 +64,53 @@ def org_modules(request):
     return {**enabled, "module_sidebar_links": sidebar_links}
 
 
+def _relative_luminance(hex_color):
+    """Formule WCAG de luminance relative — sert uniquement à choisir un texte
+    lisible (blanc ou marine foncé) sur la couleur de fond choisie par le
+    client, jamais à valider un contraste précis au sens WCAG AA/AAA."""
+    hex_color = hex_color.lstrip("#")
+    r, g, b = (int(hex_color[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+    def linearize(channel):
+        return channel / 12.92 if channel <= 0.04045 else ((channel + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
+
+
+def _sidebar_text_vars(background_hex):
+    """Bascule tout le texte de la sidebar (titres de section, liens,
+    libellé de rôle...) entre une palette blanche et une palette marine
+    foncé selon que la couleur de fond choisie par le client est sombre ou
+    claire — sans ça, une couleur claire rendait le texte illisible."""
+    is_light = _relative_luminance(background_hex) > 0.5
+    base_rgb = "10, 30, 69" if is_light else "255, 255, 255"
+    text_solid = "#0A1E45" if is_light else "#FFFFFF"
+    return {
+        "org_sidebar_text": text_solid,
+        "org_sidebar_text_soft": f"rgba({base_rgb}, 0.75)",
+        "org_sidebar_text_faint": f"rgba({base_rgb}, 0.45)",
+        "org_sidebar_hover_bg": f"rgba({base_rgb}, 0.06)",
+        "org_sidebar_border": f"rgba({base_rgb}, 0.08)",
+    }
+
+
 def org_branding(request):
     """Couleurs de marque (superadmin:organization_form, section « Apparence »)
-    appliquées à l'interface de l'organisation courante (menu latéral,
-    éléments actifs) — aucune couleur pour le Super Admin (pas de tenant)."""
+    appliquées à l'interface de l'organisation courante : couleur principale
+    pour le fond du menu latéral, couleur secondaire pour les éléments
+    d'action (boutons, liens, états actifs) dans toute l'app — aucune couleur
+    pour le Super Admin (pas de tenant)."""
     user = getattr(request, "user", None)
     tenant = user.tenant if (user and user.is_authenticated) else None
     if tenant is None:
         return {}
-    return {
+    context = {
         "org_primary_color": tenant.primary_color,
         "org_secondary_color": tenant.secondary_color,
+        "org_accent_text": "#0A1E45" if _relative_luminance(tenant.secondary_color) > 0.5 else "#FFFFFF",
     }
+    context.update(_sidebar_text_vars(tenant.primary_color))
+    return context
 
 
 def ai_sidebar(request):

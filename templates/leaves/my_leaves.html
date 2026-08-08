@@ -50,7 +50,7 @@
       function toggle() {
         var selected = typeSelect.options[typeSelect.selectedIndex];
         var isOther = selected && selected.textContent.trim() === "Autre";
-        label.textContent = isOther ? "Commentaire — précisez le motif" : "Commentaire";
+        label.textContent = isOther ? "Commentaire (précisez le motif)" : "Commentaire";
         commentField.placeholder = isOther ? "Précisez le motif de ce congé…" : "";
       }
       typeSelect.addEventListener("change", toggle);

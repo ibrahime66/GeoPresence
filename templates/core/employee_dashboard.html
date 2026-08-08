@@ -5,7 +5,7 @@
 <div class="gp-page-header">
   <div>
     <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
-    <p>{{ user.get_role_display }}{% if user.tenant %} — {{ user.tenant.display_name }}{% endif %}</p>
+    <p>{{ user.get_role_display }}{% if user.tenant %} · {{ user.tenant.display_name }}{% endif %}</p>
   </div>
 </div>
 

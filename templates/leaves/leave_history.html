@@ -7,6 +7,18 @@
     <h1>Congés à valider</h1>
     <p>Historique des demandes traitées{% if request.user.role == "MANAGER" %} pour votre équipe{% endif %}.</p>
   </div>
+  <div class="gp-page-header-actions">
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Exporter
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'leaves:history_export' 'csv' %}?{{ request.GET.urlencode }}">CSV</a></li>
+        <li><a class="dropdown-item" href="{% url 'leaves:history_export' 'xlsx' %}?{{ request.GET.urlencode }}">Excel (.xlsx)</a></li>
+        <li><a class="dropdown-item" href="{% url 'leaves:history_export' 'pdf' %}?{{ request.GET.urlencode }}">PDF</a></li>
+      </ul>
+    </div>
+  </div>
 </div>
 
 <ul class="nav nav-tabs mb-3">

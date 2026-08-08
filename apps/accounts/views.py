@@ -409,7 +409,7 @@ class ProfileUpdateView(LoginRequiredMixin, View):
             form.save()
             messages.success(request, "Profil mis à jour.")
         else:
-            messages.error(request, "Formulaire invalide — vérifiez les champs.")
+            messages.error(request, "Formulaire invalide, vérifiez les champs.")
         return redirect("accounts:profile")
 
 
@@ -421,7 +421,7 @@ class SessionRevokeView(LoginRequiredMixin, View):
     def post(self, request, pk):
         user_session = get_object_or_404(UserSession, pk=pk, user=request.user)
         if user_session.session_key == request.session.session_key:
-            messages.error(request, "Impossible de révoquer votre session actuelle ici — utilisez « Se déconnecter ».")
+            messages.error(request, "Impossible de révoquer votre session actuelle ici, utilisez « Se déconnecter ».")
             return redirect("accounts:profile")
         sessions.revoke_session(user_session)
         messages.success(request, "Session révoquée.")

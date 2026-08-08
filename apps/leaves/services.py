@@ -33,15 +33,18 @@ def get_holiday_dates(tenant_id, start_date, end_date):
     return dates
 
 
-def compute_working_days(tenant_id, start_date, end_date):
-    """RM-CONGE-002 : jours fériés exclus. Week-ends (samedi/dimanche) toujours
-    exclus — la configuration de la semaine de travail par organisation n'est
-    pas encore un paramètre (simplification documentée)."""
-    holidays = get_holiday_dates(tenant_id, start_date, end_date)
+def compute_working_days(tenant, start_date, end_date):
+    """RM-CONGE-002 : jours fériés et jours de repos hebdomadaires (réglage
+    `rest_weekdays` par organisation, apps.tenants.org_settings — samedi/dimanche
+    par défaut) exclus du décompte."""
+    from apps.tenants.org_settings import get_org_setting
+
+    holidays = get_holiday_dates(tenant.id if tenant is not None else None, start_date, end_date)
+    rest_weekdays = set(get_org_setting(tenant, "rest_weekdays"))
     count = 0
     d = start_date
     while d <= end_date:
-        if d.weekday() < 5 and d not in holidays:
+        if d.weekday() not in rest_weekdays and d not in holidays:
             count += 1
         d += timedelta(days=1)
     return Decimal(count)
@@ -68,7 +71,7 @@ def submit_leave(employee, leave_type, start_date, end_date, comment="", now=Non
     if _has_overlap(employee, start_date, end_date):
         raise LeaveRejected("Chevauchement avec une demande de congé existante.", "overlap")
 
-    working_days = compute_working_days(employee.tenant_id, start_date, end_date)
+    working_days = compute_working_days(employee.tenant, start_date, end_date)
     if working_days <= 0:
         raise LeaveRejected("La période sélectionnée ne contient aucun jour ouvrable.", "no_working_days")
 

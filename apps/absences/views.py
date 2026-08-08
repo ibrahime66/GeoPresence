@@ -1,12 +1,17 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.mixins import RoleRequiredMixin
 from apps.accounts.models import User
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
+from apps.core import exports
 from apps.core.views import paginate_queryset
 from apps.employees.services import get_active_employee
 
@@ -15,6 +20,31 @@ from .models import Absence
 from .services import AbsenceCancelled, AbsenceRejected, cancel_justification, review_absence, submit_justification
 
 APPROVER_ROLES = (User.Role.MANAGER, User.Role.ADMIN)
+
+
+def _filtered_history_queryset(request):
+    """Filtres partagés par AbsenceHistoryView et AbsenceHistoryExportView —
+    l'export doit toujours refléter exactement ce que l'écran affiche."""
+    qs = Absence.objects.all_tenants().filter(
+        tenant=request.user.tenant
+    ).exclude(status=Absence.Status.PENDING_REVIEW).select_related("employee__user", "reason", "reviewed_by")
+    if request.user.role == User.Role.MANAGER:
+        qs = qs.filter(employee__manager=request.user)
+
+    status = request.GET.get("statut", "")
+    if status:
+        qs = qs.filter(status=status)
+    employee_id = request.GET.get("employe", "")
+    if employee_id:
+        qs = qs.filter(employee_id=employee_id)
+    date_from = request.GET.get("du", "")
+    if date_from:
+        qs = qs.filter(date__gte=date_from)
+    date_to = request.GET.get("au", "")
+    if date_to:
+        qs = qs.filter(date__lte=date_to)
+
+    return qs.order_by("-reviewed_at", "-date")
 
 
 class MyAbsencesView(LoginRequiredMixin, TemplateView):
@@ -41,7 +71,7 @@ class SubmitJustificationView(LoginRequiredMixin, View):
 
         form = JustificationForm(request.POST, tenant=employee.tenant)
         if not form.is_valid():
-            messages.error(request, "Formulaire invalide — vérifiez les champs.")
+            messages.error(request, "Formulaire invalide, vérifiez les champs.")
             return redirect("absences:my_absences")
 
         try:
@@ -98,26 +128,11 @@ class AbsenceHistoryView(RoleRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        qs = Absence.objects.all_tenants().filter(
-            tenant=self.request.user.tenant
-        ).exclude(status=Absence.Status.PENDING_REVIEW).select_related("employee__user", "reason", "reviewed_by")
-        if self.request.user.role == User.Role.MANAGER:
-            qs = qs.filter(employee__manager=self.request.user)
-
+        qs = _filtered_history_queryset(self.request)
         status = self.request.GET.get("statut", "")
-        if status:
-            qs = qs.filter(status=status)
         employee_id = self.request.GET.get("employe", "")
-        if employee_id:
-            qs = qs.filter(employee_id=employee_id)
         date_from = self.request.GET.get("du", "")
-        if date_from:
-            qs = qs.filter(date__gte=date_from)
         date_to = self.request.GET.get("au", "")
-        if date_to:
-            qs = qs.filter(date__lte=date_to)
-
-        qs = qs.order_by("-reviewed_at", "-date")
         context.update(paginate_queryset(self.request, qs))
         context["absences"] = context["page_obj"].object_list
         context["status_choices"] = [c for c in Absence.Status.choices if c[0] != Absence.Status.PENDING_REVIEW]
@@ -158,3 +173,47 @@ class ReviewAbsenceView(RoleRequiredMixin, View):
         except AbsenceRejected as exc:
             messages.error(request, exc.message)
         return redirect("absences:pending")
+
+
+class AbsenceHistoryExportView(RoleRequiredMixin, View):
+    """Export de l'historique des justificatifs (CSV/Excel/PDF) — mêmes
+    filtres que AbsenceHistoryView."""
+
+    allowed_roles = APPROVER_ROLES
+
+    HEADERS = ["Employé", "Date", "Motif", "Statut", "Commentaire employé", "Décidé par", "Décidé le", "Commentaire valideur"]
+
+    def get(self, request, fmt):
+        absences = _filtered_history_queryset(request)
+        rows = [
+            [
+                str(absence.employee),
+                absence.date.isoformat(),
+                absence.display_reason,
+                absence.get_status_display(),
+                absence.employee_comment,
+                str(absence.reviewed_by) if absence.reviewed_by else "",
+                timezone.localtime(absence.reviewed_at).strftime("%d/%m/%Y %H:%M") if absence.reviewed_at else "",
+                absence.reviewer_comment,
+            ]
+            for absence in absences
+        ]
+        filename_base = f"absences_{request.tenant.slug}_{timezone.localdate().isoformat()}"
+
+        if fmt == "csv":
+            response = exports.export_csv(f"{filename_base}.csv", self.HEADERS, rows)
+        elif fmt == "xlsx":
+            response = exports.export_xlsx(f"{filename_base}.xlsx", self.HEADERS, rows, sheet_title="Absences")
+        elif fmt == "pdf":
+            response = exports.export_pdf(
+                f"{filename_base}.pdf", "Historique des absences", self.HEADERS, rows,
+                subtitle=f"{request.tenant.display_name} · {timezone.localdate():%d/%m/%Y}",
+            )
+        else:
+            raise Http404("Format d'export inconnu.")
+
+        audit.log_event(
+            request, audit.EXPORT_DATA, AuditLog.Result.SUCCESS, user=request.user,
+            description=f"Export absences ({fmt}, {len(rows)} lignes)",
+        )
+        return response

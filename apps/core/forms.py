@@ -19,9 +19,11 @@ def apply_module_gating(form, tenant, gated_fields):
 class BootstrapModelFormMixin:
     """Ajoute les classes Bootstrap adaptées à chaque type de widget."""
 
+    CHECK_WIDGETS = (forms.CheckboxInput, forms.CheckboxSelectMultiple, forms.RadioSelect)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            css_class = "form-check-input" if isinstance(field.widget, forms.CheckboxInput) else "form-control"
+            css_class = "form-check-input" if isinstance(field.widget, self.CHECK_WIDGETS) else "form-control"
             existing = field.widget.attrs.get("class", "")
             field.widget.attrs["class"] = f"{existing} {css_class}".strip()

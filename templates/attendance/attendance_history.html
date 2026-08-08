@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Historique des pointages — GeoPresence{% endblock %}
+{% block page_title %}Historique des pointages{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Historique des pointages</h1>
+    <p>Feuille de présence{% if request.user.role == "MANAGER" %} de votre équipe{% else %} de l'organisation{% endif %}.</p>
+  </div>
+  <div class="gp-page-header-actions">
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Exporter
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'attendance:export' 'csv' %}?{{ request.GET.urlencode }}">CSV</a></li>
+        <li><a class="dropdown-item" href="{% url 'attendance:export' 'xlsx' %}?{{ request.GET.urlencode }}">Excel (.xlsx)</a></li>
+        <li><a class="dropdown-item" href="{% url 'attendance:export' 'pdf' %}?{{ request.GET.urlencode }}">PDF</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<form method="get" class="gp-card gp-form-card mb-3" style="max-width: none;">
+  <div class="gp-card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Employé</label>
+        <select name="employe" class="form-select form-select-sm">
+          <option value="">Tous</option>
+          {% for emp in employee_choices %}
+          <option value="{{ emp.id }}" {% if selected_employee == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Type</label>
+        <select name="type" class="form-select form-select-sm">
+          <option value="">Tous</option>
+          {% for value, label in type_choices %}
+          <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Du</label>
+        <input type="date" name="du" value="{{ selected_du }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-6 col-sm-3">
+        <label class="form-label small">Au</label>
+        <input type="date" name="au" value="{{ selected_au }}" class="form-control form-control-sm">
+      </div>
+    </div>
+    <div class="gp-form-actions mt-2">
+      <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
+      <a href="{% url 'attendance:history' %}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+    </div>
+  </div>
+</form>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead><tr><th>Employé</th><th>Date</th><th>Type</th><th>Heure</th><th>Statut</th><th>Agence</th><th>Retard</th><th>Départ anticipé</th><th>Heures sup.</th></tr></thead>
+      <tbody>
+        {% for a in attendances %}
+        <tr>
+          <td class="fw-semibold">{{ a.employee }}</td>
+          <td class="text-nowrap">{{ a.clock_date|date:"d/m/Y" }}</td>
+          <td>{{ a.get_clock_type_display }}</td>
+          <td>{{ a.server_time|date:"H:i" }}</td>
+          <td>
+            {% if a.status == "LATE" %}<span class="gp-badge warning"><span class="dot"></span>{{ a.get_status_display }}</span>
+            {% elif a.status == "ON_TIME" %}<span class="gp-badge success"><span class="dot"></span>{{ a.get_status_display }}</span>
+            {% elif a.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>{{ a.get_status_display }}</span>
+            {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ a.get_status_display }}</span>{% endif %}
+          </td>
+          <td>{{ a.agency.name }}</td>
+          <td>{{ a.late_minutes|default:"—" }}</td>
+          <td>{{ a.early_leave_minutes|default:"—" }}</td>
+          <td>{{ a.overtime_minutes|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9"><div class="gp-table-empty">Aucun pointage pour ces filtres.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "_pagination.html" %}
+{% endblock %}

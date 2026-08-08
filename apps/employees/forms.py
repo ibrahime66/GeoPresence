@@ -76,7 +76,7 @@ class EmployeeImportForm(forms.Form):
         if uploaded.size > self.MAX_SIZE_BYTES:
             raise ValidationError("Le fichier dépasse la taille maximale autorisée (10 Mo).")
         if not uploaded.name.lower().endswith((".csv", ".xlsx")):
-            raise ValidationError("Format non supporté — utilisez un fichier .csv ou .xlsx.")
+            raise ValidationError("Format non supporté, utilisez un fichier .csv ou .xlsx.")
         return uploaded
 
 
@@ -92,6 +92,8 @@ class EmployeeSelfServiceForm(BootstrapModelFormMixin, forms.ModelForm):
 
 
 class EmployeeUpdateForm(BootstrapModelFormMixin, forms.ModelForm):
+    role = forms.ChoiceField(choices=CREATABLE_ROLES, label="Rôle")
+
     class Meta:
         model = Employee
         fields = [
@@ -103,8 +105,9 @@ class EmployeeUpdateForm(BootstrapModelFormMixin, forms.ModelForm):
             "contract_end_date": forms.DateInput(attrs={"type": "date"}),
         }
 
-    def __init__(self, *args, tenant=None, **kwargs):
+    def __init__(self, *args, tenant=None, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.current_user = current_user
         self.fields["department"].queryset = Department.objects.all_tenants().filter(tenant=tenant, is_active=True)
         self.fields["department"].required = False
         self.fields["position"].queryset = Position.objects.all_tenants().filter(tenant=tenant, is_active=True)
@@ -112,4 +115,25 @@ class EmployeeUpdateForm(BootstrapModelFormMixin, forms.ModelForm):
         self.fields["primary_agency"].queryset = Agency.objects.all_tenants().filter(tenant=tenant, is_active=True)
         self.fields["manager"].queryset = User.objects.filter(tenant=tenant, role__in=MANAGER_ROLES)
         self.fields["manager"].required = False
+        self.fields["role"].initial = self.instance.user.role
+        if current_user is not None and self.instance.user_id == current_user.id:
+            # Empêche de se retirer soi-même ses droits par erreur (et un
+            # dernier Administrateur de se verrouiller hors de son propre compte).
+            self.fields["role"].disabled = True
+            self.fields["role"].help_text = "Vous ne pouvez pas modifier votre propre rôle."
         apply_module_gating(self, tenant, MODULE_GATED_FIELDS)
+        self.order_fields([
+            "role", "department", "position", "primary_agency", "manager",
+            "contract_type", "hire_date", "contract_end_date", "annual_leave_days", "status",
+        ])
+
+    def save(self, commit=True):
+        employee = super().save(commit=False)
+        if not self.fields["role"].disabled:
+            employee.user.role = self.cleaned_data["role"]
+            if commit:
+                employee.user.save(update_fields=["role"])
+        if commit:
+            employee.save()
+            self.save_m2m()
+        return employee

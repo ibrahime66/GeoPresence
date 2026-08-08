@@ -336,7 +336,7 @@
 
     sendClock(payload)
       .then((data) => {
-        let message = `${data.status_display} — enregistré à ${new Date(data.server_time).toLocaleTimeString()} (${data.agency}).`;
+        let message = `${data.status_display}, enregistré à ${new Date(data.server_time).toLocaleTimeString()} (${data.agency}).`;
         if (data.late_minutes) message += ` Retard : ${data.late_minutes} min.`;
         if (data.early_leave_minutes) message += ` Départ anticipé : ${data.early_leave_minutes} min.`;
         if (data.overtime_minutes) message += ` Heures sup. : ${data.overtime_minutes} min.`;

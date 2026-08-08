@@ -2,107 +2,115 @@
 {% block title %}Tableau de bord — GeoPresence{% endblock %}
 {% block page_title %}Tableau de bord{% endblock %}
 {% block content %}
-<div class="gp-page-header">
-  <div>
-    <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
-    <p>{{ user.tenant.display_name }} — {% now "l d F Y" %}</p>
-  </div>
-  <div class="gp-page-header-actions">
-    <a href="{% url 'leaves:pending' %}" class="btn btn-outline-secondary">
-      Congés à valider {% if pending_leaves %}<span class="gp-badge warning">{{ pending_leaves }}</span>{% endif %}
-    </a>
-    <a href="{% url 'absences:pending' %}" class="btn btn-outline-secondary">
-      Justificatifs à valider {% if pending_absences %}<span class="gp-badge warning">{{ pending_absences }}</span>{% endif %}
-    </a>
-  </div>
-</div>
+<div class="gp-ov">
 
-<div class="gp-stat-grid">
-  <div class="gp-stat success">
-    <div class="gp-stat-icon">{% include "core/_icon.html" with icon="check" size="18" %}</div>
-    <div class="gp-stat-label">Présents aujourd'hui</div>
-    <div class="gp-stat-value">{{ present_today }} <span class="unit">/ {{ total_employees }}</span></div>
+  <div class="gp-ov-header">
+    <div>
+      <span class="gp-ov-eyebrow">{{ user.tenant.display_name }} · {% now "l d F Y" %}</span>
+      <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
+    </div>
+    <div class="gp-ov-header-actions">
+      <a href="{% url 'leaves:pending' %}" class="gp-ov-action{% if pending_leaves %} has-badge{% endif %}">
+        {% include "core/_icon.html" with icon="calendar" size="16" %}
+        <span>Congés à valider</span>
+        {% if pending_leaves %}<span class="gp-ov-action-count">{{ pending_leaves }}</span>{% endif %}
+      </a>
+      <a href="{% url 'absences:pending' %}" class="gp-ov-action{% if pending_absences %} has-badge{% endif %}">
+        {% include "core/_icon.html" with icon="clipboard" size="16" %}
+        <span>Justificatifs à valider</span>
+        {% if pending_absences %}<span class="gp-ov-action-count">{{ pending_absences }}</span>{% endif %}
+      </a>
+    </div>
   </div>
-  <div class="gp-stat danger">
-    <div class="gp-stat-icon">{% include "core/_icon.html" with icon="x-circle" size="18" %}</div>
-    <div class="gp-stat-label">Absents aujourd'hui</div>
-    <div class="gp-stat-value">{{ absent_today }}</div>
+
+  <div class="gp-ov-kpis">
+    <div class="gp-ov-kpi">
+      <span class="gp-ov-kpi-label">Présents aujourd'hui</span>
+      <span class="gp-ov-kpi-value">{{ present_today }}<span class="gp-ov-kpi-unit">/ {{ total_employees }}</span></span>
+    </div>
+    <div class="gp-ov-kpi">
+      <span class="gp-ov-kpi-label">Absents aujourd'hui</span>
+      <span class="gp-ov-kpi-value tone-danger">{{ absent_today }}</span>
+    </div>
+    <div class="gp-ov-kpi">
+      <span class="gp-ov-kpi-label">Retards aujourd'hui</span>
+      <span class="gp-ov-kpi-value tone-warning">{{ late_today }}</span>
+    </div>
+    <div class="gp-ov-kpi">
+      <span class="gp-ov-kpi-label">Taux de présence</span>
+      <span class="gp-ov-kpi-value">
+        {{ rate_today }}<span class="gp-ov-kpi-unit">%</span>
+        {% if rate_today > rate_yesterday %}<span class="gp-ov-trend up">↑</span>
+        {% elif rate_today < rate_yesterday %}<span class="gp-ov-trend down">↓</span>
+        {% endif %}
+      </span>
+      <span class="gp-ov-kpi-sub">Hier : {{ rate_yesterday }}%</span>
+    </div>
   </div>
-  <div class="gp-stat warning">
-    <div class="gp-stat-icon">{% include "core/_icon.html" with icon="clock" size="18" %}</div>
-    <div class="gp-stat-label">Retards aujourd'hui</div>
-    <div class="gp-stat-value">{{ late_today }}</div>
-  </div>
-  <div class="gp-stat info">
-    <div class="gp-stat-icon">{% include "core/_icon.html" with icon="target" size="18" %}</div>
-    <div class="gp-stat-label">Taux de présence</div>
-    <div class="gp-stat-value">
-      {{ rate_today }}%
-      {% if rate_today > rate_yesterday %}<span class="gp-stat-trend up">▲</span>
-      {% elif rate_today < rate_yesterday %}<span class="gp-stat-trend down">▼</span>
+
+  <div class="gp-ov-grid gp-ov-grid-wide">
+    <div class="gp-ov-panel">
+      <div class="gp-ov-panel-head">
+        <h2>Taux de présence</h2>
+        <span class="gp-ov-panel-sub">30 derniers jours</span>
+      </div>
+      <canvas id="trendChart" height="90"></canvas>
+    </div>
+    <div class="gp-ov-panel">
+      <div class="gp-ov-panel-head">
+        <h2>Absences par motif</h2>
+        <span class="gp-ov-panel-sub">Ce mois-ci</span>
+      </div>
+      {% if reason_labels %}
+      <canvas id="reasonChart" height="200"></canvas>
+      {% else %}
+      <div class="gp-ov-empty">
+        {% include "core/_icon.html" with icon="clipboard" size="28" %}
+        <span>Aucune absence ce mois-ci.</span>
+      </div>
       {% endif %}
     </div>
-    <div class="gp-stat-sub">Hier : {{ rate_yesterday }}%</div>
   </div>
-</div>
 
-<div class="row g-4 mb-4">
-  <div class="col-12 col-lg-8">
-    <div class="gp-card h-100">
-      <div class="gp-card-header">Taux de présence — 30 derniers jours</div>
-      <div class="gp-card-body">
-        <canvas id="trendChart" height="90"></canvas>
+  <div class="gp-ov-grid">
+    <div class="gp-ov-panel">
+      <div class="gp-ov-panel-head">
+        <h2>Top retards</h2>
+        <span class="gp-ov-panel-sub">Ce mois-ci</span>
+      </div>
+      {% if late_ranking %}
+      <canvas id="lateChart" height="200"></canvas>
+      {% else %}
+      <div class="gp-ov-empty">
+        {% include "core/_icon.html" with icon="clock" size="28" %}
+        <span>Aucun retard enregistré ce mois-ci.</span>
+      </div>
+      {% endif %}
+    </div>
+    <div class="gp-ov-panel">
+      <div class="gp-ov-panel-head">
+        <h2>Activité récente</h2>
+      </div>
+      <div class="gp-ov-feed">
+        {% for a in recent_attendances %}
+        <div class="gp-ov-feed-row">
+          <span class="gp-ov-feed-dot status-{{ a.status|lower }}"></span>
+          <div class="gp-ov-feed-main">
+            <span class="gp-ov-feed-name">{{ a.employee.user.full_name|default:a.employee.user.email }}</span>
+            <span class="gp-ov-feed-meta">{{ a.get_clock_type_display }} · {{ a.get_status_display }}</span>
+          </div>
+          <span class="gp-ov-feed-time">{{ a.server_time|date:"d/m H:i" }}</span>
+        </div>
+        {% empty %}
+        <div class="gp-ov-empty">
+          {% include "core/_icon.html" with icon="target" size="28" %}
+          <span>Aucun pointage.</span>
+        </div>
+        {% endfor %}
       </div>
     </div>
   </div>
-  <div class="col-12 col-lg-4">
-    <div class="gp-card h-100">
-      <div class="gp-card-header">Absences par motif (ce mois)</div>
-      <div class="gp-card-body">
-        {% if reason_labels %}
-        <canvas id="reasonChart" height="200"></canvas>
-        {% else %}
-        <p class="text-muted small mb-0">Aucune absence ce mois-ci.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="row g-4 mb-4">
-  <div class="col-12 col-lg-6">
-    <div class="gp-card h-100">
-      <div class="gp-card-header">Top retards (ce mois)</div>
-      <div class="gp-card-body">
-        {% if late_ranking %}
-        <canvas id="lateChart" height="200"></canvas>
-        {% else %}
-        <p class="text-muted small mb-0">Aucun retard enregistré ce mois-ci.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-  <div class="col-12 col-lg-6">
-    <div class="gp-table-card h-100">
-      <div class="gp-card-header">Activité récente</div>
-      <div class="gp-table-scroll">
-        <table class="gp-table">
-          <tbody>
-            {% for a in recent_attendances %}
-            <tr>
-              <td class="text-nowrap text-muted-cell">{{ a.server_time|date:"d/m H:i" }}</td>
-              <td class="fw-semibold">{{ a.employee.user.full_name|default:a.employee.user.email }}</td>
-              <td>{{ a.get_clock_type_display }}</td>
-              <td>{{ a.get_status_display }}</td>
-            </tr>
-            {% empty %}
-            <tr><td><div class="gp-table-empty">Aucun pointage.</div></td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 </div>
 
 {{ trend_labels|json_script:"trend-labels" }}
@@ -122,15 +130,36 @@
         label: "Taux de présence (%)",
         data: trendValues,
         borderColor: "#0B63F6",
-        backgroundColor: "rgba(11,99,246,0.08)",
-        tension: 0.25,
+        borderWidth: 2,
+        backgroundColor: "rgba(11,99,246,0.06)",
+        tension: 0.35,
         fill: true,
         pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: "#0B63F6",
+        pointHitRadius: 12,
       }],
     },
     options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + "%" } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#0A1E45", padding: 10, cornerRadius: 8, displayColors: false,
+          titleFont: { size: 12 }, bodyFont: { size: 12, weight: "600" },
+        },
+      },
+      scales: {
+        y: {
+          min: 0, max: 100, ticks: { callback: (v) => v + "%", color: "#98A2B3", font: { size: 11 } },
+          grid: { color: "rgba(16,24,40,0.055)", drawTicks: false },
+          border: { display: false },
+        },
+        x: {
+          ticks: { color: "#98A2B3", font: { size: 11 }, maxTicksLimit: 8, autoSkip: true },
+          grid: { display: false },
+          border: { display: false },
+        },
+      },
     },
   });
 
@@ -141,9 +170,20 @@
       type: "doughnut",
       data: {
         labels: reasonLabels,
-        datasets: [{ data: reasonValues, backgroundColor: ["#0B63F6", "#16C74E", "#0A1E45", "#2F8CFF", "#98A2B3", "#B7791F"] }],
+        datasets: [{
+          data: reasonValues,
+          backgroundColor: ["#0B63F6", "#0A1E45", "#2F8CFF", "#98A2B3", "#F4B740", "#64748B"],
+          borderColor: "#FFFFFF",
+          borderWidth: 2,
+        }],
       },
-      options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } } },
+      options: {
+        cutout: "68%",
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 8, usePointStyle: true, padding: 14, font: { size: 11.5 }, color: "#475467" } },
+          tooltip: { backgroundColor: "#0A1E45", padding: 10, cornerRadius: 8 },
+        },
+      },
     });
   }
 
@@ -152,9 +192,25 @@
     type: "bar",
     data: {
       labels: [{% for r in late_ranking %}"{{ r.employee__user__first_name }} {{ r.employee__user__last_name }}",{% endfor %}],
-      datasets: [{ label: "Minutes de retard cumulées", data: [{% for r in late_ranking %}{{ r.total_late }},{% endfor %}], backgroundColor: "#0B63F6" }],
+      datasets: [{
+        label: "Minutes de retard cumulées",
+        data: [{% for r in late_ranking %}{{ r.total_late }},{% endfor %}],
+        backgroundColor: "#2F8CFF",
+        borderRadius: 4,
+        maxBarThickness: 18,
+      }],
     },
-    options: { indexAxis: "y", plugins: { legend: { display: false } } },
+    options: {
+      indexAxis: "y",
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: "#0A1E45", padding: 10, cornerRadius: 8, displayColors: false },
+      },
+      scales: {
+        x: { grid: { color: "rgba(16,24,40,0.055)" }, border: { display: false }, ticks: { color: "#98A2B3", font: { size: 11 } } },
+        y: { grid: { display: false }, border: { display: false }, ticks: { color: "#475467", font: { size: 11.5 } } },
+      },
+    },
   });
   {% endif %}
 })();

@@ -12,6 +12,11 @@ tant qu'aucune organisation ne surcharge la valeur).
 from django.utils.translation import gettext_lazy as _
 
 DEFAULTS = {
+    # Jours de repos hebdomadaires (indices apps.schedules.models.Weekday,
+    # 0=Lundi ... 6=Dimanche) — exclus du décompte des jours de congé
+    # (apps.leaves.services.compute_working_days). N'affecte pas les horaires
+    # de pointage eux-mêmes, déjà librement configurables jour par jour.
+    "rest_weekdays": [5, 6],
     # CDC §6.4.2 — pointage.
     "gps_radius_default_meters": 200,
     "gps_tolerance_meters": 30,

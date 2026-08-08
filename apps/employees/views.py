@@ -135,6 +135,11 @@ class EmployeeUpdateView(RoleRequiredMixin, TenantFormMixin, UpdateView):
     template_name = "employees/employee_form.html"
     success_url = reverse_lazy("employees:list")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["current_user"] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         response = super().form_valid(form)
         sync_user_active_state(self.object)
@@ -183,7 +188,7 @@ class EmployeeExportView(RoleRequiredMixin, TenantQuerysetMixin, View):
         elif fmt == "pdf":
             response = exports.export_pdf(
                 f"{filename_base}.pdf", "Liste des employés", self.HEADERS, rows,
-                subtitle=f"{request.tenant.display_name} — {timezone.localdate():%d/%m/%Y}",
+                subtitle=f"{request.tenant.display_name} · {timezone.localdate():%d/%m/%Y}",
             )
         else:
             raise Http404("Format d'export inconnu.")
@@ -313,7 +318,7 @@ class EmployeeImportConfirmView(RoleRequiredMixin, View):
             messages.success(request, f"{len(created)} employé(s) importé(s) avec succès.")
         if failed:
             details = "; ".join(f"ligne {f['row']} ({f['email']}) : {f['error']}" for f in failed)
-            messages.error(request, f"{len(failed)} ligne(s) n'ont pas pu être importées — {details}")
+            messages.error(request, f"{len(failed)} ligne(s) n'ont pas pu être importées : {details}")
         if not created and not failed:
             messages.warning(request, "Aucune ligne à importer.")
         return redirect("employees:list")

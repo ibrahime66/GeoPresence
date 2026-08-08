@@ -1,6 +1,7 @@
 from django import forms
 
 from apps.core.forms import BootstrapModelFormMixin
+from apps.schedules.models import Weekday
 
 from .org_settings import DEFAULTS
 
@@ -10,9 +11,14 @@ class OrganizationSettingsForm(BootstrapModelFormMixin, forms.Form):
     l'organisation — stockés dans Organization.settings (JSON), pas de Meta
     de ModelForm possible ici."""
 
+    rest_weekdays = forms.TypedMultipleChoiceField(
+        label="Jours de repos hebdomadaires", choices=Weekday.choices, coerce=int,
+        widget=forms.CheckboxSelectMultiple, required=False,
+        help_text="Jours exclus du décompte des congés (ex. week-end). N'affecte pas les horaires de pointage, déjà configurables jour par jour.",
+    )
     departments_enabled = forms.BooleanField(
         label="Départements activés", required=False,
-        help_text="Désactiver masque le menu Départements — utile pour une structure organisationnelle plate.",
+        help_text="Désactiver masque le menu Départements, utile pour une structure organisationnelle plate.",
     )
     positions_enabled = forms.BooleanField(
         label="Postes activés", required=False,
@@ -48,10 +54,10 @@ class OrganizationSettingsForm(BootstrapModelFormMixin, forms.Form):
         help_text="Double à chaque récidive (15 → 30 → 60 min...).",
     )
     session_duration_admin_hours = forms.IntegerField(
-        label="Durée de session — Administrateurs (h)", min_value=1, max_value=24
+        label="Durée de session · Administrateurs (h)", min_value=1, max_value=24
     )
     session_duration_employee_hours = forms.IntegerField(
-        label="Durée de session — Employés (h)", min_value=1, max_value=24
+        label="Durée de session · Employés (h)", min_value=1, max_value=24
     )
     password_min_length = forms.IntegerField(
         label="Longueur minimale du mot de passe", min_value=8, max_value=20,
