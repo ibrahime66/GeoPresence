@@ -3,10 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}GeoPresence{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}GeoPresence vérifie la présence de vos équipes par géolocalisation, calcule retards et heures supplémentaires automatiquement, et centralise congés et absences.{% endblock %}">
+  <title>{% block title %}GeoPresence — Gestion de présence géolocalisée{% endblock %}</title>
+  {% block meta_description_tag %}<meta name="description" content="{% block meta_description %}GeoPresence vérifie la présence de vos équipes par géolocalisation, calcule retards et heures supplémentaires automatiquement, et centralise congés et absences.{% endblock %}">{% endblock %}
+  <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  <meta property="og:site_name" content="GeoPresence">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% block og_title %}GeoPresence — Gestion de présence géolocalisée{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}GeoPresence vérifie la présence de vos équipes par géolocalisation et automatise le calcul des retards, heures supplémentaires, congés et absences.{% endblock %}">
+  <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/dashboard-preview.png' %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block twitter_title %}GeoPresence — Gestion de présence géolocalisée{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}Géolocalisation, retards, heures supplémentaires, congés et absences : une seule plateforme pour piloter la présence de vos équipes.{% endblock %}">
+  <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/dashboard-preview.png' %}">
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
   <link rel="apple-touch-icon" href="{% static 'img/favicon-192.png' %}">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "GeoPresence",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "{{ request.scheme }}://{{ request.get_host }}/",
+    "description": "GeoPresence vérifie la présence de vos équipes par géolocalisation, calcule retards et heures supplémentaires automatiquement, et centralise congés et absences."
+  }
+  </script>
+  {% block extra_head %}{% endblock %}
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="{% static_v 'css/main.css' %}" rel="stylesheet">
@@ -63,6 +86,7 @@
           <h4>Légal</h4>
           <a href="{% url 'core:privacy' %}">Politique de confidentialité</a>
           <a href="{% url 'core:terms' %}">Conditions d'utilisation</a>
+          {% if ga_measurement_id %}<button type="button" id="gp-consent-manage">Gérer les cookies</button>{% endif %}
         </div>
       </div>
       <div class="gp-footer-bottom">
@@ -70,6 +94,64 @@
       </div>
     </div>
   </footer>
+
+  {% if ga_measurement_id %}
+  <div id="gp-consent-banner" class="gp-consent-banner" hidden role="dialog" aria-live="polite" aria-label="Consentement aux cookies de mesure d'audience">
+    <p>
+      GeoPresence utilise Google Analytics sur ses pages publiques pour mesurer la fréquentation.
+      Ces cookies ne sont jamais utilisés dans l'application (tableau de bord, pointage).
+      <a href="{% url 'core:privacy' %}">En savoir plus</a>.
+    </p>
+    <div class="gp-consent-actions">
+      <button type="button" class="gp-btn gp-btn-ghost" id="gp-consent-refuse">Refuser</button>
+      <button type="button" class="gp-btn gp-btn-primary" id="gp-consent-accept">Accepter</button>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var GA_ID = "{{ ga_measurement_id }}";
+    var STORAGE_KEY = "gp_analytics_consent";
+    var banner = document.getElementById("gp-consent-banner");
+
+    function loadGA() {
+      if (window.gpGaLoaded) return;
+      window.gpGaLoaded = true;
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
+      gtag("js", new Date());
+      gtag("config", GA_ID);
+      var s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
+      document.head.appendChild(s);
+    }
+
+    function showBanner() { if (banner) banner.hidden = false; }
+    function hideBanner() { if (banner) banner.hidden = true; }
+
+    var consent = localStorage.getItem(STORAGE_KEY);
+    if (consent === "granted") {
+      loadGA();
+    } else if (consent !== "denied") {
+      showBanner();
+    }
+
+    var acceptBtn = document.getElementById("gp-consent-accept");
+    var refuseBtn = document.getElementById("gp-consent-refuse");
+    var manageBtn = document.getElementById("gp-consent-manage");
+    if (acceptBtn) acceptBtn.addEventListener("click", function () {
+      localStorage.setItem(STORAGE_KEY, "granted");
+      hideBanner();
+      loadGA();
+    });
+    if (refuseBtn) refuseBtn.addEventListener("click", function () {
+      localStorage.setItem(STORAGE_KEY, "denied");
+      hideBanner();
+    });
+    if (manageBtn) manageBtn.addEventListener("click", showBanner);
+  })();
+  </script>
+  {% endif %}
 
 </body>
 </html>

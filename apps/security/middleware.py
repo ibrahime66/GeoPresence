@@ -10,13 +10,17 @@ Cache-Control: no-store sur les pages authentifiées.
 
 CSP_DIRECTIVES = (
     "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com; "
+    # Google Analytics (GA4, pages vitrine publiques uniquement — voir
+    # apps.core.context_processors.analytics) : gtag.js + balise de mesure.
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com "
+    "https://www.googletagmanager.com; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
     "font-src 'self' https://fonts.gstatic.com; "
     # CDC §7.4 : tuiles OpenStreetMap (carte interactive agences).
     "img-src 'self' data: https://*.tile.openstreetmap.org; "
     # CDC §7.4 : Nominatim (géocodage d'adresse -> coordonnées GPS).
-    "connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://nominatim.openstreetmap.org; "
+    "connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://nominatim.openstreetmap.org "
+    "https://www.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; "
     "frame-src https://hcaptcha.com https://*.hcaptcha.com; "
     "frame-ancestors 'none'; "
     "base-uri 'self'; "

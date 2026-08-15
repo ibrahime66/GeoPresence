@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}Validations — GeoPresence{% endblock %}
+{% block page_title %}Validations{% endblock %}
+{% block content %}
+<div class="gp-home">
+  <section class="gp-home-section">
+    <div class="gp-home-actions">
+      <a href="{% url 'leaves:pending' %}" class="gp-home-action-card{% if not pending_leaves_count %} is-neutral{% endif %}">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="calendar" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Congés à valider" %}{% if pending_leaves_count %} <span class="gp-home-action-badge">{{ pending_leaves_count }}</span>{% endif %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'absences:pending' %}" class="gp-home-action-card{% if not pending_absences_count %} is-neutral{% endif %}">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="clipboard" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Justificatifs à valider" %}{% if pending_absences_count %} <span class="gp-home-action-badge">{{ pending_absences_count }}</span>{% endif %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'attendance:history' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="archive" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Historique pointages" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

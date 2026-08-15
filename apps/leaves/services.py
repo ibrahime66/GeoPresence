@@ -1,6 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
+from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
@@ -99,15 +100,32 @@ def submit_leave(employee, leave_type, start_date, end_date, comment="", now=Non
 def approve_leave(leave, reviewer, comment=""):
     if leave.status != Leave.Status.PENDING:
         raise LeaveRejected("Seule une demande en attente peut être approuvée.", "invalid_state")
-    leave.status = Leave.Status.APPROVED
-    leave.reviewer_comment = comment
-    leave.reviewed_by = reviewer
-    leave.reviewed_at = timezone.now()
-    leave.save(update_fields=["status", "reviewer_comment", "reviewed_by", "reviewed_at"])
-    if leave.leave_type.deducts_from_balance:
-        Employee.objects.all_tenants().filter(pk=leave.employee_id).update(
-            leave_balance=F("leave_balance") - leave.working_days
-        )
+    with transaction.atomic():
+        if leave.leave_type.deducts_from_balance:
+            # Verrou de ligne (SELECT ... FOR UPDATE), pas seulement une
+            # lecture : deux approbations concurrentes pour le même employé
+            # (deux demandes sans chevauchement de dates) doivent s'exécuter
+            # en séquence, sinon les deux liraient le même solde encore
+            # disponible et le feraient passer sous zéro toutes les deux —
+            # une simple vérification sans verrou laisse cette fenêtre ouverte.
+            current_balance = Employee.objects.all_tenants().select_for_update().filter(
+                pk=leave.employee_id
+            ).values_list("leave_balance", flat=True).first()
+            if leave.working_days > current_balance:
+                raise LeaveRejected(
+                    f"Solde insuffisant pour approuver cette demande ({current_balance} j disponibles, "
+                    f"{leave.working_days} j demandés) — une autre demande a probablement été approuvée depuis.",
+                    "insufficient_balance",
+                )
+        leave.status = Leave.Status.APPROVED
+        leave.reviewer_comment = comment
+        leave.reviewed_by = reviewer
+        leave.reviewed_at = timezone.now()
+        leave.save(update_fields=["status", "reviewer_comment", "reviewed_by", "reviewed_at"])
+        if leave.leave_type.deducts_from_balance:
+            Employee.objects.all_tenants().filter(pk=leave.employee_id).update(
+                leave_balance=F("leave_balance") - leave.working_days
+            )
     return leave
 
 

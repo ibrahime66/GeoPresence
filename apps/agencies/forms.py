@@ -1,4 +1,5 @@
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
 
 from apps.accounts.models import User
 from apps.core.forms import BootstrapModelFormMixin
@@ -8,6 +9,8 @@ from .models import Agency
 
 
 class AgencyForm(BootstrapModelFormMixin, forms.ModelForm):
+    MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
+
     class Meta:
         model = Agency
         fields = [
@@ -32,3 +35,9 @@ class AgencyForm(BootstrapModelFormMixin, forms.ModelForm):
             from apps.tenants.org_settings import get_org_setting
 
             self.fields["radius_meters"].initial = get_org_setting(tenant, "gps_radius_default_meters")
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get("photo")
+        if isinstance(photo, UploadedFile) and photo.size > self.MAX_PHOTO_SIZE_BYTES:
+            raise forms.ValidationError("L'image dépasse la taille maximale autorisée (5 Mo).")
+        return photo

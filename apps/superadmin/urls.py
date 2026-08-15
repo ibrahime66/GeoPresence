@@ -14,4 +14,5 @@ urlpatterns = [
     path("superadmin/organisations/<uuid:pk>/supprimer/", views.OrganizationDeleteView.as_view(), name="organization_delete"),
     path("superadmin/audit/", views.AuditLogListView.as_view(), name="audit_log_list"),
     path("superadmin/audit/export/<str:fmt>/", views.AuditLogExportView.as_view(), name="audit_log_export"),
+    path("superadmin/plus/", views.MoreMenuView.as_view(), name="more_menu"),
 ]

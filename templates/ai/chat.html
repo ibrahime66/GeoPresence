@@ -65,6 +65,8 @@
   {
     "csrfToken": "{{ csrf_token }}",
     "conversationId": {% if conversation %}"{{ conversation.pk }}"{% else %}null{% endif %},
+    "chatUrl": "{% url 'ai:chat' %}",
+    "chatDetailUrlTemplate": "{% url 'ai:chat_detail' '00000000-0000-0000-0000-000000000000' %}",
     "genericError": "{% trans 'Une erreur est survenue.' %}",
     "networkError": "{% trans 'Impossible de contacter GeoIA, vérifiez votre connexion.' %}",
     "newConversationLabel": "{% trans 'Nouvelle conversation' %}"

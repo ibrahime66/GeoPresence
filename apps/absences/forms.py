@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from .models import AbsenceReason
 
@@ -22,6 +23,17 @@ class JustificationForm(forms.Form):
         if tenant is not None:
             AbsenceReason.objects.all_tenants().get_or_create(tenant=tenant, name=OTHER_REASON_NAME)
         self.fields["reason"].queryset = AbsenceReason.objects.all_tenants().filter(tenant=tenant, is_active=True)
+
+    def clean_date(self):
+        date = self.cleaned_data["date"]
+        if date > timezone.localdate():
+            # Une absence se justifie après coup (un fait déjà survenu) —
+            # accepter une date future n'a pas de sens dans ce flux et
+            # pourrait faire approuver une "absence" pour un jour qui n'a pas
+            # encore eu lieu. Une absence prévue à l'avance relève des congés
+            # (apps.leaves), pas de ce module.
+            raise ValidationError("Impossible de justifier une absence à une date future.")
+        return date
 
     def clean(self):
         cleaned_data = super().clean()

@@ -1,0 +1,55 @@
+{% extends "core/_landing_base.html" %}
+{% load static %}
+{% block title %}{{ sector.meta_title }}{% endblock %}
+{% block meta_description %}{{ sector.meta_description }}{% endblock %}
+{% block og_title %}{{ sector.meta_title }}{% endblock %}
+{% block og_description %}{{ sector.meta_description }}{% endblock %}
+{% block twitter_title %}{{ sector.meta_title }}{% endblock %}
+{% block twitter_description %}{{ sector.meta_description }}{% endblock %}
+{% block content %}
+
+  <section class="gp-section pb-0">
+    <div class="gp-section-head">
+      <span class="gp-kicker">{{ sector.name }}</span>
+      <h1>{{ sector.h1 }}</h1>
+      <p>{{ sector.intro }}</p>
+    </div>
+    <div class="gp-hero-ctas justify-content-center d-flex">
+      <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary gp-btn-lg">Se connecter</a>
+      <a href="mailto:ibrahimebarry683@gmail.com" class="gp-btn gp-btn-ghost gp-btn-lg">Nous contacter</a>
+    </div>
+  </section>
+
+  <section class="gp-section" id="fonctionnalites">
+    <div class="gp-features">
+      {% for point in sector.points %}
+      <div class="gp-card">
+        <div class="gp-card-icon">{% include "core/_icon.html" with icon=point.icon %}</div>
+        <h3>{{ point.title }}</h3>
+        <p>{{ point.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="gp-section pt-0">
+    <div class="gp-section-head mb-4">
+      <span class="gp-kicker">Autres secteurs</span>
+      <h2>GeoPresence s'adapte à votre activité</h2>
+    </div>
+    <div class="gp-pills">
+      {% for slug, other in all_sectors.items %}
+      <a class="gp-pill" href="{% url 'core:sector' slug %}">{{ other.name }}</a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="gp-section">
+    <div class="gp-cta-band">
+      <h2>Prêt à essayer GeoPresence ?</h2>
+      <p>Connectez-vous pour découvrir la plateforme.</p>
+      <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary gp-btn-lg">Se connecter</a>
+    </div>
+  </section>
+
+{% endblock %}

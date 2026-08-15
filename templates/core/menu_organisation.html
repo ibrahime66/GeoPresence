@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}Organisation — GeoPresence{% endblock %}
+{% block page_title %}Organisation{% endblock %}
+{% block content %}
+<div class="gp-home">
+  <section class="gp-home-section">
+    <div class="gp-home-actions">
+      <a href="{% url 'agencies:list' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="pin" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Agences" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% for link in module_sidebar_links %}
+      {% if link.enabled %}
+      <a href="{% url link.url_name %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon=link.icon size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{{ link.label }}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% endif %}
+      {% endfor %}
+      <a href="{% url 'schedules:list' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="clock" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Horaires" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'employees:list' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="users" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Employés" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'announcements:list' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="megaphone" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Annonces" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'tenants:settings' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="settings" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Paramètres" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% if ai_available %}
+      <a href="{% url 'ai:chat' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="mail" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">GeoIA</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

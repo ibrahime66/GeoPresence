@@ -327,9 +327,15 @@
 
     const payload = {
       clockType: config.nextClockType,
-      latitude: gpsData.latitude,
-      longitude: gpsData.longitude,
-      accuracy: gpsData.accuracy,
+      // navigator.geolocation renvoie des nombres à pleine précision flottante
+      // (souvent 15+ chiffres, ex. 9.680608712345678) : envoyés tels quels, ils
+      // dépassent le max_digits=10 du DecimalField serveur (ClockForm) et le
+      // pointage est rejeté avec une erreur générique — arrondi ici à une
+      // précision largement suffisante (7 décimales ≈ 1 cm pour lat/lon,
+      // 2 décimales pour une précision GPS exprimée en mètres).
+      latitude: gpsData.latitude.toFixed(7),
+      longitude: gpsData.longitude.toFixed(7),
+      accuracy: gpsData.accuracy != null ? gpsData.accuracy.toFixed(2) : gpsData.accuracy,
       isMocked: gpsData.isMocked,
       clientTime: new Date().toISOString(),
     };

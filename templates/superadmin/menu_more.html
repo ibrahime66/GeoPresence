@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}Plus — GeoPresence{% endblock %}
+{% block page_title %}Plus{% endblock %}
+{% block content %}
+<div class="gp-home">
+  <section class="gp-home-section">
+    <div class="gp-home-actions">
+      <a href="{% url 'superadmin:audit_log_list' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="shield" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Journal d'audit" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'backups:list' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="archive" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Sauvegardes" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% if ai_available %}
+      <a href="{% url 'ai:chat' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="mail" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">GeoIA</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

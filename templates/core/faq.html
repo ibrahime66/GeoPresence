@@ -1,5 +1,24 @@
 {% extends "core/_landing_base.html" %}
-{% block title %}FAQ — GeoPresence{% endblock %}
+{% block title %}FAQ — GeoPresence, pointage géolocalisé{% endblock %}
+{% block meta_description %}Comment fonctionne le pointage géolocalisé, la gestion des congés, l'isolation des données entre organisations : les réponses aux questions les plus courantes sur GeoPresence.{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Comment fonctionne le pointage géolocalisé ?", "acceptedAnswer": {"@type": "Answer", "text": "Au moment de pointer, votre téléphone envoie votre position GPS à la plateforme. Elle est comparée à la zone autorisée définie pour votre agence : si vous êtes dans le rayon autorisé, le pointage est validé automatiquement."}},
+    {"@type": "Question", "name": "Que se passe-t-il si je ne suis pas dans la zone autorisée ?", "acceptedAnswer": {"@type": "Answer", "text": "Le pointage est refusé et l'événement est journalisé. Votre administrateur ou manager peut consulter l'historique des tentatives de pointage."}},
+    {"@type": "Question", "name": "Puis-je pointer depuis un ordinateur ?", "acceptedAnswer": {"@type": "Answer", "text": "Le pointage nécessite un appareil équipé d'un GPS (un smartphone) pour garantir une position fiable. Un ordinateur de bureau n'a généralement pas de puce GPS et ne peut donner qu'une position approximative."}},
+    {"@type": "Question", "name": "Comment demander un congé ou justifier une absence ?", "acceptedAnswer": {"@type": "Answer", "text": "Depuis votre espace employé, les rubriques « Mes congés » et « Mes absences » permettent de soumettre une demande, que votre manager ou administrateur pourra ensuite approuver ou refuser."}},
+    {"@type": "Question", "name": "Mes données sont-elles visibles par d'autres organisations utilisant GeoPresence ?", "acceptedAnswer": {"@type": "Answer", "text": "Non. Chaque organisation cliente est strictement isolée des autres. Vos données ne sont accessibles qu'aux administrateurs et managers habilités au sein de votre propre organisation."}},
+    {"@type": "Question", "name": "Comment gérer plusieurs sites avec un seul compte administrateur ?", "acceptedAnswer": {"@type": "Answer", "text": "Une organisation peut créer autant d'agences que nécessaire, chacune avec sa propre zone GPS autorisée et ses propres horaires, tout en restant gérée depuis un seul tableau de bord."}},
+    {"@type": "Question", "name": "J'ai oublié mon mot de passe, que faire ?", "acceptedAnswer": {"@type": "Answer", "text": "Sur la page de connexion, cliquez sur « Mot de passe oublié ? » et suivez les instructions envoyées par e-mail."}},
+    {"@type": "Question", "name": "Comment obtenir GeoPresence pour mon organisation ?", "acceptedAnswer": {"@type": "Answer", "text": "Contactez-nous à ibrahimebarry683@gmail.com pour la mise en place de votre espace."}}
+  ]
+}
+</script>
+{% endblock %}
 {% block content %}
 <div class="gp-legal">
   <h1>Questions fréquentes</h1>

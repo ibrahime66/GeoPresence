@@ -92,7 +92,7 @@ def _clean_str(value):
     return str(value).strip()
 
 
-def validate_row(raw, tenant, row_number, seen_emails):
+def validate_row(raw, tenant, row_number, seen_emails, seen_matricules):
     """Valide une ligne brute. Retourne (donnée_nettoyée_ou_None, [erreurs])."""
     errors = []
 
@@ -174,13 +174,18 @@ def validate_row(raw, tenant, row_number, seen_emails):
         except InvalidOperation:
             errors.append(f"Droit aux congés invalide : « {leave_days_raw} ».")
 
-    if matricule_raw and Employee.objects.all_tenants().filter(tenant=tenant, matricule=matricule_raw).exists():
-        errors.append(f"Matricule déjà utilisé : « {matricule_raw} ».")
+    if matricule_raw:
+        if matricule_raw in seen_matricules:
+            errors.append("Matricule en double dans le fichier.")
+        elif Employee.objects.all_tenants().filter(tenant=tenant, matricule=matricule_raw).exists():
+            errors.append(f"Matricule déjà utilisé : « {matricule_raw} ».")
 
     if errors:
         return None, errors
 
     seen_emails.add(email)
+    if matricule_raw:
+        seen_matricules.add(matricule_raw)
     return {
         "row": row_number,
         "email": email,
@@ -205,8 +210,9 @@ def validate_rows(raw_rows, tenant):
     """Valide toutes les lignes. Retourne (lignes_valides, lignes_en_erreur)."""
     valid, invalid = [], []
     seen_emails = set()
+    seen_matricules = set()
     for i, raw in enumerate(raw_rows, start=2):  # ligne 1 = en-tête
-        cleaned, errors = validate_row(raw, tenant, i, seen_emails)
+        cleaned, errors = validate_row(raw, tenant, i, seen_emails, seen_matricules)
         if errors:
             invalid.append({"row": i, "email": _clean_str(raw.get("E-mail")) or "—", "errors": errors})
         else:
@@ -251,18 +257,27 @@ def commit_import(tenant, validated_rows):
             failed.append({"row": data["row"], "email": data["email"], "error": str(exc)})
             continue
 
-        send_mail(
-            subject="Bienvenue sur GeoPresence",
-            message=(
-                f"Bonjour {user.first_name},\n\n"
-                f"Votre compte a été créé sur GeoPresence.\n"
-                f"E-mail : {user.email}\n"
-                f"Mot de passe temporaire : {temp_password}\n\n"
-                "Connectez-vous et changez votre mot de passe dès la première connexion."
-            ),
-            from_email=None,
-            recipient_list=[user.email],
-        )
-        created.append({"row": data["row"], "email": data["email"]})
+        email_sent = True
+        try:
+            # Le compte est déjà committé à ce stade : un échec d'envoi (SMTP
+            # indisponible, etc.) ne doit ni annuler la ligne (elle a bien été
+            # créée) ni interrompre le traitement des lignes suivantes — sans
+            # ce try/except, une exception ici remontait hors de la boucle et
+            # cassait l'isolation par ligne promise ci-dessus.
+            send_mail(
+                subject="Bienvenue sur GeoPresence",
+                message=(
+                    f"Bonjour {user.first_name},\n\n"
+                    f"Votre compte a été créé sur GeoPresence.\n"
+                    f"E-mail : {user.email}\n"
+                    f"Mot de passe temporaire : {temp_password}\n\n"
+                    "Connectez-vous et changez votre mot de passe dès la première connexion."
+                ),
+                from_email=None,
+                recipient_list=[user.email],
+            )
+        except Exception:  # noqa: BLE001
+            email_sent = False
+        created.append({"row": data["row"], "email": data["email"], "email_sent": email_sent})
 
     return created, failed

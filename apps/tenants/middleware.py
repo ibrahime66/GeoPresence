@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.shortcuts import redirect
+from django.utils import timezone
 
 from apps.core.context import clear_current_tenant, set_current_tenant
 
@@ -12,6 +13,12 @@ class TenantMiddleware:
     slug pour l'instant — CDC §2.3.2 permet plusieurs stratégies, on a choisi
     la plus simple : identification via la session/l'utilisateur) et l'injecte
     dans request.tenant + le contexte thread-local consommé par TenantManager.
+
+    Active aussi le fuseau horaire de l'organisation (Organization.timezone)
+    pour toute la durée de la requête : sans ça, timezone.localdate()/
+    localtime() (calcul des retards, heures supplémentaires, jour de
+    rattachement d'un pointage...) utiliseraient silencieusement le fuseau
+    serveur (UTC, cf. TIME_ZONE) au lieu de celui du client.
 
     RM-ORG-003/005 : si l'organisation de l'utilisateur devient suspendue en
     cours de session, la session est immédiatement invalidée à la requête
@@ -36,8 +43,13 @@ class TenantMiddleware:
 
         request.tenant = tenant
         set_current_tenant(tenant)
+        if tenant is not None:
+            timezone.activate(tenant.timezone)
+        else:
+            timezone.deactivate()
         try:
             response = self.get_response(request)
         finally:
             clear_current_tenant()
+            timezone.deactivate()
         return response

@@ -2,19 +2,25 @@
 {% block title %}Tableau de bord — GeoPresence{% endblock %}
 {% block page_title %}Tableau de bord{% endblock %}
 {% block content %}
-<div class="gp-page-header">
-  <div>
-    <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
-    <p>{{ user.get_role_display }}{% if user.tenant %} · {{ user.tenant.display_name }}{% endif %}</p>
+<div class="gp-home">
+
+  <div class="gp-home-welcome">
+    <h1>Bonjour, {% firstof user.first_name user.full_name user.email %}</h1>
+    <p>Voici ce qui se passe aujourd'hui</p>
+    <div class="gp-home-context">
+      <span class="gp-home-context-pill">{% include "core/_icon.html" with icon="calendar" size="15" %}{% now "l d F Y" %}</span>
+      {% if user.tenant %}
+      <span class="gp-home-context-pill">{% include "core/_icon.html" with icon="building" size="15" %}{{ user.tenant.display_name }}</span>
+      {% endif %}
+    </div>
   </div>
-</div>
 
-{% if not employee %}
+  {% if not employee %}
   <div class="alert alert-warning">Aucun profil employé actif associé à votre compte.</div>
-{% else %}
+  {% else %}
 
-  <div class="gp-card mb-4">
-    <div class="gp-card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <section class="gp-home-section">
+    <div class="gp-home-status-card">
       <div>
         {% if today_status == "done" %}
           <span class="gp-badge neutral mb-1"><span class="dot"></span>Journée terminée</span>
@@ -33,73 +39,95 @@
       </div>
       <a href="{% url 'attendance:clock_page' %}" class="btn btn-primary">Pointer arrivée / départ</a>
     </div>
-  </div>
+  </section>
 
-  <div class="gp-stat-grid">
-    <div class="gp-stat success">
-      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="check" size="18" %}</div>
-      <div class="gp-stat-label">Jours présents (mois)</div>
-      <div class="gp-stat-value">{{ days_present_month }}</div>
+  <section class="gp-home-section">
+    <h2 class="gp-home-section-title">Mon résumé</h2>
+    <div class="gp-home-stats">
+      <div class="gp-home-stat tone-success">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="check" size="18" %}</span>
+        <span class="gp-home-stat-label">Jours présents (mois)</span>
+        <span class="gp-home-stat-value">{{ days_present_month }}</span>
+      </div>
+      <div class="gp-home-stat tone-warning">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="clock" size="18" %}</span>
+        <span class="gp-home-stat-label">Retards (mois)</span>
+        <span class="gp-home-stat-value">{{ days_late_month }}</span>
+      </div>
+      <div class="gp-home-stat tone-info">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="calendar" size="18" %}</span>
+        <span class="gp-home-stat-label">Solde congés</span>
+        <span class="gp-home-stat-value">{{ employee.leave_balance }}<span class="gp-home-stat-unit">j</span></span>
+      </div>
+      <div class="gp-home-stat">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="clipboard" size="18" %}</span>
+        <span class="gp-home-stat-label">Demandes en attente</span>
+        <span class="gp-home-stat-value">{{ my_leaves_pending|add:my_absences_pending }}</span>
+      </div>
     </div>
-    <div class="gp-stat warning">
-      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="clock" size="18" %}</div>
-      <div class="gp-stat-label">Retards (mois)</div>
-      <div class="gp-stat-value">{{ days_late_month }}</div>
-    </div>
-    <div class="gp-stat info">
-      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="calendar" size="18" %}</div>
-      <div class="gp-stat-label">Solde congés</div>
-      <div class="gp-stat-value">{{ employee.leave_balance }} <span class="unit">j</span></div>
-    </div>
-    <div class="gp-stat">
-      <div class="gp-stat-icon">{% include "core/_icon.html" with icon="clipboard" size="18" %}</div>
-      <div class="gp-stat-label">Demandes en attente</div>
-      <div class="gp-stat-value">{{ my_leaves_pending|add:my_absences_pending }}</div>
-    </div>
-  </div>
+  </section>
 
-  <div class="d-flex flex-wrap gap-2 mb-4">
-    <a href="{% url 'leaves:my_leaves' %}" class="btn btn-outline-primary">Mes congés</a>
-    <a href="{% url 'absences:my_absences' %}" class="btn btn-outline-primary">Mes absences</a>
-  </div>
+  <section class="gp-home-section">
+    <h2 class="gp-home-section-title">Mes accès rapides</h2>
+    <div class="gp-home-actions">
+      <a href="{% url 'leaves:my_leaves' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="calendar" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">Mes congés</span>
+          <span class="gp-home-action-desc">Demandes et solde</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'absences:my_absences' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="clipboard" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">Mes absences</span>
+          <span class="gp-home-action-desc">Justificatifs</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+    </div>
+  </section>
 
   {% if active_announcements %}
-  <div class="gp-card mb-4">
-    <div class="gp-card-header">Annonces de l'organisation</div>
-    <div class="gp-card-body">
-      {% for a in active_announcements %}
-      <div class="{% if not forloop.last %}mb-3 pb-3 border-bottom{% endif %}">
-        <div class="fw-semibold">{{ a.title }}</div>
-        <p class="text-muted small mb-1">{{ a.content|linebreaksbr }}</p>
-        <span class="text-muted small">{{ a.publish_at|date:"d/m/Y" }}</span>
+  <section class="gp-home-section">
+    <h2 class="gp-home-section-title">Annonces</h2>
+    <div class="gp-card">
+      <div class="gp-card-body">
+        {% for a in active_announcements %}
+        <div class="{% if not forloop.last %}mb-3 pb-3 border-bottom{% endif %}">
+          <div class="fw-semibold">{{ a.title }}</div>
+          <p class="text-muted small mb-1">{{ a.content|linebreaksbr }}</p>
+          <span class="text-muted small">{{ a.publish_at|date:"d/m/Y" }}</span>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="gp-table-card">
+    <div class="gp-card-header">Mes 10 derniers pointages</div>
+    <div class="gp-table-scroll">
+      <table class="gp-table">
+        <thead><tr><th>Date</th><th>Type</th><th>Heure</th><th>Statut</th><th>Agence</th></tr></thead>
+        <tbody>
+          {% for a in recent_attendances %}
+          <tr>
+            <td class="fw-semibold">{{ a.clock_date }}</td>
+            <td>{{ a.get_clock_type_display }}</td>
+            <td>{{ a.server_time|date:"H:i" }}</td>
+            <td>{{ a.get_status_display }}</td>
+            <td>{{ a.agency.name }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5"><div class="gp-table-empty">Aucun pointage.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
-  {% endif %}
-{% endif %}
 
-{% if employee %}
-<div class="gp-table-card">
-  <div class="gp-card-header">Mes 10 derniers pointages</div>
-  <div class="gp-table-scroll">
-    <table class="gp-table">
-      <thead><tr><th>Date</th><th>Type</th><th>Heure</th><th>Statut</th><th>Agence</th></tr></thead>
-      <tbody>
-        {% for a in recent_attendances %}
-        <tr>
-          <td class="fw-semibold">{{ a.clock_date }}</td>
-          <td>{{ a.get_clock_type_display }}</td>
-          <td>{{ a.server_time|date:"H:i" }}</td>
-          <td>{{ a.get_status_display }}</td>
-          <td>{{ a.agency.name }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5"><div class="gp-table-empty">Aucun pointage.</div></td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  {% endif %}
 </div>
-{% endif %}
 {% endblock %}

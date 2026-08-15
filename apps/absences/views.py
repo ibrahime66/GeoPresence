@@ -71,7 +71,8 @@ class SubmitJustificationView(LoginRequiredMixin, View):
 
         form = JustificationForm(request.POST, tenant=employee.tenant)
         if not form.is_valid():
-            messages.error(request, "Formulaire invalide, vérifiez les champs.")
+            details = "; ".join(f"{err}" for errs in form.errors.values() for err in errs)
+            messages.error(request, details or "Formulaire invalide, vérifiez les champs.")
             return redirect("absences:my_absences")
 
         try:

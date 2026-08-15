@@ -57,17 +57,6 @@
         </div>
       </div>
 
-      <div class="gp-form-section">
-        <div class="gp-form-section-head">
-          <h3>Apparence</h3>
-          <p>Couleurs de marque appliquées à l'interface de cette organisation (menu latéral, éléments actifs).</p>
-        </div>
-        <div class="row g-3">
-          {% include "core/_form_field.html" with field=form.primary_color col="col-6 col-sm-4" %}
-          {% include "core/_form_field.html" with field=form.secondary_color col="col-6 col-sm-4" %}
-        </div>
-      </div>
-
       {% if form.admin_email %}
       <div class="gp-form-section">
         <div class="gp-form-section-head">

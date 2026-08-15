@@ -4,8 +4,10 @@
 :root {
   --gp-navy: #0A1E45;
   --gp-navy-deep: #071233;
-  --gp-blue: #0B63F6;
-  --gp-blue-bright: #2F8CFF;
+  /* Aligné sur --nav-accent (barre de navigation) : même bleu de marque
+     partout dans l'app, pas deux bleus différents entre la nav et le reste. */
+  --gp-blue: #2C5CE0;
+  --gp-blue-bright: #4A72E8;
   --gp-green: #16C74E;
   --gp-green-deep: #0FA23D;
   --gp-amber: #B7791F;
@@ -29,15 +31,9 @@
   --gp-gray-50: #F8FAFC;
   --gp-white: #FFFFFF;
 
-  /* Texte de la sidebar — recalculé par organisation (apps.core.context_processors.org_branding)
-     selon la luminosité de la couleur de fond choisie, pour rester lisible quel que soit le choix. */
-  --gp-sidebar-text: #FFFFFF;
-  --gp-sidebar-text-soft: rgba(255, 255, 255, 0.75);
-  --gp-sidebar-text-faint: rgba(255, 255, 255, 0.45);
-  --gp-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
-  --gp-sidebar-border: rgba(255, 255, 255, 0.08);
-  /* Texte lisible sur les éléments d'accent (boutons, avatars) — recalculé par
-     organisation selon la luminosité de sa couleur secondaire. */
+  /* Texte lisible sur les éléments d'accent (boutons, avatars). Tokens de
+     navigation (--nav-*) : définis sur .gp-app-body, cf. plus bas — la barre
+     de nav est en thème clair fixe, indépendant du reste de l'app. */
   --gp-accent-text: #FFFFFF;
 
   --gp-radius: 12px;
@@ -76,12 +72,17 @@ body {
    par défaut, très inégal d'un navigateur à l'autre, sur tous les éléments
    interactifs custom qui n'ont pas déjà leur propre style de focus. */
 .gp-btn:focus-visible,
-.gp-sidebar-link:focus-visible,
+.gp-navbar-link:focus-visible,
+.gp-navbar-brand:focus-visible,
+.gp-navbar-avatar-btn:focus-visible,
+.gp-navbar-menu .dropdown-item:focus-visible,
+.gp-bottomnav-link:focus-visible,
 .gp-row-action-btn:focus-visible,
 .gp-row-link:focus-visible,
 .gp-chat-suggestion-btn:focus-visible,
 .gp-pagination a:focus-visible,
-.gp-footer-col a:focus-visible {
+.gp-footer-col a:focus-visible,
+.gp-home-action-card:focus-visible {
   outline: none;
   box-shadow: var(--gp-focus-ring);
   border-radius: 6px;
@@ -348,6 +349,7 @@ a {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+.gp-section-head h1,
 .gp-section-head h2 {
   font-size: 2rem;
   font-weight: 800;
@@ -446,6 +448,12 @@ a {
   font-size: 0.88rem;
   font-weight: 500;
   color: var(--gp-gray-700);
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+a.gp-pill:hover, a.gp-pill:focus-visible {
+  border-color: var(--gp-blue);
+  color: var(--gp-blue);
 }
 
 /* ---------- Sécurité ---------- */
@@ -505,6 +513,32 @@ a {
 .gp-footer-col { display: flex; flex-direction: column; gap: 0.6rem; }
 .gp-footer-col a { color: var(--gp-gray-400); font-size: 0.9rem; text-decoration: none; }
 .gp-footer-col a:hover { color: var(--gp-navy); }
+.gp-footer-col button {
+  background: none; border: none; padding: 0; margin: 0; text-align: left;
+  color: var(--gp-gray-400); font-size: 0.9rem; font-family: inherit; cursor: pointer;
+}
+.gp-footer-col button:hover { color: var(--gp-navy); }
+
+/* ---------- Bandeau de consentement cookies (Google Analytics) ---------- */
+.gp-consent-banner {
+  position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 1000;
+  max-width: 760px; margin: 0 auto;
+  background: var(--gp-navy); color: rgba(255, 255, 255, 0.9);
+  border-radius: 14px; padding: 1.1rem 1.4rem;
+  box-shadow: 0 24px 60px -12px rgba(10, 30, 69, 0.4);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem;
+}
+.gp-consent-banner p { margin: 0; font-size: 0.88rem; line-height: 1.5; flex: 1 1 380px; }
+.gp-consent-banner a { color: #FFFFFF; text-decoration: underline; }
+.gp-consent-actions { display: flex; gap: 0.6rem; flex-shrink: 0; }
+.gp-consent-banner .gp-btn-ghost {
+  border-color: rgba(255, 255, 255, 0.3); color: #FFFFFF;
+}
+.gp-consent-banner .gp-btn-ghost:hover { border-color: rgba(255, 255, 255, 0.6); }
+@media (max-width: 560px) {
+  .gp-consent-banner { flex-direction: column; align-items: stretch; }
+  .gp-consent-actions { justify-content: flex-end; }
+}
 .gp-footer-bottom {
   border-top: 1px solid var(--gp-gray-200);
   padding-top: 1.25rem;
@@ -743,61 +777,240 @@ a {
 
 .gp-shell { display: flex; min-height: 100vh; }
 
-/* ---------- Sidebar ---------- */
-.gp-sidebar {
-  flex: 0 0 260px;
-  width: 260px;
-  background: var(--gp-navy);
-  color: var(--gp-sidebar-text);
+/* ---------- Navigation — barre horizontale (RM-UI-NAV, refonte du
+   11/08/2026, remplace la sidebar verticale). Tokens partagés par la barre
+   du haut ET la barre d'onglets mobile, posés sur .gp-app-body (ancêtre
+   commun) plutôt que dupliqués : le reste de l'app (dashboard, cartes,
+   formulaires, tableaux) continue d'utiliser --gp-navy/--gp-blue partagés
+   sans aucun changement. Aucune couleur par organisation (cf. décision
+   produit) : --nav-accent est une constante GeoPresence, jamais une donnée
+   tenant. */
+.gp-app-body {
+  --nav-accent: #2C5CE0;
+  --nav-accent-soft: rgba(44, 92, 224, 0.07);
+  --nav-accent-soft-strong: rgba(44, 92, 224, 0.1);
+  --nav-accent-border: rgba(44, 92, 224, 0.16);
+  --nav-ink: #0A1E45;
+  --nav-text: #334155;
+  --nav-text-soft: #64748B;
+  --nav-text-faint: #94A3B8;
+  --nav-bg: #FFFFFF;
+  --nav-bg-soft: #F8FAFC;
+  --nav-border: #E2E8F0;
+  --nav-red: #DC3545;
   display: flex;
   flex-direction: column;
-  position: fixed;
-  top: 0; bottom: 0; left: 0;
-  z-index: 40;
-  transition: transform 0.2s ease;
-}
-@media (max-width: 991px) {
-  .gp-sidebar { transform: translateX(-100%); box-shadow: var(--gp-shadow-lg); }
-  .gp-sidebar.is-open { transform: translateX(0); }
+  min-height: 100vh;
 }
 
-.gp-sidebar-brand {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 1.25rem 1.25rem 1rem;
-  text-decoration: none; color: var(--gp-sidebar-text); font-weight: 800; font-size: 1.05rem;
+/* ---------- Barre du haut ---------- */
+.gp-navbar {
   flex: none;
+  position: sticky; top: 0; z-index: 40;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
 }
-.gp-sidebar-brand img { height: 30px; width: auto; }
-
-.gp-sidebar-nav { flex: 1; overflow-y: auto; padding: 0.5rem 0.75rem 1rem; }
-.gp-sidebar-section {
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--gp-sidebar-text-faint);
-  margin: 1.25rem 0.65rem 0.4rem;
+.gp-navbar-inner {
+  max-width: 1400px; margin: 0 auto;
+  height: 60px;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0 1.5rem;
 }
-.gp-sidebar-section:first-child { margin-top: 0.25rem; }
+.gp-navbar-brand { flex: none; display: flex; align-items: center; gap: 0.55rem; text-decoration: none; }
+.gp-navbar-brand img { height: 28px; width: auto; }
+.gp-navbar-brand-name { font-weight: 800; font-size: 1rem; color: var(--nav-ink); letter-spacing: -0.01em; }
+@media (max-width: 560px) { .gp-navbar-brand-name { display: none; } }
 
-.gp-sidebar-link {
-  display: flex; align-items: center; gap: 0.7rem;
-  padding: 0.6rem 0.65rem;
+/* Organisation active : simple repère de contexte (dans quel tenant on
+   travaille), pas une donnée décorative — teinte bleue fixe GeoPresence,
+   jamais dérivée de l'organisation (cf. décision produit). */
+.gp-navbar-org-chip {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--nav-accent-soft-strong);
+  border: 1px solid var(--nav-accent-border);
+  color: var(--nav-ink); font-weight: 700; font-size: 0.82rem;
+  max-width: 180px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gp-navbar-org-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--nav-accent); }
+.gp-navbar-org-chip-platform { background: var(--nav-bg-soft); border-color: var(--nav-border); color: var(--nav-text-soft); }
+.gp-navbar-org-chip-platform .gp-navbar-org-dot { background: var(--nav-text-faint); }
+@media (max-width: 700px) { .gp-navbar-org-chip { display: none; } }
+
+.gp-navbar-nav { display: flex; align-items: center; gap: 0.15rem; margin-inline-start: 0.5rem; min-width: 0; }
+@media (max-width: 991px) { .gp-navbar-nav { display: none; } }
+
+.gp-navbar-link {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  color: var(--gp-sidebar-text-soft);
-  text-decoration: none;
-  font-size: 0.9rem; font-weight: 500;
+  border: none; background: transparent;
+  color: var(--nav-text); text-decoration: none;
+  font: inherit; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.12s ease, color 0.12s ease;
 }
-.gp-sidebar-link svg { flex: none; opacity: 0.85; }
-.gp-sidebar-link:hover { background: var(--gp-sidebar-hover-bg); color: var(--gp-sidebar-text); }
-.gp-sidebar-link.is-active { background: color-mix(in srgb, var(--gp-blue-bright) 16%, transparent); color: var(--gp-sidebar-text); }
-.gp-sidebar-link.is-active svg { color: var(--gp-blue-bright); opacity: 1; }
-.gp-sidebar-badge {
-  margin-left: auto;
-  background: var(--gp-orange);
-  color: var(--gp-white);
-  font-size: 0.72rem; font-weight: 700;
+.gp-navbar-link svg { flex: none; color: var(--nav-text-soft); transition: color 0.12s ease; }
+.gp-navbar-link:hover { background: var(--nav-bg-soft); color: var(--nav-ink); }
+.gp-navbar-link:hover svg { color: var(--nav-ink); }
+.gp-navbar-link.is-active { background: var(--nav-accent-soft); color: var(--nav-accent); }
+.gp-navbar-link.is-active svg { color: var(--nav-accent); }
+.gp-navbar-link-icon { padding: 0.5rem; }
+.gp-navbar-link-icon span { display: none; }
+
+.gp-navbar-group { position: relative; }
+.gp-navbar-group-trigger svg:last-child { color: var(--nav-text-faint); margin-inline-start: -0.15rem; }
+
+.gp-navbar-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 0.35rem;
   border-radius: 999px;
-  padding: 0.05rem 0.45rem;
-  line-height: 1.4;
+  background: var(--nav-accent); color: #FFFFFF;
+  font-size: 0.68rem; font-weight: 700;
+}
+
+.gp-navbar-spacer { flex: 1; }
+
+/* Le profil est déjà accessible via l'onglet "Profil" de la barre du bas —
+   sans ça, l'avatar apparaissait deux fois sur mobile (haut ET bas). */
+@media (max-width: 991px) { .gp-navbar-profile { display: none; } }
+
+.gp-navbar-avatar-btn { flex: none; background: none; border: none; padding: 0; cursor: pointer; display: flex; }
+.gp-navbar-avatar {
+  position: relative;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--nav-accent); color: var(--gp-accent-text);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.82rem;
+}
+/* Signature visuelle unique de l'app (cf. consigne : un seul élément, jamais
+   un motif répété) — écho discret et statique du rayon de géofencing autour
+   de l'avatar de profil, seul endroit où ce motif apparaît. */
+.gp-navbar-avatar::before {
+  content: "";
+  position: absolute; inset: -4px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--nav-accent-border);
+  pointer-events: none;
+}
+
+/* ---------- Menus déroulants (groupes de nav, profil, barre du bas —
+   même habillage partout) ---------- */
+.gp-navbar-menu {
+  min-width: 15rem;
+  padding: 0.5rem;
+  border: 1px solid var(--nav-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px -8px rgba(10, 30, 69, 0.18);
+  margin-top: 0.4rem !important;
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+}
+
+/* Tant que son menu est ouvert, le déclencheur d'un groupe (ex. "Organisation")
+   prend le même habillage que l'onglet actif : sans ça, rien ne montrait
+   visuellement qu'on venait de taper dessus (l'onglet restait gris, "Accueil"
+   restait bleu). */
+.gp-navbar-link[aria-expanded="true"],
+.gp-bottomnav-link[aria-expanded="true"] {
+  background: var(--nav-accent-soft); color: var(--nav-accent);
+}
+.gp-navbar-link[aria-expanded="true"] svg,
+.gp-bottomnav-link[aria-expanded="true"] svg { color: var(--nav-accent); }
+
+/* Mobile : le menu d'un groupe de la barre du bas s'ancre en feuille pleine
+   largeur au-dessus de la barre plutôt que de flotter là où Popper trouve de
+   la place — sur un écran étroit, avec le bouton "Organisation" excentré à
+   droite, ça pouvait atterrir au milieu du contenu de la page, sans lien
+   visuel avec l'onglet appuyé. */
+@media (max-width: 991px) {
+  .gp-bottomnav-group .dropdown-menu {
+    position: fixed !important;
+    inset: auto 0.5rem calc(4.35rem + env(safe-area-inset-bottom, 0px)) 0.5rem !important;
+    transform: none !important;
+    width: auto; max-width: none; min-width: 0;
+  }
+}
+.gp-navbar-menu .dropdown-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.88rem; font-weight: 500;
+  color: var(--nav-text);
+}
+.gp-navbar-menu .dropdown-item svg { flex: none; color: var(--nav-text-soft); }
+.gp-navbar-menu .dropdown-item:hover, .gp-navbar-menu .dropdown-item:focus { background: var(--nav-bg-soft); color: var(--nav-ink); }
+.gp-navbar-menu .dropdown-item.is-active { background: var(--nav-accent-soft); color: var(--nav-accent); font-weight: 600; }
+.gp-navbar-menu .dropdown-item.is-active svg { color: var(--nav-accent); }
+.gp-navbar-item-badge {
+  margin-inline-start: auto; flex: none;
+  min-width: 20px; height: 20px; padding: 0 0.4rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: var(--nav-accent-soft-strong); color: var(--nav-accent);
+  font-size: 0.72rem; font-weight: 700;
+}
+
+.gp-navbar-profile-head { padding: 0.5rem 0.65rem 0.6rem; }
+.gp-navbar-user-name { display: block; font-weight: 700; font-size: 0.9rem; color: var(--nav-ink); }
+.gp-navbar-user-role { display: block; font-size: 0.78rem; color: var(--nav-text-soft); }
+.gp-navbar-logout-form { margin: 0; }
+.gp-navbar-logout-item { width: 100%; background: none; border: none; text-align: start; cursor: pointer; color: var(--nav-text); }
+.gp-navbar-logout-item:hover { background: rgba(220, 53, 69, 0.08) !important; color: var(--nav-red) !important; }
+.gp-navbar-logout-item:hover svg { color: var(--nav-red); }
+
+/* ---------- Titre de page (bandeau discret sous la barre principale —
+   alimenté par {% block page_title %}, inchangé depuis l'ancienne topbar) --- */
+.gp-titlebar { border-bottom: 1px solid var(--gp-gray-200); background: var(--gp-white); }
+.gp-titlebar-inner { max-width: 1400px; margin: 0 auto; padding: 0.85rem 1.5rem; font-weight: 700; color: var(--gp-navy); font-size: 1.05rem; }
+.gp-titlebar-inner:empty { display: none; }
+.gp-titlebar:has(.gp-titlebar-inner:empty) { display: none; }
+
+.gp-content { flex: 1; padding: 1.75rem; max-width: 1400px; width: 100%; margin: 0 auto; }
+@media (max-width: 576px) { .gp-content { padding: 1.1rem; } }
+@media (max-width: 991px) { .gp-content { padding-bottom: 5.5rem; } }
+
+/* ---------- Barre d'onglets mobile (<992px), façon Instagram — mêmes liens
+   que la barre du haut, juste regroupés différemment pour tenir en 4-5
+   onglets (cf. base.html pour le détail du regroupement par rôle). ---------- */
+.gp-bottomnav {
+  display: none;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  background: var(--nav-bg);
+  border-top: 1px solid var(--nav-border);
+  padding: 0.35rem 0.3rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+  align-items: stretch;
+  justify-content: space-around;
+  gap: 0.1rem;
+}
+@media (max-width: 991px) { .gp-bottomnav { display: flex; } }
+
+.gp-bottomnav-link {
+  position: relative;
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem;
+  padding: 0.35rem 0.2rem;
+  border-radius: 10px;
+  border: none; background: transparent;
+  color: var(--nav-text-soft); text-decoration: none;
+  font: inherit; font-size: 0.66rem; font-weight: 600;
+  cursor: pointer;
+}
+.gp-bottomnav-link span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.gp-bottomnav-link.is-active { color: var(--nav-accent); font-weight: 700; background: var(--nav-accent-soft); }
+.gp-bottomnav-group { position: relative; flex: 1; min-width: 0; display: flex; }
+.gp-bottomnav-group .gp-bottomnav-link { width: 100%; }
+.gp-bottomnav-badge { position: absolute; top: 0.1rem; right: 22%; min-width: 15px; height: 15px; font-size: 0.6rem; padding: 0 0.25rem; }
+[dir="rtl"] .gp-bottomnav-badge { right: auto; left: 22%; }
+.gp-bottomnav-avatar {
+  width: 21px; height: 21px; border-radius: 50%;
+  background: var(--nav-accent); color: var(--gp-accent-text);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.64rem;
 }
 
 .gp-profile-card {
@@ -814,68 +1027,6 @@ a {
 .gp-profile-name { font-size: 1.15rem; font-weight: 800; color: var(--gp-navy); }
 .gp-profile-email { color: var(--gp-gray-600); font-size: 0.9rem; margin-bottom: 0.5rem; }
 
-.gp-sidebar-foot {
-  flex: none;
-  padding: 0.9rem 1.1rem;
-  border-top: 1px solid var(--gp-sidebar-border);
-  display: flex; align-items: center; gap: 0.65rem;
-}
-.gp-sidebar-avatar {
-  flex: none; width: 34px; height: 34px; border-radius: 50%;
-  background: var(--gp-blue); color: var(--gp-accent-text);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.85rem;
-  text-decoration: none; transition: background-color 0.12s ease;
-}
-.gp-sidebar-avatar:hover { background: var(--gp-blue-bright); color: var(--gp-accent-text); }
-.gp-sidebar-user { min-width: 0; flex: 1; display: block; }
-.gp-sidebar-user-name {
-  color: var(--gp-sidebar-text); font-size: 0.85rem; font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.gp-sidebar-user-role { color: var(--gp-sidebar-text-faint); font-size: 0.75rem; }
-.gp-sidebar-logout {
-  flex: none; background: transparent; border: none; color: var(--gp-sidebar-text-soft);
-  padding: 0.35rem; border-radius: 6px; display: flex; cursor: pointer;
-}
-.gp-sidebar-logout:hover { color: var(--gp-sidebar-text); background: var(--gp-sidebar-hover-bg); }
-
-.gp-sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(10, 30, 69, 0.4); z-index: 35; }
-@media (max-width: 991px) { .gp-sidebar-backdrop.is-open { display: block; } }
-
-/* ---------- Zone principale ---------- */
-.gp-main { flex: 1; display: flex; flex-direction: column; min-width: 0; margin-left: 260px; }
-@media (max-width: 991px) { .gp-main { margin-left: 0; } }
-
-.gp-topbar {
-  flex: none;
-  height: 64px;
-  background: var(--gp-white);
-  border-bottom: 1px solid var(--gp-gray-200);
-  display: flex; align-items: center; gap: 1rem;
-  padding: 0 1.5rem;
-  position: sticky; top: 0; z-index: 20;
-}
-.gp-topbar-toggle {
-  display: none;
-  background: transparent; border: 1px solid var(--gp-gray-200); border-radius: 8px;
-  padding: 0.4rem; color: var(--gp-navy); cursor: pointer;
-}
-@media (max-width: 991px) { .gp-topbar-toggle { display: flex; } }
-.gp-topbar-title { font-weight: 700; color: var(--gp-navy); font-size: 1.05rem; }
-
-.gp-content { flex: 1; padding: 1.75rem; max-width: 1400px; width: 100%; margin: 0 auto; }
-@media (max-width: 576px) { .gp-content { padding: 1.1rem; } }
-
-/* ---------- RTL (arabe) ---------- */
-[dir="rtl"] .gp-sidebar { left: auto; right: 0; }
-@media (max-width: 991px) {
-  [dir="rtl"] .gp-sidebar { transform: translateX(100%); }
-  [dir="rtl"] .gp-sidebar.is-open { transform: translateX(0); }
-}
-[dir="rtl"] .gp-main { margin-left: 0; margin-right: 260px; }
-@media (max-width: 991px) { [dir="rtl"] .gp-main { margin-right: 0; } }
-[dir="rtl"] .gp-sidebar-badge { margin-left: 0; margin-right: auto; }
 [dir="rtl"] .gp-pass-wrap .form-control { padding-right: 1rem; padding-left: 2.75rem; }
 [dir="rtl"] .gp-pass-toggle { right: auto; left: 0.6rem; }
 
@@ -1127,105 +1278,169 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 }
 
 /* ==========================================================================
-   Vue d'ensemble — tableau de bord Admin (core/admin_dashboard.html)
-   Namespace dédié (.gp-ov-*), volontairement séparé du système .gp-card /
-   .gp-stat partagé par le reste de l'app : cette refonte ne doit avoir aucun
-   effet de bord sur les autres pages (formulaires, listes, dashboards
-   Manager/Employé) qui réutilisent ces classes communes.
+   Page d'accueil — refonte mobile-first (RM-UI-HOME, 15/08/2026)
+   Remplace l'ancien namespace .gp-ov-* (bandeau KPI + grille de panneaux
+   "dashboard administratif") par une composition façon appli mobile :
+   bienvenue → contexte du jour → actions à traiter → résumé en cartes →
+   panneaux. Namespace dédié (.gp-home-*), toujours volontairement séparé
+   du système .gp-card partagé par le reste de l'app (formulaires, listes) :
+   cette refonte ne doit avoir aucun effet de bord ailleurs. Utilisé par
+   core/admin_dashboard.html, core/manager_dashboard.html et
+   core/employee_dashboard.html.
    ========================================================================== */
 
-.gp-ov { display: flex; flex-direction: column; gap: 1.75rem; }
+.gp-home { display: flex; flex-direction: column; gap: 1.75rem; }
 
-.gp-ov-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap; }
-.gp-ov-eyebrow {
-  display: block; font-size: 0.78rem; font-weight: 600; color: var(--gp-gray-400);
-  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
-}
-.gp-ov-header h1 { font-size: 1.5rem; font-weight: 700; color: var(--gp-navy); margin: 0; letter-spacing: -0.015em; }
-.gp-ov-header-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+/* Sur la page d'accueil uniquement, les cartes/tableaux partagés (annonces,
+   planning...) adoptent le radius plus généreux de la nouvelle identité —
+   sans toucher à .gp-card/.gp-table-card eux-mêmes, utilisés tels quels sur
+   toutes les autres pages (listes, formulaires...). */
+.gp-home .gp-card,
+.gp-home .gp-table-card { border-radius: 16px; }
 
-.gp-ov-action {
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  padding: 0.55rem 0.9rem; border-radius: 9px;
-  border: 1px solid var(--gp-gray-200); background: var(--gp-white);
-  color: var(--gp-gray-700); font-size: 0.86rem; font-weight: 600;
-  text-decoration: none; transition: border-color 0.15s ease, background-color 0.15s ease;
+/* ---------- 1. Bloc de bienvenue ---------- */
+.gp-home-welcome h1 {
+  font-size: 1.5rem; font-weight: 800; color: var(--gp-navy);
+  margin: 0 0 0.25rem; letter-spacing: -0.02em; line-height: 1.25;
 }
-.gp-ov-action svg { color: var(--gp-gray-400); flex: none; }
-.gp-ov-action:hover { background: var(--gp-gray-50); color: var(--gp-navy); text-decoration: none; }
-.gp-ov-action.has-badge { border-color: var(--gp-orange-bg); background: var(--gp-orange-bg); color: var(--gp-orange-deep); }
-.gp-ov-action.has-badge svg { color: var(--gp-orange); }
-.gp-ov-action.has-badge:hover { background: #FFEFDF; }
-.gp-ov-action-count {
+.gp-home-welcome > p { margin: 0; color: var(--gp-gray-600); font-size: 0.92rem; }
+@media (min-width: 992px) { .gp-home-welcome h1 { font-size: 1.7rem; } }
+
+/* ---------- 2. Contexte du jour ---------- */
+.gp-home-context { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+.gp-home-context-pill {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.75rem; border-radius: 999px;
+  background: var(--gp-gray-50); border: 1px solid var(--gp-gray-200);
+  color: var(--gp-gray-600); font-size: 0.8rem; font-weight: 600;
+}
+.gp-home-context-pill svg { flex: none; color: var(--gp-gray-400); }
+
+/* ---------- Titres de section ---------- */
+.gp-home-section { display: flex; flex-direction: column; gap: 0.85rem; }
+.gp-home-section-title { font-size: 1.05rem; font-weight: 700; color: var(--gp-navy); margin: 0; }
+
+/* ---------- 3. Statut du jour / action de pointage — carte primaire
+   (équivalent "à traiter" pour sa propre journée, sur manager/employé) ---------- */
+.gp-home-status-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: 16px;
+  box-shadow: var(--gp-shadow); padding: 1.1rem 1.25rem;
+}
+
+/* ---------- 3bis. À traiter / accès rapides — cartes d'action tactiles ---------- */
+.gp-home-actions { display: flex; flex-direction: column; gap: 0.65rem; }
+.gp-home-action-card {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.95rem 1.1rem; border-radius: 16px;
+  background: var(--gp-white); border: 1px solid var(--gp-gray-200);
+  box-shadow: var(--gp-shadow);
+  text-decoration: none; color: inherit;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+.gp-home-action-card:hover { border-color: var(--gp-gray-400); text-decoration: none; color: inherit; }
+.gp-home-action-card:active { transform: scale(0.99); }
+.gp-home-action-icon {
+  flex: none; width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gp-orange-bg); color: var(--gp-orange);
+}
+/* variante neutre : accès rapide qui ne demande pas d'action (ex. "Mes congés"
+   côté employé) — même carte, mais sans la teinte orange réservée à ce qui
+   nécessite une intervention. */
+.gp-home-action-card.is-neutral .gp-home-action-icon { background: var(--gp-gray-100); color: var(--gp-gray-600); }
+.gp-home-action-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.gp-home-action-title { display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; font-weight: 650; color: var(--gp-navy); }
+.gp-home-action-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 19px; height: 19px; padding: 0 0.35rem; border-radius: 999px;
-  background: var(--gp-orange); color: var(--gp-white); font-size: 0.72rem; font-weight: 700;
+  min-width: 20px; height: 20px; padding: 0 0.4rem; border-radius: 999px;
+  background: var(--gp-orange); color: var(--gp-white); font-size: 0.74rem; font-weight: 700;
 }
+.gp-home-action-desc { font-size: 0.82rem; color: var(--gp-gray-400); }
+.gp-home-action-card > svg:last-child { flex: none; color: var(--gp-gray-400); }
 
-/* ---------- Bandeau KPI : une seule surface, séparateurs internes plutôt
-   que 4 cartes bordées+ombrées redondantes ---------- */
-.gp-ov-kpis {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: var(--gp-radius);
+/* ---------- 4. Résumé — cartes statistiques compactes (2 colonnes mobile,
+   4 colonnes dès que la largeur le permet) ---------- */
+.gp-home-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+@media (min-width: 700px) { .gp-home-stats { grid-template-columns: repeat(4, 1fr); } }
+.gp-home-stat {
+  background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: 16px;
+  box-shadow: var(--gp-shadow); padding: 1rem 1.1rem;
+  display: flex; flex-direction: column; gap: 0.55rem;
 }
-.gp-ov-kpi { padding: 1.4rem 1.6rem; border-left: 1px solid var(--gp-gray-100); display: flex; flex-direction: column; gap: 0.45rem; }
-.gp-ov-kpi:first-child { border-left: none; }
-.gp-ov-kpi-label { font-size: 0.8rem; font-weight: 600; color: var(--gp-gray-600); }
-.gp-ov-kpi-value {
-  font-size: 2.15rem; font-weight: 800; color: var(--gp-navy); line-height: 1.1;
-  letter-spacing: -0.02em; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 0.4rem;
+.gp-home-stat-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gp-gray-100); color: var(--gp-gray-600);
 }
-.gp-ov-kpi-value.tone-danger { color: var(--gp-red); }
-.gp-ov-kpi-value.tone-warning { color: var(--gp-amber); }
-.gp-ov-kpi-unit { font-size: 1rem; font-weight: 600; color: var(--gp-gray-400); }
-.gp-ov-kpi-sub { font-size: 0.78rem; color: var(--gp-gray-400); }
-.gp-ov-trend { font-size: 0.85rem; font-weight: 700; }
-.gp-ov-trend.up { color: var(--gp-green-deep); }
-.gp-ov-trend.down { color: var(--gp-red); }
+.gp-home-stat.tone-success .gp-home-stat-icon { background: #F0FDF4; color: var(--gp-green-deep); }
+.gp-home-stat.tone-danger .gp-home-stat-icon { background: var(--gp-red-bg); color: var(--gp-red); }
+.gp-home-stat.tone-warning .gp-home-stat-icon { background: var(--gp-amber-bg); color: var(--gp-amber); }
+.gp-home-stat.tone-info .gp-home-stat-icon { background: #EFF6FF; color: var(--gp-blue); }
+.gp-home-stat-label { font-size: 0.8rem; font-weight: 600; color: var(--gp-gray-600); }
+.gp-home-stat-value {
+  font-size: 1.7rem; font-weight: 800; color: var(--gp-navy); line-height: 1.1;
+  letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+  display: flex; align-items: baseline; gap: 0.3rem; flex-wrap: wrap;
+}
+.gp-home-stat.tone-danger .gp-home-stat-value { color: var(--gp-red); }
+.gp-home-stat.tone-warning .gp-home-stat-value { color: var(--gp-amber); }
+.gp-home-stat.tone-success .gp-home-stat-value { color: var(--gp-green-deep); }
+.gp-home-stat.tone-info .gp-home-stat-value { color: var(--gp-blue); }
+.gp-home-stat-unit { font-size: 0.85rem; font-weight: 600; color: var(--gp-gray-400); }
+.gp-home-stat-trend { font-size: 0.78rem; font-weight: 700; }
+.gp-home-stat-trend.up { color: var(--gp-green-deep); }
+.gp-home-stat-trend.down { color: var(--gp-red); }
 
-@media (max-width: 900px) { .gp-ov-kpis { grid-template-columns: repeat(2, 1fr); } .gp-ov-kpi:nth-child(3) { border-left: none; } .gp-ov-kpi:nth-child(odd) { border-left: none; } .gp-ov-kpi:nth-child(n+3) { border-top: 1px solid var(--gp-gray-100); } }
-@media (max-width: 520px) { .gp-ov-kpis { grid-template-columns: 1fr; } .gp-ov-kpi { border-left: none !important; } .gp-ov-kpi:not(:first-child) { border-top: 1px solid var(--gp-gray-100); } }
+/* ---------- 5. Grille de panneaux (graphiques / listes) ---------- */
+.gp-home-panels { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 992px) {
+  .gp-home-panels.is-wide { grid-template-columns: 2fr 1fr; }
+  .gp-home-panels.is-even { grid-template-columns: 1fr 1fr; }
+}
+.gp-home-panel {
+  background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: 16px;
+  box-shadow: var(--gp-shadow); padding: 1.2rem 1.25rem 1.35rem; display: flex; flex-direction: column;
+}
+.gp-home-panel-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+.gp-home-panel-head h3 { font-size: 0.95rem; font-weight: 700; color: var(--gp-navy); margin: 0; }
+.gp-home-panel-sub { font-size: 0.78rem; color: var(--gp-gray-400); }
 
-/* ---------- Grille de panneaux (graphiques / listes) ---------- */
-.gp-ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: stretch; }
-.gp-ov-grid.gp-ov-grid-wide { grid-template-columns: 2fr 1fr; }
-@media (max-width: 1100px) { .gp-ov-grid, .gp-ov-grid.gp-ov-grid-wide { grid-template-columns: 1fr; } }
-
-.gp-ov-panel { background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: var(--gp-radius); padding: 1.4rem 1.5rem 1.5rem; display: flex; flex-direction: column; }
-.gp-ov-panel-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-.gp-ov-panel-head h2 { font-size: 0.95rem; font-weight: 650; color: var(--gp-navy); margin: 0; }
-.gp-ov-panel-sub { font-size: 0.8rem; color: var(--gp-gray-400); }
-
-.gp-ov-empty {
+.gp-home-empty {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.6rem; padding: 2.5rem 1rem; color: var(--gp-gray-400); text-align: center;
 }
-.gp-ov-empty svg { color: var(--gp-gray-200); }
-.gp-ov-empty span { font-size: 0.86rem; color: var(--gp-gray-400); }
+.gp-home-empty svg { color: var(--gp-gray-200); }
+.gp-home-empty span { font-size: 0.86rem; color: var(--gp-gray-400); }
 
 /* ---------- Fil d'activité ---------- */
-.gp-ov-feed { display: flex; flex-direction: column; }
-.gp-ov-feed-row {
+.gp-home-feed { display: flex; flex-direction: column; }
+.gp-home-feed-row {
   display: flex; align-items: center; gap: 0.75rem;
   padding: 0.7rem 0.25rem; border-bottom: 1px solid var(--gp-gray-100);
 }
-.gp-ov-feed-row:last-child { border-bottom: none; }
-.gp-ov-feed-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--gp-gray-400); }
-.gp-ov-feed-dot.status-on_time, .gp-ov-feed-dot.status-manually_validated { background: var(--gp-green-deep); }
-.gp-ov-feed-dot.status-late, .gp-ov-feed-dot.status-early_leave { background: var(--gp-amber); }
-.gp-ov-feed-dot.status-overtime { background: var(--gp-blue); }
-.gp-ov-feed-dot.status-rejected { background: var(--gp-red); }
-.gp-ov-feed-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
-.gp-ov-feed-name { font-size: 0.88rem; font-weight: 600; color: var(--gp-ink); }
-.gp-ov-feed-meta { font-size: 0.78rem; color: var(--gp-gray-400); }
-.gp-ov-feed-time { flex: none; font-size: 0.78rem; color: var(--gp-gray-400); font-variant-numeric: tabular-nums; }
+.gp-home-feed-row:last-child { border-bottom: none; }
+.gp-home-feed-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--gp-gray-400); }
+.gp-home-feed-dot.status-on_time, .gp-home-feed-dot.status-manually_validated { background: var(--gp-green-deep); }
+.gp-home-feed-dot.status-late, .gp-home-feed-dot.status-early_leave { background: var(--gp-amber); }
+.gp-home-feed-dot.status-overtime { background: var(--gp-blue); }
+.gp-home-feed-dot.status-rejected { background: var(--gp-red); }
+.gp-home-feed-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.gp-home-feed-name { font-size: 0.88rem; font-weight: 600; color: var(--gp-ink); }
+.gp-home-feed-meta { font-size: 0.78rem; color: var(--gp-gray-400); }
+.gp-home-feed-time { flex: none; font-size: 0.78rem; color: var(--gp-gray-400); font-variant-numeric: tabular-nums; }
 
-/* ---------- Entrée en douceur, discrète (pas d'effet gadget) ---------- */
+/* ---------- Micro-interactions : apparition légère au chargement, jamais
+   d'effet permanent ni de rebond ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  .gp-ov-kpis, .gp-ov-panel { animation: gp-ov-rise 0.35s ease both; }
-  .gp-ov-grid-wide ~ .gp-ov-grid .gp-ov-panel { animation-delay: 0.06s; }
+  .gp-home > * { animation: gp-home-rise 0.35s ease both; }
+  .gp-home > *:nth-child(2) { animation-delay: 0.04s; }
+  .gp-home > *:nth-child(3) { animation-delay: 0.08s; }
+  .gp-home > *:nth-child(4) { animation-delay: 0.12s; }
+  .gp-home > *:nth-child(5) { animation-delay: 0.16s; }
+  .gp-home > *:nth-child(n+6) { animation-delay: 0.2s; }
 }
-@keyframes gp-ov-rise {
+@keyframes gp-home-rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }

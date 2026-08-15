@@ -49,6 +49,18 @@ class SuperAdminDashboardView(RoleRequiredMixin, TemplateView):
         return context
 
 
+class MoreMenuView(RoleRequiredMixin, TemplateView):
+    """RM-UI-NAV-HUB (15/08/2026) : écran plein qui remplace l'ancien menu
+    déroulant "Plus" de la barre d'onglets mobile Super Admin — même logique
+    que core.views.OrganisationMenuView/ValidationsMenuView/WorkspaceMenuView
+    (cf. leur docstring) : taper "Plus" doit quitter complètement l'écran
+    courant, pas ouvrir une fenêtre flottante par-dessus. Aucune donnée
+    propre, juste la liste des mêmes destinations que l'ancien menu."""
+
+    allowed_roles = SUPER_ADMIN_ONLY
+    template_name = "superadmin/menu_more.html"
+
+
 class OrganizationListView(RoleRequiredMixin, ListView):
     allowed_roles = SUPER_ADMIN_ONLY
     model = Organization

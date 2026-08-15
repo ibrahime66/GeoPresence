@@ -30,3 +30,16 @@ class LeaveAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return Leave.objects.all_tenants()
+
+    def get_readonly_fields(self, request, obj=None):
+        # Modifier les dates d'une demande déjà APPROVED ici repasserait son
+        # statut à PENDING (RM-CONGE-003, Leave.save()) sans jamais restituer
+        # le solde déjà décompté ni recalculer working_days — un support
+        # technique qui corrige une date depuis l'admin créerait ainsi un
+        # double décompte au moment d'une nouvelle approbation. Pour corriger
+        # les dates d'un congé approuvé, passer par l'annulation
+        # (apps.leaves.services.cancel_leave, qui restitue le solde) puis une
+        # nouvelle soumission.
+        if obj is not None and obj.status == obj.Status.APPROVED:
+            return self.readonly_fields + ("start_date", "end_date")
+        return self.readonly_fields

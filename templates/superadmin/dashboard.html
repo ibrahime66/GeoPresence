@@ -2,84 +2,103 @@
 {% block title %}Console Super Admin — GeoPresence{% endblock %}
 {% block page_title %}Console plateforme{% endblock %}
 {% block content %}
-<div class="gp-page-header">
-  <div><h1>Console plateforme</h1></div>
-  <div class="gp-page-header-actions">
-    <a href="{% url 'superadmin:audit_log_list' %}" class="btn btn-outline-secondary">Journal d'audit</a>
-    <a href="{% url 'superadmin:organization_create' %}" class="btn btn-primary">+ Nouvelle organisation</a>
-  </div>
-</div>
+<div class="gp-home">
 
-<div class="gp-stat-grid">
-  <div class="gp-stat info">
-    <div class="gp-stat-label">Organisations actives</div>
-    <div class="gp-stat-value">{{ org_counts.active }}</div>
-  </div>
-  <div class="gp-stat danger">
-    <div class="gp-stat-label">Organisations suspendues</div>
-    <div class="gp-stat-value">{{ org_counts.suspended }}</div>
-  </div>
-  <div class="gp-stat">
-    <div class="gp-stat-label">Utilisateurs (plateforme)</div>
-    <div class="gp-stat-value">{{ users_total }}</div>
-  </div>
-  <div class="gp-stat success">
-    <div class="gp-stat-label">Pointages aujourd'hui</div>
-    <div class="gp-stat-value">{{ attendances_today }}</div>
-  </div>
-</div>
-
-<div class="row g-4">
-  <div class="col-12 col-lg-6">
-    <div class="gp-table-card">
-      <div class="gp-card-header d-flex justify-content-between align-items-center">
-        Organisations récentes
-        <a href="{% url 'superadmin:organization_list' %}" class="gp-row-link">Voir tout</a>
-      </div>
-      <div class="gp-table-scroll">
-        <table class="gp-table">
-          <tbody>
-            {% for org in recent_organizations %}
-            <tr>
-              <td class="fw-semibold">{{ org.display_name }}</td>
-              <td class="text-muted-cell text-nowrap">{{ org.created_at|date:"d/m/Y" }}</td>
-              <td>
-                {% if org.status == "ACTIVE" %}<span class="gp-badge success"><span class="dot"></span>Active</span>
-                {% elif org.status == "SUSPENDED" %}<span class="gp-badge warning"><span class="dot"></span>Suspendue</span>
-                {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ org.get_status_display }}</span>{% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr><td><div class="gp-table-empty">Aucune organisation.</div></td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+  <div class="gp-home-welcome">
+    <h1>Bonjour, {% firstof user.first_name user.full_name user.email %}</h1>
+    <p>Voici ce qui se passe sur la plateforme aujourd'hui</p>
+    <div class="gp-home-context">
+      <span class="gp-home-context-pill">{% include "core/_icon.html" with icon="calendar" size="15" %}{% now "l d F Y" %}</span>
+      <span class="gp-home-context-pill">{% include "core/_icon.html" with icon="grid" size="15" %}Plateforme</span>
     </div>
   </div>
 
-  <div class="col-12 col-lg-6">
-    <div class="gp-table-card">
-      <div class="gp-card-header d-flex justify-content-between align-items-center">
-        Activité récente
-        <a href="{% url 'superadmin:audit_log_list' %}" class="gp-row-link">Voir tout</a>
+  <section class="gp-home-section">
+    <div class="gp-home-status-card">
+      <div>
+        <span class="gp-badge neutral mb-1"><span class="dot"></span>{{ org_counts.total }} organisation{{ org_counts.total|pluralize }} au total</span>
       </div>
-      <div class="gp-table-scroll">
-        <table class="gp-table">
-          <tbody>
-            {% for log in recent_audit_logs %}
-            <tr>
-              <td class="text-muted-cell text-nowrap">{{ log.timestamp|date:"d/m H:i" }}</td>
-              <td class="fw-semibold">{{ log.action }}</td>
-              <td class="text-muted-cell">{{ log.tenant.display_name|default:"—" }}</td>
-            </tr>
-            {% empty %}
-            <tr><td><div class="gp-table-empty">Aucune activité.</div></td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <a href="{% url 'superadmin:organization_create' %}" class="btn btn-primary">+ Nouvelle organisation</a>
+    </div>
+  </section>
+
+  <section class="gp-home-section">
+    <h2 class="gp-home-section-title">Résumé d'aujourd'hui</h2>
+    <div class="gp-home-stats">
+      <div class="gp-home-stat tone-info">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="building" size="18" %}</span>
+        <span class="gp-home-stat-label">Organisations actives</span>
+        <span class="gp-home-stat-value">{{ org_counts.active }}</span>
+      </div>
+      <div class="gp-home-stat tone-danger">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="alert" size="18" %}</span>
+        <span class="gp-home-stat-label">Organisations suspendues</span>
+        <span class="gp-home-stat-value">{{ org_counts.suspended }}</span>
+      </div>
+      <div class="gp-home-stat">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="users" size="18" %}</span>
+        <span class="gp-home-stat-label">Utilisateurs (plateforme)</span>
+        <span class="gp-home-stat-value">{{ users_total }}</span>
+      </div>
+      <div class="gp-home-stat tone-success">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="target" size="18" %}</span>
+        <span class="gp-home-stat-label">Pointages aujourd'hui</span>
+        <span class="gp-home-stat-value">{{ attendances_today }}</span>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section class="gp-home-section">
+    <div class="gp-home-panels is-even">
+      <div class="gp-table-card">
+        <div class="gp-card-header d-flex justify-content-between align-items-center">
+          Organisations récentes
+          <a href="{% url 'superadmin:organization_list' %}" class="gp-row-link">Voir tout</a>
+        </div>
+        <div class="gp-table-scroll">
+          <table class="gp-table">
+            <tbody>
+              {% for org in recent_organizations %}
+              <tr>
+                <td class="fw-semibold">{{ org.display_name }}</td>
+                <td class="text-muted-cell text-nowrap">{{ org.created_at|date:"d/m/Y" }}</td>
+                <td>
+                  {% if org.status == "ACTIVE" %}<span class="gp-badge success"><span class="dot"></span>Active</span>
+                  {% elif org.status == "SUSPENDED" %}<span class="gp-badge warning"><span class="dot"></span>Suspendue</span>
+                  {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ org.get_status_display }}</span>{% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td><div class="gp-table-empty">Aucune organisation.</div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="gp-table-card">
+        <div class="gp-card-header d-flex justify-content-between align-items-center">
+          Activité récente
+          <a href="{% url 'superadmin:audit_log_list' %}" class="gp-row-link">Voir tout</a>
+        </div>
+        <div class="gp-table-scroll">
+          <table class="gp-table">
+            <tbody>
+              {% for log in recent_audit_logs %}
+              <tr>
+                <td class="text-muted-cell text-nowrap">{{ log.timestamp|date:"d/m H:i" }}</td>
+                <td class="fw-semibold">{{ log.action }}</td>
+                <td class="text-muted-cell">{{ log.tenant.display_name|default:"—" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td><div class="gp-table-empty">Aucune activité.</div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

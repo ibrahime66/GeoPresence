@@ -1,5 +1,7 @@
 from django.utils import timezone
 
+from apps.attendance.models import Attendance
+
 from .models import Absence
 
 
@@ -21,6 +23,18 @@ def submit_justification(employee, date, reason=None, comment="", custom_reason=
     """CDC §12.1.2. Fonctionne aussi bien pour justifier une absence détectée
     au préalable (get_or_create) que pour une absence signalée directement
     par l'employé sans détection automatique préalable."""
+    if Attendance.objects.all_tenants().filter(
+        employee=employee, clock_date=date, clock_type=Attendance.ClockType.ARRIVAL
+    ).exists():
+        # Une arrivée pointée ce jour-là signifie que l'employé était
+        # présent — sans ce contrôle, un employé pouvait faire approuver une
+        # "absence justifiée" pour un jour où il a réellement travaillé,
+        # créant une incohérence entre pointage et absence dans son dossier.
+        raise AbsenceRejected(
+            "Un pointage d'arrivée existe pour cette date — vous n'étiez pas absent(e) ce jour-là.",
+            "attendance_exists",
+        )
+
     absence, _ = Absence.objects.all_tenants().get_or_create(
         tenant=employee.tenant,
         employee=employee,

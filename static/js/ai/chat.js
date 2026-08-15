@@ -20,8 +20,14 @@
   };
   if (!els.form || !els.textarea) return;
 
+  const DETAIL_URL_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
+
+  function detailUrl(id) {
+    return config.chatDetailUrlTemplate.replace(DETAIL_URL_PLACEHOLDER, id);
+  }
+
   function apiUrl() {
-    return conversationId ? `/ia/${conversationId}/` : "/ia/";
+    return conversationId ? detailUrl(conversationId) : config.chatUrl;
   }
 
   function scrollToBottom() {
@@ -82,7 +88,7 @@
     if (emptyMsg) emptyMsg.remove();
     els.sidebarList.querySelectorAll(".gp-chat-conv-link.is-active").forEach((el) => el.classList.remove("is-active"));
     const link = document.createElement("a");
-    link.href = `/ia/${id}/`;
+    link.href = detailUrl(id);
     link.className = "gp-chat-conv-link is-active";
     link.textContent = title || config.newConversationLabel;
     els.sidebarList.insertBefore(link, els.sidebarList.firstChild);
@@ -129,7 +135,7 @@
         appendBubble("assistant", data.answer);
         setSuggestions(data.suggestions);
         if (isNewConversation && conversationId) {
-          window.history.replaceState({}, "", `/ia/${conversationId}/`);
+          window.history.replaceState({}, "", detailUrl(conversationId));
           addSidebarEntry(conversationId, data.conversation_title);
         }
       })

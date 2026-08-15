@@ -316,6 +316,14 @@ class EmployeeImportConfirmView(RoleRequiredMixin, View):
 
         if created:
             messages.success(request, f"{len(created)} employé(s) importé(s) avec succès.")
+            email_failures = [c for c in created if not c.get("email_sent", True)]
+            if email_failures:
+                emails = ", ".join(c["email"] for c in email_failures)
+                messages.warning(
+                    request,
+                    f"Compte(s) créé(s) mais e-mail de bienvenue non envoyé (problème d'envoi) : {emails}. "
+                    "Réinitialisez leur mot de passe manuellement pour leur communiquer un accès.",
+                )
         if failed:
             details = "; ".join(f"ligne {f['row']} ({f['email']}) : {f['error']}" for f in failed)
             messages.error(request, f"{len(failed)} ligne(s) n'ont pas pu être importées : {details}")

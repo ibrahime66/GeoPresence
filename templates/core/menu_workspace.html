@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}Mon espace — GeoPresence{% endblock %}
+{% block page_title %}Mon espace{% endblock %}
+{% block content %}
+<div class="gp-home">
+  <section class="gp-home-section">
+    <div class="gp-home-actions">
+      <a href="{% url 'leaves:my_leaves' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="calendar" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Mes congés" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      <a href="{% url 'absences:my_absences' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="clipboard" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">{% trans "Mes absences" %}</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% if ai_available %}
+      <a href="{% url 'ai:chat' %}" class="gp-home-action-card is-neutral">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="mail" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">GeoIA</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

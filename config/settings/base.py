@@ -126,8 +126,8 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
                 "apps.core.context_processors.sidebar_counts",
                 "apps.core.context_processors.org_modules",
-                "apps.core.context_processors.org_branding",
                 "apps.core.context_processors.ai_sidebar",
+                "apps.core.context_processors.analytics",
             ],
         },
     },
@@ -247,6 +247,11 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 # désactive le CAPTCHA partout (pratique en dev local).
 HCAPTCHA_SITE_KEY = env("HCAPTCHA_SITE_KEY", default="")
 HCAPTCHA_SECRET_KEY = env("HCAPTCHA_SECRET_KEY", default="")
+
+# Google Analytics (GA4) — pages vitrine publiques uniquement (voir
+# apps.core.context_processors.analytics). Vide par défaut : aucun script,
+# aucun cookie tant que la variable n'est pas positionnée.
+GA_MEASUREMENT_ID = env("GA_MEASUREMENT_ID", default="")
 
 # Assistant GeoIA (CDC §15) — configuration serveur uniquement, jamais via une
 # page web : la clé API d'un fournisseur tiers ne doit jamais transiter par un

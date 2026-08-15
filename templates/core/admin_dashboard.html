@@ -2,114 +2,143 @@
 {% block title %}Tableau de bord — GeoPresence{% endblock %}
 {% block page_title %}Tableau de bord{% endblock %}
 {% block content %}
-<div class="gp-ov">
+<div class="gp-home">
 
-  <div class="gp-ov-header">
-    <div>
-      <span class="gp-ov-eyebrow">{{ user.tenant.display_name }} · {% now "l d F Y" %}</span>
-      <h1>Bienvenue, {{ user.full_name|default:user.email }}</h1>
-    </div>
-    <div class="gp-ov-header-actions">
-      <a href="{% url 'leaves:pending' %}" class="gp-ov-action{% if pending_leaves %} has-badge{% endif %}">
-        {% include "core/_icon.html" with icon="calendar" size="16" %}
-        <span>Congés à valider</span>
-        {% if pending_leaves %}<span class="gp-ov-action-count">{{ pending_leaves }}</span>{% endif %}
-      </a>
-      <a href="{% url 'absences:pending' %}" class="gp-ov-action{% if pending_absences %} has-badge{% endif %}">
-        {% include "core/_icon.html" with icon="clipboard" size="16" %}
-        <span>Justificatifs à valider</span>
-        {% if pending_absences %}<span class="gp-ov-action-count">{{ pending_absences }}</span>{% endif %}
-      </a>
+  <div class="gp-home-welcome">
+    <h1>Bonjour, {% firstof user.first_name user.full_name user.email %}</h1>
+    <p>Voici ce qui se passe aujourd'hui</p>
+    <div class="gp-home-context">
+      <span class="gp-home-context-pill">{% include "core/_icon.html" with icon="calendar" size="15" %}{% now "l d F Y" %}</span>
+      {% if user.tenant %}
+      <span class="gp-home-context-pill">{% include "core/_icon.html" with icon="building" size="15" %}{{ user.tenant.display_name }}</span>
+      {% endif %}
     </div>
   </div>
 
-  <div class="gp-ov-kpis">
-    <div class="gp-ov-kpi">
-      <span class="gp-ov-kpi-label">Présents aujourd'hui</span>
-      <span class="gp-ov-kpi-value">{{ present_today }}<span class="gp-ov-kpi-unit">/ {{ total_employees }}</span></span>
+  {% if pending_leaves or pending_absences %}
+  <section class="gp-home-section">
+    <h2 class="gp-home-section-title">À traiter</h2>
+    <div class="gp-home-actions">
+      {% if pending_leaves %}
+      <a href="{% url 'leaves:pending' %}" class="gp-home-action-card">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="calendar" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">Congés à valider <span class="gp-home-action-badge">{{ pending_leaves }}</span></span>
+          <span class="gp-home-action-desc">Voir et approuver</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% endif %}
+      {% if pending_absences %}
+      <a href="{% url 'absences:pending' %}" class="gp-home-action-card">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="clipboard" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">Justificatifs à valider <span class="gp-home-action-badge">{{ pending_absences }}</span></span>
+          <span class="gp-home-action-desc">Voir et approuver</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% endif %}
     </div>
-    <div class="gp-ov-kpi">
-      <span class="gp-ov-kpi-label">Absents aujourd'hui</span>
-      <span class="gp-ov-kpi-value tone-danger">{{ absent_today }}</span>
+  </section>
+  {% endif %}
+
+  <section class="gp-home-section">
+    <h2 class="gp-home-section-title">Résumé d'aujourd'hui</h2>
+    <div class="gp-home-stats">
+      <div class="gp-home-stat tone-success">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="check" size="18" %}</span>
+        <span class="gp-home-stat-label">Présents</span>
+        <span class="gp-home-stat-value">{{ present_today }}<span class="gp-home-stat-unit">/ {{ total_employees }}</span></span>
+      </div>
+      <div class="gp-home-stat tone-danger">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="x-circle" size="18" %}</span>
+        <span class="gp-home-stat-label">Absents</span>
+        <span class="gp-home-stat-value">{{ absent_today }}</span>
+      </div>
+      <div class="gp-home-stat tone-warning">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="clock" size="18" %}</span>
+        <span class="gp-home-stat-label">Retards</span>
+        <span class="gp-home-stat-value">{{ late_today }}</span>
+      </div>
+      <div class="gp-home-stat">
+        <span class="gp-home-stat-icon">{% include "core/_icon.html" with icon="target" size="18" %}</span>
+        <span class="gp-home-stat-label">Taux de présence</span>
+        <span class="gp-home-stat-value">
+          {{ rate_today }}<span class="gp-home-stat-unit">%</span>
+          {% if rate_today > rate_yesterday %}<span class="gp-home-stat-trend up">↑</span>
+          {% elif rate_today < rate_yesterday %}<span class="gp-home-stat-trend down">↓</span>
+          {% endif %}
+        </span>
+      </div>
     </div>
-    <div class="gp-ov-kpi">
-      <span class="gp-ov-kpi-label">Retards aujourd'hui</span>
-      <span class="gp-ov-kpi-value tone-warning">{{ late_today }}</span>
-    </div>
-    <div class="gp-ov-kpi">
-      <span class="gp-ov-kpi-label">Taux de présence</span>
-      <span class="gp-ov-kpi-value">
-        {{ rate_today }}<span class="gp-ov-kpi-unit">%</span>
-        {% if rate_today > rate_yesterday %}<span class="gp-ov-trend up">↑</span>
-        {% elif rate_today < rate_yesterday %}<span class="gp-ov-trend down">↓</span>
+  </section>
+
+  <section class="gp-home-section">
+    <h2 class="gp-home-section-title">Tendances</h2>
+    <div class="gp-home-panels is-wide">
+      <div class="gp-home-panel">
+        <div class="gp-home-panel-head">
+          <h3>Taux de présence</h3>
+          <span class="gp-home-panel-sub">30 derniers jours</span>
+        </div>
+        <canvas id="trendChart" height="90"></canvas>
+      </div>
+      <div class="gp-home-panel">
+        <div class="gp-home-panel-head">
+          <h3>Absences par motif</h3>
+          <span class="gp-home-panel-sub">Ce mois-ci</span>
+        </div>
+        {% if reason_labels %}
+        <canvas id="reasonChart" height="200"></canvas>
+        {% else %}
+        <div class="gp-home-empty">
+          {% include "core/_icon.html" with icon="clipboard" size="28" %}
+          <span>Aucune absence ce mois-ci.</span>
+        </div>
         {% endif %}
-      </span>
-      <span class="gp-ov-kpi-sub">Hier : {{ rate_yesterday }}%</span>
+      </div>
     </div>
-  </div>
 
-  <div class="gp-ov-grid gp-ov-grid-wide">
-    <div class="gp-ov-panel">
-      <div class="gp-ov-panel-head">
-        <h2>Taux de présence</h2>
-        <span class="gp-ov-panel-sub">30 derniers jours</span>
+    <div class="gp-home-panels is-even">
+      <div class="gp-home-panel">
+        <div class="gp-home-panel-head">
+          <h3>Top retards</h3>
+          <span class="gp-home-panel-sub">Ce mois-ci</span>
+        </div>
+        {% if late_ranking %}
+        <canvas id="lateChart" height="200"></canvas>
+        {% else %}
+        <div class="gp-home-empty">
+          {% include "core/_icon.html" with icon="clock" size="28" %}
+          <span>Aucun retard enregistré ce mois-ci.</span>
+        </div>
+        {% endif %}
       </div>
-      <canvas id="trendChart" height="90"></canvas>
-    </div>
-    <div class="gp-ov-panel">
-      <div class="gp-ov-panel-head">
-        <h2>Absences par motif</h2>
-        <span class="gp-ov-panel-sub">Ce mois-ci</span>
-      </div>
-      {% if reason_labels %}
-      <canvas id="reasonChart" height="200"></canvas>
-      {% else %}
-      <div class="gp-ov-empty">
-        {% include "core/_icon.html" with icon="clipboard" size="28" %}
-        <span>Aucune absence ce mois-ci.</span>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="gp-ov-grid">
-    <div class="gp-ov-panel">
-      <div class="gp-ov-panel-head">
-        <h2>Top retards</h2>
-        <span class="gp-ov-panel-sub">Ce mois-ci</span>
-      </div>
-      {% if late_ranking %}
-      <canvas id="lateChart" height="200"></canvas>
-      {% else %}
-      <div class="gp-ov-empty">
-        {% include "core/_icon.html" with icon="clock" size="28" %}
-        <span>Aucun retard enregistré ce mois-ci.</span>
-      </div>
-      {% endif %}
-    </div>
-    <div class="gp-ov-panel">
-      <div class="gp-ov-panel-head">
-        <h2>Activité récente</h2>
-      </div>
-      <div class="gp-ov-feed">
-        {% for a in recent_attendances %}
-        <div class="gp-ov-feed-row">
-          <span class="gp-ov-feed-dot status-{{ a.status|lower }}"></span>
-          <div class="gp-ov-feed-main">
-            <span class="gp-ov-feed-name">{{ a.employee.user.full_name|default:a.employee.user.email }}</span>
-            <span class="gp-ov-feed-meta">{{ a.get_clock_type_display }} · {{ a.get_status_display }}</span>
+      <div class="gp-home-panel">
+        <div class="gp-home-panel-head">
+          <h3>Activité récente</h3>
+        </div>
+        <div class="gp-home-feed">
+          {% for a in recent_attendances %}
+          <div class="gp-home-feed-row">
+            <span class="gp-home-feed-dot status-{{ a.status|lower }}"></span>
+            <div class="gp-home-feed-main">
+              <span class="gp-home-feed-name">{{ a.employee.user.full_name|default:a.employee.user.email }}</span>
+              <span class="gp-home-feed-meta">{{ a.get_clock_type_display }} · {{ a.get_status_display }}</span>
+            </div>
+            <span class="gp-home-feed-time">{{ a.server_time|date:"d/m H:i" }}</span>
           </div>
-          <span class="gp-ov-feed-time">{{ a.server_time|date:"d/m H:i" }}</span>
+          {% empty %}
+          <div class="gp-home-empty">
+            {% include "core/_icon.html" with icon="target" size="28" %}
+            <span>Aucun pointage.</span>
+          </div>
+          {% endfor %}
         </div>
-        {% empty %}
-        <div class="gp-ov-empty">
-          {% include "core/_icon.html" with icon="target" size="28" %}
-          <span>Aucun pointage.</span>
-        </div>
-        {% endfor %}
       </div>
     </div>
-  </div>
+  </section>
 
 </div>
 
@@ -129,14 +158,14 @@
       datasets: [{
         label: "Taux de présence (%)",
         data: trendValues,
-        borderColor: "#0B63F6",
+        borderColor: "#2C5CE0",
         borderWidth: 2,
-        backgroundColor: "rgba(11,99,246,0.06)",
+        backgroundColor: "rgba(44,92,224,0.06)",
         tension: 0.35,
         fill: true,
         pointRadius: 0,
         pointHoverRadius: 4,
-        pointHoverBackgroundColor: "#0B63F6",
+        pointHoverBackgroundColor: "#2C5CE0",
         pointHitRadius: 12,
       }],
     },
@@ -172,7 +201,7 @@
         labels: reasonLabels,
         datasets: [{
           data: reasonValues,
-          backgroundColor: ["#0B63F6", "#0A1E45", "#2F8CFF", "#98A2B3", "#F4B740", "#64748B"],
+          backgroundColor: ["#2C5CE0", "#0A1E45", "#4A72E8", "#98A2B3", "#F4B740", "#64748B"],
           borderColor: "#FFFFFF",
           borderWidth: 2,
         }],
@@ -195,7 +224,7 @@
       datasets: [{
         label: "Minutes de retard cumulées",
         data: [{% for r in late_ranking %}{{ r.total_late }},{% endfor %}],
-        backgroundColor: "#2F8CFF",
+        backgroundColor: "#2C5CE0",
         borderRadius: 4,
         maxBarThickness: 18,
       }],

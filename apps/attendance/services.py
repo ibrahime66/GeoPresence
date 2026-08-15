@@ -50,7 +50,7 @@ def resolve_clock_date(employee, clock_type, now):
     """RM-HOR-004 : un DEPARTURE (ou une pause) qui suit une arrivée non
     encore clôturée de la veille reste rattaché au jour de cette arrivée
     (équipe de nuit à cheval sur minuit)."""
-    today = now.date()
+    today = timezone.localdate(now)
     if clock_type == Attendance.ClockType.ARRIVAL:
         return today
 
@@ -87,7 +87,7 @@ def get_clock_status(employee, now=None):
     from apps.tenants.org_settings import get_org_setting
 
     if get_org_setting(employee.tenant, "multi_slot_attendance_enabled"):
-        today = now.date()
+        today = timezone.localdate(now)
         schedule = get_effective_schedule(employee, on_date=today)
         if schedule is not None:
             ct = Attendance.ClockType
@@ -108,7 +108,7 @@ def get_clock_status(employee, now=None):
     if Attendance.ClockType.ARRIVAL in departure_day_types and Attendance.ClockType.DEPARTURE not in departure_day_types:
         return Attendance.ClockType.DEPARTURE, departure_date, None
 
-    today = now.date()
+    today = timezone.localdate(now)
     today_types = set(
         Attendance.objects.all_tenants()
         .filter(employee=employee, clock_date=today)
@@ -131,7 +131,7 @@ def _check_sequence(employee, clock_date, clock_type, slot=None, multi_slot=Fals
     if multi_slot and slot is not None and clock_type in (ct.ARRIVAL, ct.DEPARTURE):
         types = _slot_attendance_types(employee, clock_date, slot)
         if clock_type in types:
-            raise ClockRejected(f"{clock_type} déjà enregistré pour ce créneau.", "duplicate")
+            raise ClockRejected(f"{ct(clock_type).label} déjà enregistré(e) pour ce créneau.", "duplicate")
         if clock_type == ct.DEPARTURE and ct.ARRIVAL not in types:
             raise ClockRejected("Aucune arrivée enregistrée pour ce créneau.", "no_arrival")
         return
@@ -143,7 +143,7 @@ def _check_sequence(employee, clock_date, clock_type, slot=None, multi_slot=Fals
     )
 
     if clock_type in existing:
-        raise ClockRejected(f"{clock_type} déjà enregistré pour cette journée.", "duplicate")
+        raise ClockRejected(f"{ct(clock_type).label} déjà enregistré(e) pour cette journée.", "duplicate")
     if clock_type == ct.DEPARTURE and ct.ARRIVAL not in existing:
         raise ClockRejected("Aucune arrivée enregistrée : impossible de pointer un départ.", "no_arrival")
     if clock_type == ct.BREAK_START and ct.ARRIVAL not in existing:

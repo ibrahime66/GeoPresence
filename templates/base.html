@@ -13,156 +13,252 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{% static_v 'css/main.css' %}" rel="stylesheet">
 </head>
-<body class="gp-app-body"{% if org_secondary_color %} style="--gp-blue: {{ org_secondary_color }}; --gp-blue-bright: {{ org_secondary_color }}; --gp-accent-text: {{ org_accent_text }};"{% endif %}>
+<body class="gp-app-body">
 {# Toutes les pages qui étendent base.html sont derrière LoginRequiredMixin/RoleRequiredMixin — #}
 {# user.is_authenticated est donc toujours vrai ici ; pas de variante "visiteur" à gérer. #}
-{# Couleur secondaire de l'organisation (ci-dessus, sur <body>) : boutons, liens et éléments actifs #}
-{# dans toute l'app. Couleur principale (ci-dessous, sur la sidebar uniquement) : fond du menu latéral, #}
-{# avec un jeu de variables de texte recalculé pour rester lisible quelle que soit la couleur choisie. #}
-<div class="gp-shell">
-    <div class="gp-sidebar-backdrop" id="gpSidebarBackdrop"></div>
-    <aside class="gp-sidebar" id="gpSidebar"{% if org_primary_color %} style="--gp-navy: {{ org_primary_color }}; --gp-sidebar-text: {{ org_sidebar_text }}; --gp-sidebar-text-soft: {{ org_sidebar_text_soft }}; --gp-sidebar-text-faint: {{ org_sidebar_text_faint }}; --gp-sidebar-hover-bg: {{ org_sidebar_hover_bg }}; --gp-sidebar-border: {{ org_sidebar_border }};"{% endif %}>
-        <a class="gp-sidebar-brand" href="{% url 'core:dashboard' %}">
+{# RM-UI-NAV (refonte du 11/08/2026) : navigation horizontale façon réseau social #}
+{# (barre du haut sur desktop, barre d'onglets fixe en bas sur mobile) — remplace #}
+{# la sidebar verticale. Les 3 groupes (Mon espace / Organisation / Validations) #}
+{# reprennent tels quels les 3 sections de l'ancienne sidebar, juste reformés en #}
+{# menus déroulants : même arborescence, même permissions, aucun lien retiré. #}
+<header class="gp-navbar">
+    <div class="gp-navbar-inner">
+        <a class="gp-navbar-brand" href="{% url 'core:dashboard' %}">
             <img src="{% static 'img/logo-mark.png' %}" alt="">
-            <span>GeoPresence</span>
+            <span class="gp-navbar-brand-name">GeoPresence</span>
         </a>
-        <nav class="gp-sidebar-nav">
+        {% if user.role == "SUPER_ADMIN" %}
+        <span class="gp-navbar-org-chip gp-navbar-org-chip-platform">
+            <span class="gp-navbar-org-dot" aria-hidden="true"></span>{% trans "Plateforme" %}
+        </span>
+        {% elif user.tenant %}
+        <span class="gp-navbar-org-chip">
+            <span class="gp-navbar-org-dot" aria-hidden="true"></span>{{ user.tenant.display_name }}
+        </span>
+        {% endif %}
+
+        <nav class="gp-navbar-nav">
             {% if user.role == "SUPER_ADMIN" %}
-                <div class="gp-sidebar-section">{% trans "Plateforme" %}</div>
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'superadmin' %}is-active{% endif %}" href="{% url 'superadmin:dashboard' %}">
-                    {% include "core/_icon.html" with icon="grid" size="18" %} {% trans "Tableau de bord" %}
+                <a class="gp-navbar-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'superadmin' %}is-active{% endif %}" href="{% url 'superadmin:dashboard' %}">
+                    {% include "core/_icon.html" with icon="grid" size="17" %}<span>{% trans "Tableau de bord" %}</span>
                 </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'organization_list' %}is-active{% endif %}" href="{% url 'superadmin:organization_list' %}">
-                    {% include "core/_icon.html" with icon="building" size="18" %} {% trans "Organisations" %}
+                <a class="gp-navbar-link {% if request.resolver_match.url_name == 'organization_list' %}is-active{% endif %}" href="{% url 'superadmin:organization_list' %}">
+                    {% include "core/_icon.html" with icon="building" size="17" %}<span>{% trans "Organisations" %}</span>
                 </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'audit_log_list' %}is-active{% endif %}" href="{% url 'superadmin:audit_log_list' %}">
-                    {% include "core/_icon.html" with icon="shield" size="18" %} {% trans "Journal d'audit" %}
+                <a class="gp-navbar-link {% if request.resolver_match.url_name == 'audit_log_list' %}is-active{% endif %}" href="{% url 'superadmin:audit_log_list' %}">
+                    {% include "core/_icon.html" with icon="shield" size="17" %}<span>{% trans "Journal d'audit" %}</span>
                 </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'backups' %}is-active{% endif %}" href="{% url 'backups:list' %}">
-                    {% include "core/_icon.html" with icon="archive" size="18" %} {% trans "Sauvegardes" %}
+                <a class="gp-navbar-link {% if request.resolver_match.namespace == 'backups' %}is-active{% endif %}" href="{% url 'backups:list' %}">
+                    {% include "core/_icon.html" with icon="archive" size="17" %}<span>{% trans "Sauvegardes" %}</span>
                 </a>
                 {% if ai_available %}
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'ai:chat' %}">
-                    {% include "core/_icon.html" with icon="mail" size="18" %} GeoIA
+                <a class="gp-navbar-link gp-navbar-link-icon {% if request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'ai:chat' %}" title="GeoIA">
+                    {% include "core/_icon.html" with icon="mail" size="18" %}
                 </a>
                 {% endif %}
             {% else %}
-                <div class="gp-sidebar-section">{% trans "Tableau de bord" %}</div>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'core' %}is-active{% endif %}" href="{% url 'core:dashboard' %}">
-                    {% include "core/_icon.html" with icon="grid" size="18" %} {% trans "Accueil" %}
+                <a class="gp-navbar-link {% if request.resolver_match.namespace == 'core' %}is-active{% endif %}" href="{% url 'core:dashboard' %}">
+                    {% include "core/_icon.html" with icon="grid" size="17" %}<span>{% trans "Accueil" %}</span>
                 </a>
-                {% if ai_available %}
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'ai:chat' %}">
-                    {% include "core/_icon.html" with icon="mail" size="18" %} GeoIA
-                </a>
-                {% endif %}
 
                 {% if user.role != "ADMIN" %}
-                <div class="gp-sidebar-section">{% trans "Mon espace" %}</div>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'attendance' %}is-active{% endif %}" href="{% url 'attendance:clock_page' %}">
-                    {% include "core/_icon.html" with icon="target" size="18" %} {% trans "Pointer" %}
-                </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'my_leaves' %}is-active{% endif %}" href="{% url 'leaves:my_leaves' %}">
-                    {% include "core/_icon.html" with icon="calendar" size="18" %} {% trans "Mes congés" %}
-                </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'my_absences' %}is-active{% endif %}" href="{% url 'absences:my_absences' %}">
-                    {% include "core/_icon.html" with icon="clipboard" size="18" %} {% trans "Mes absences" %}
-                </a>
+                <div class="gp-navbar-group dropdown">
+                    <button type="button" class="gp-navbar-link gp-navbar-group-trigger {% if request.resolver_match.namespace == 'attendance' and request.resolver_match.url_name == 'clock_page' or request.resolver_match.url_name == 'my_leaves' or request.resolver_match.url_name == 'my_absences' %}is-active{% endif %}" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% include "core/_icon.html" with icon="briefcase" size="17" %}<span>{% trans "Mon espace" %}</span>{% include "core/_icon.html" with icon="chevron-down" size="14" %}
+                    </button>
+                    <div class="dropdown-menu gp-navbar-menu">
+                        <a class="dropdown-item {% if request.resolver_match.namespace == 'attendance' and request.resolver_match.url_name == 'clock_page' %}is-active{% endif %}" href="{% url 'attendance:clock_page' %}">
+                            {% include "core/_icon.html" with icon="target" size="17" %} {% trans "Pointer" %}
+                        </a>
+                        <a class="dropdown-item {% if request.resolver_match.url_name == 'my_leaves' %}is-active{% endif %}" href="{% url 'leaves:my_leaves' %}">
+                            {% include "core/_icon.html" with icon="calendar" size="17" %} {% trans "Mes congés" %}
+                        </a>
+                        <a class="dropdown-item {% if request.resolver_match.url_name == 'my_absences' %}is-active{% endif %}" href="{% url 'absences:my_absences' %}">
+                            {% include "core/_icon.html" with icon="clipboard" size="17" %} {% trans "Mes absences" %}
+                        </a>
+                    </div>
+                </div>
                 {% endif %}
 
                 {% if user.role == "ADMIN" %}
-                <div class="gp-sidebar-section">{% trans "Organisation" %}</div>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'agencies' %}is-active{% endif %}" href="{% url 'agencies:list' %}">
-                    {% include "core/_icon.html" with icon="pin" size="18" %} {% trans "Agences" %}
-                </a>
-                {% for link in module_sidebar_links %}
-                {% if link.enabled %}
-                <a class="gp-sidebar-link {% if link.match_namespace and request.resolver_match.namespace == link.match_namespace or link.match_url_name and request.resolver_match.url_name == link.match_url_name %}is-active{% endif %}" href="{% url link.url_name %}">
-                    {% include "core/_icon.html" with icon=link.icon size="18" %} {{ link.label }}
-                </a>
-                {% endif %}
-                {% endfor %}
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'schedules' %}is-active{% endif %}" href="{% url 'schedules:list' %}">
-                    {% include "core/_icon.html" with icon="clock" size="18" %} {% trans "Horaires" %}
-                </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'employees' %}is-active{% endif %}" href="{% url 'employees:list' %}">
-                    {% include "core/_icon.html" with icon="users" size="18" %} {% trans "Employés" %}
-                </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'announcements' %}is-active{% endif %}" href="{% url 'announcements:list' %}">
-                    {% include "core/_icon.html" with icon="megaphone" size="18" %} {% trans "Annonces" %}
-                </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'tenants' %}is-active{% endif %}" href="{% url 'tenants:settings' %}">
-                    {% include "core/_icon.html" with icon="settings" size="18" %} {% trans "Paramètres" %}
-                </a>
+                <div class="gp-navbar-group dropdown">
+                    <button type="button" class="gp-navbar-link gp-navbar-group-trigger {% if request.resolver_match.namespace == 'agencies' or request.resolver_match.namespace == 'schedules' or request.resolver_match.namespace == 'employees' or request.resolver_match.namespace == 'announcements' or request.resolver_match.namespace == 'tenants' %}is-active{% endif %}" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% include "core/_icon.html" with icon="building" size="17" %}<span>{% trans "Organisation" %}</span>{% include "core/_icon.html" with icon="chevron-down" size="14" %}
+                    </button>
+                    <div class="dropdown-menu gp-navbar-menu">
+                        <a class="dropdown-item {% if request.resolver_match.namespace == 'agencies' %}is-active{% endif %}" href="{% url 'agencies:list' %}">
+                            {% include "core/_icon.html" with icon="pin" size="17" %} {% trans "Agences" %}
+                        </a>
+                        {% for link in module_sidebar_links %}
+                        {% if link.enabled %}
+                        <a class="dropdown-item {% if link.match_namespace and request.resolver_match.namespace == link.match_namespace or link.match_url_name and request.resolver_match.url_name == link.match_url_name %}is-active{% endif %}" href="{% url link.url_name %}">
+                            {% include "core/_icon.html" with icon=link.icon size="17" %} {{ link.label }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                        <a class="dropdown-item {% if request.resolver_match.namespace == 'schedules' %}is-active{% endif %}" href="{% url 'schedules:list' %}">
+                            {% include "core/_icon.html" with icon="clock" size="17" %} {% trans "Horaires" %}
+                        </a>
+                        <a class="dropdown-item {% if request.resolver_match.namespace == 'employees' %}is-active{% endif %}" href="{% url 'employees:list' %}">
+                            {% include "core/_icon.html" with icon="users" size="17" %} {% trans "Employés" %}
+                        </a>
+                        <a class="dropdown-item {% if request.resolver_match.namespace == 'announcements' %}is-active{% endif %}" href="{% url 'announcements:list' %}">
+                            {% include "core/_icon.html" with icon="megaphone" size="17" %} {% trans "Annonces" %}
+                        </a>
+                        <a class="dropdown-item {% if request.resolver_match.namespace == 'tenants' %}is-active{% endif %}" href="{% url 'tenants:settings' %}">
+                            {% include "core/_icon.html" with icon="settings" size="17" %} {% trans "Paramètres" %}
+                        </a>
+                    </div>
+                </div>
                 {% endif %}
 
                 {% if user.role == "ADMIN" or user.role == "MANAGER" %}
-                <div class="gp-sidebar-section">{% trans "Validations" %}</div>
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'pending' and request.resolver_match.namespace == 'leaves' %}is-active{% endif %}" href="{% url 'leaves:pending' %}">
-                    {% include "core/_icon.html" with icon="calendar" size="18" %} {% trans "Congés à valider" %}
-                    {% if pending_leaves_count %}<span class="gp-sidebar-badge">{{ pending_leaves_count }}</span>{% endif %}
-                </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.url_name == 'pending' and request.resolver_match.namespace == 'absences' %}is-active{% endif %}" href="{% url 'absences:pending' %}">
-                    {% include "core/_icon.html" with icon="clipboard" size="18" %} {% trans "Justificatifs à valider" %}
-                    {% if pending_absences_count %}<span class="gp-sidebar-badge">{{ pending_absences_count }}</span>{% endif %}
-                </a>
-                <a class="gp-sidebar-link {% if request.resolver_match.namespace == 'attendance' and request.resolver_match.url_name == 'history' %}is-active{% endif %}" href="{% url 'attendance:history' %}">
-                    {% include "core/_icon.html" with icon="archive" size="18" %} {% trans "Historique pointages" %}
+                {% with total_pending=pending_leaves_count|add:pending_absences_count %}
+                <div class="gp-navbar-group dropdown">
+                    <button type="button" class="gp-navbar-link gp-navbar-group-trigger {% if request.resolver_match.url_name == 'pending' or request.resolver_match.url_name == 'review' or request.resolver_match.namespace == 'attendance' and request.resolver_match.url_name == 'history' %}is-active{% endif %}" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% include "core/_icon.html" with icon="clipboard" size="17" %}<span>{% trans "Validations" %}</span>{% if total_pending %}<span class="gp-navbar-badge">{{ total_pending }}</span>{% endif %}{% include "core/_icon.html" with icon="chevron-down" size="14" %}
+                    </button>
+                    <div class="dropdown-menu gp-navbar-menu">
+                        <a class="dropdown-item {% if request.resolver_match.url_name == 'pending' and request.resolver_match.namespace == 'leaves' %}is-active{% endif %}" href="{% url 'leaves:pending' %}">
+                            {% include "core/_icon.html" with icon="calendar" size="17" %} {% trans "Congés à valider" %}
+                            {% if pending_leaves_count %}<span class="gp-navbar-item-badge">{{ pending_leaves_count }}</span>{% endif %}
+                        </a>
+                        <a class="dropdown-item {% if request.resolver_match.url_name == 'pending' and request.resolver_match.namespace == 'absences' %}is-active{% endif %}" href="{% url 'absences:pending' %}">
+                            {% include "core/_icon.html" with icon="clipboard" size="17" %} {% trans "Justificatifs à valider" %}
+                            {% if pending_absences_count %}<span class="gp-navbar-item-badge">{{ pending_absences_count }}</span>{% endif %}
+                        </a>
+                        <a class="dropdown-item {% if request.resolver_match.namespace == 'attendance' and request.resolver_match.url_name == 'history' %}is-active{% endif %}" href="{% url 'attendance:history' %}">
+                            {% include "core/_icon.html" with icon="archive" size="17" %} {% trans "Historique pointages" %}
+                        </a>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endif %}
+
+                {% if ai_available %}
+                <a class="gp-navbar-link gp-navbar-link-icon {% if request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'ai:chat' %}" title="GeoIA">
+                    {% include "core/_icon.html" with icon="mail" size="18" %}
                 </a>
                 {% endif %}
             {% endif %}
         </nav>
-        <div class="gp-sidebar-foot">
-            <a href="{% url 'accounts:profile' %}" class="gp-sidebar-avatar" title="{% trans 'Mon profil' %}">{{ user.first_name|slice:":1"|upper|default:user.email|slice:":1"|upper }}</a>
-            <a href="{% url 'accounts:profile' %}" class="gp-sidebar-user text-decoration-none">
-                <div class="gp-sidebar-user-name">{{ user.full_name|default:user.email }}</div>
-                <div class="gp-sidebar-user-role">{{ user.get_role_display }}</div>
+
+        <div class="gp-navbar-spacer"></div>
+
+        <div class="gp-navbar-group dropdown gp-navbar-profile">
+            <button type="button" class="gp-navbar-avatar-btn" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{% trans 'Menu du compte' %}">
+                <span class="gp-navbar-avatar">{{ user.first_name|slice:":1"|upper|default:user.email|slice:":1"|upper }}</span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end gp-navbar-menu gp-navbar-profile-menu">
+                <div class="gp-navbar-profile-head">
+                    <span class="gp-navbar-user-name">{{ user.full_name|default:user.email }}</span>
+                    <span class="gp-navbar-user-role">{{ user.get_role_display }}</span>
+                </div>
+                <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                    {% include "core/_icon.html" with icon="users" size="17" %} {% trans "Mon profil" %}
+                </a>
+                <div class="dropdown-divider"></div>
+                <form method="post" action="{% url 'accounts:logout' %}" class="gp-navbar-logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item gp-navbar-logout-item">
+                        {% include "core/_icon.html" with icon="logout" size="17" %} {% trans "Déconnexion" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="gp-titlebar">
+    <div class="gp-titlebar-inner">{% block page_title %}{% endblock %}</div>
+</div>
+
+<main class="gp-content">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+
+{# Barre d'onglets mobile (<992px, cf. media query). RM-UI-NAV-HUB (15/08/2026) : #}
+{# "Organisation"/"Validations"/"Mon espace" sont des liens directs vers un écran #}
+{# plein (core:menu_organisation/menu_validations/menu_workspace) qui liste les #}
+{# mêmes destinations que l'ancien menu déroulant — sur mobile, taper un onglet #}
+{# doit faire quitter l'écran courant comme sur une appli native, pas ouvrir une #}
+{# fenêtre flottante par-dessus. Seul "Profil" reste un menu déroulant (2 actions #}
+{# rapides classiques, cf. Facebook/Instagram). "Pointer" reste un onglet direct #}
+{# (action la plus fréquente), GeoIA rejoint le premier menu plein disponible. #}
+<nav class="gp-bottomnav">
+    {% if user.role == "SUPER_ADMIN" %}
+        <a class="gp-bottomnav-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'superadmin' %}is-active{% endif %}" href="{% url 'superadmin:dashboard' %}">
+            {% include "core/_icon.html" with icon="grid" size="20" %}<span>{% trans "Accueil" %}</span>
+        </a>
+        <a class="gp-bottomnav-link {% if request.resolver_match.url_name == 'organization_list' %}is-active{% endif %}" href="{% url 'superadmin:organization_list' %}">
+            {% include "core/_icon.html" with icon="building" size="20" %}<span>{% trans "Organisations" %}</span>
+        </a>
+        <a class="gp-bottomnav-link {% if request.resolver_match.url_name == 'more_menu' or request.resolver_match.url_name == 'audit_log_list' or request.resolver_match.namespace == 'backups' or request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'superadmin:more_menu' %}">
+            {% include "core/_icon.html" with icon="dots" size="20" %}<span>{% trans "Plus" %}</span>
+        </a>
+    {% else %}
+        <a class="gp-bottomnav-link {% if request.resolver_match.namespace == 'core' %}is-active{% endif %}" href="{% url 'core:dashboard' %}">
+            {% include "core/_icon.html" with icon="grid" size="20" %}<span>{% trans "Accueil" %}</span>
+        </a>
+
+        {% if user.role != "ADMIN" %}
+        <a class="gp-bottomnav-link {% if request.resolver_match.namespace == 'attendance' and request.resolver_match.url_name == 'clock_page' %}is-active{% endif %}" href="{% url 'attendance:clock_page' %}">
+            {% include "core/_icon.html" with icon="target" size="20" %}<span>{% trans "Pointer" %}</span>
+        </a>
+        <a class="gp-bottomnav-link {% if request.resolver_match.url_name == 'menu_workspace' or request.resolver_match.url_name == 'my_leaves' or request.resolver_match.url_name == 'my_absences' or request.resolver_match.url_name == 'chat' or request.resolver_match.url_name == 'chat_detail' %}is-active{% endif %}" href="{% url 'core:menu_workspace' %}">
+            {% include "core/_icon.html" with icon="briefcase" size="20" %}<span>{% trans "Mon espace" %}</span>
+        </a>
+        {% endif %}
+
+        {% if user.role == "ADMIN" %}
+        <a class="gp-bottomnav-link {% if request.resolver_match.url_name == 'menu_organisation' or request.resolver_match.namespace == 'agencies' or request.resolver_match.namespace == 'schedules' or request.resolver_match.namespace == 'employees' or request.resolver_match.namespace == 'announcements' or request.resolver_match.namespace == 'tenants' %}is-active{% endif %}" href="{% url 'core:menu_organisation' %}">
+            {% include "core/_icon.html" with icon="building" size="20" %}<span>{% trans "Organisation" %}</span>
+        </a>
+        {% endif %}
+
+        {% if user.role == "ADMIN" or user.role == "MANAGER" %}
+        {% with total_pending=pending_leaves_count|add:pending_absences_count %}
+        <a class="gp-bottomnav-link {% if request.resolver_match.url_name == 'menu_validations' or request.resolver_match.url_name == 'pending' or request.resolver_match.url_name == 'review' or request.resolver_match.namespace == 'attendance' and request.resolver_match.url_name == 'history' %}is-active{% endif %}" href="{% url 'core:menu_validations' %}">
+            {% include "core/_icon.html" with icon="clipboard" size="20" %}<span>{% trans "Validations" %}</span>
+            {% if total_pending %}<span class="gp-navbar-badge gp-bottomnav-badge">{{ total_pending }}</span>{% endif %}
+        </a>
+        {% endwith %}
+        {% endif %}
+    {% endif %}
+
+    <div class="gp-bottomnav-group dropup gp-bottomnav-profile">
+        <button type="button" class="gp-bottomnav-link gp-bottomnav-group-trigger" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{% trans 'Menu du compte' %}">
+            <span class="gp-bottomnav-avatar">{{ user.first_name|slice:":1"|upper|default:user.email|slice:":1"|upper }}</span><span>{% trans "Profil" %}</span>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end gp-navbar-menu gp-navbar-profile-menu">
+            <div class="gp-navbar-profile-head">
+                <span class="gp-navbar-user-name">{{ user.full_name|default:user.email }}</span>
+                <span class="gp-navbar-user-role">{{ user.get_role_display }}</span>
+            </div>
+            <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                {% include "core/_icon.html" with icon="users" size="17" %} {% trans "Mon profil" %}
             </a>
-            <form method="post" action="{% url 'accounts:logout' %}">
+            <div class="dropdown-divider"></div>
+            <form method="post" action="{% url 'accounts:logout' %}" class="gp-navbar-logout-form">
                 {% csrf_token %}
-                <button type="submit" class="gp-sidebar-logout" aria-label="{% trans 'Se déconnecter' %}" title="{% trans 'Se déconnecter' %}">
-                    {% include "core/_icon.html" with icon="logout" size="18" %}
+                <button type="submit" class="dropdown-item gp-navbar-logout-item">
+                    {% include "core/_icon.html" with icon="logout" size="17" %} {% trans "Déconnexion" %}
                 </button>
             </form>
         </div>
-    </aside>
-
-    <div class="gp-main">
-        <header class="gp-topbar">
-            <button type="button" class="gp-topbar-toggle" id="gpSidebarToggle" aria-label="{% trans 'Ouvrir le menu' %}">
-                {% include "core/_icon.html" with icon="menu" size="20" %}
-            </button>
-            <div class="gp-topbar-title">{% block page_title %}{% endblock %}</div>
-        </header>
-        <main class="gp-content">
-            {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-            {% block content %}{% endblock %}
-        </main>
     </div>
-</div>
-<script>
-    (() => {
-        const sidebar = document.getElementById("gpSidebar");
-        const backdrop = document.getElementById("gpSidebarBackdrop");
-        const toggle = document.getElementById("gpSidebarToggle");
-        if (!sidebar || !toggle) return;
-        const close = () => { sidebar.classList.remove("is-open"); backdrop.classList.remove("is-open"); };
-        toggle.addEventListener("click", () => {
-            sidebar.classList.toggle("is-open");
-            backdrop.classList.toggle("is-open");
-        });
-        backdrop.addEventListener("click", close);
-    })();
-</script>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // positionnement en "fixed" (par rapport à la fenêtre, pas au parent) :
-    // sans ça, un menu ⋮ ouvert dans une cellule de tableau à défilement
-    // horizontal (.gp-table-scroll) serait rogné par ce défilement.
+    // sans ça, un menu déroulant ouvert dans une cellule de tableau à
+    // défilement horizontal (.gp-table-scroll) serait rogné par ce défilement.
     document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach((el) => {
         new bootstrap.Dropdown(el, { popperConfig: { strategy: "fixed" } });
     });

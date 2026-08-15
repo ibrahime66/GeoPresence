@@ -5,8 +5,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import IntegrityError, connection, transaction
-from django.db.models import Count, Sum
-from django.http import HttpResponse, JsonResponse
+from django.db.models import Count, Q, Sum
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views import View
@@ -75,6 +75,63 @@ class ServiceWorkerView(View):
         return response
 
 
+class RobotsTxtView(View):
+    """robots.txt à la racine du domaine — autorise l'indexation des pages
+    publiques et pointe les moteurs de recherche vers le sitemap (référencement
+    du nom "GeoPresence")."""
+
+    def get(self, request):
+        lines = [
+            "User-agent: *",
+            "Allow: /$",
+            "Allow: /confidentialite/",
+            "Allow: /conditions-utilisation/",
+            "Allow: /faq/",
+            "Allow: /accounts/login/",
+            "Disallow: /dashboard/",
+            "Disallow: /admin/",
+            f"Sitemap: {request.scheme}://{request.get_host()}/sitemap.xml",
+        ]
+        return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
+
+
+class GoogleSiteVerificationView(View):
+    """Fichier de vérification de propriété Google Search Console — le contenu
+    doit correspondre exactement à celui fourni par Google pour ce site."""
+
+    def get(self, request):
+        return HttpResponse("google-site-verification: google11cfdbf23fe92380.html", content_type="text/html")
+
+
+class SitemapXmlView(View):
+    """Sitemap minimal des pages publiques (peu de pages, pas besoin du
+    framework django.contrib.sitemaps)."""
+
+    def get(self, request):
+        from apps.core.sector_content import SECTORS
+
+        base = f"{request.scheme}://{request.get_host()}"
+        pages = [
+            ("", "1.0"),
+            ("faq/", "0.6"),
+            ("confidentialite/", "0.3"),
+            ("conditions-utilisation/", "0.3"),
+            ("accounts/login/", "0.5"),
+        ]
+        pages += [(f"secteurs/{slug}/", "0.7") for slug in SECTORS]
+        urls = "\n".join(
+            f"  <url><loc>{base}/{path}</loc><priority>{priority}</priority></url>"
+            for path, priority in pages
+        )
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"{urls}\n"
+            "</urlset>\n"
+        )
+        return HttpResponse(xml, content_type="application/xml")
+
+
 class HomeView(TemplateView):
     """Page d'accueil publique (site vitrine). Un utilisateur déjà connecté est
     renvoyé directement à son tableau de bord plutôt que de revoir la vitrine."""
@@ -85,6 +142,21 @@ class HomeView(TemplateView):
         if request.user.is_authenticated:
             return redirect("core:dashboard")
         return super().get(request, *args, **kwargs)
+
+
+class SectorLandingView(TemplateView):
+    """Page publique par secteur d'activité (référencement) — contenu défini
+    dans apps.core.sector_content.SECTORS, indexé par le slug d'URL."""
+
+    template_name = "core/sector.html"
+
+    def get_context_data(self, **kwargs):
+        from apps.core.sector_content import SECTORS
+
+        sector = SECTORS.get(kwargs["slug"])
+        if sector is None:
+            raise Http404
+        return super().get_context_data(sector=sector, all_sectors=SECTORS, **kwargs)
 
 
 class PrivacyView(TemplateView):
@@ -152,12 +224,21 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             )
         }
         late_today = sum(1 for a in today_arrivals.values() if a.status == Attendance.Status.LATE)
+        on_leave_team_today = self._on_leave_count(user.tenant, today, employee_ids=team_ids) if total_team else 0
+        # Même base de calcul que _presence_rate (date d'entrée / fin de
+        # contrat) pour que "absents" et "taux de présence" restent cohérents
+        # entre eux — sans ça, un employé pas encore réellement entré en poste
+        # ou dont le contrat est déjà terminé pouvait être compté dans l'un et
+        # pas dans l'autre.
+        expected_team_today = self._expected_headcount(user.tenant, today, employee_ids=team_ids)
 
         trend_labels, trend_values = [], []
         for i in range(6, -1, -1):
             d = today - timedelta(days=i)
             trend_labels.append(d.strftime("%d/%m"))
-            trend_values.append(self._presence_rate(user.tenant, d, total_team) if total_team else 0.0)
+            trend_values.append(
+                self._presence_rate(user.tenant, d, employee_ids=team_ids) if total_team else 0.0
+            )
 
         pending_leaves_qs = Leave.objects.all_tenants().filter(
             tenant=user.tenant, status=Leave.Status.PENDING, employee__manager=user,
@@ -179,7 +260,8 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             "team_rows": team_rows,
             "total_team": total_team,
             "present_team_today": len(today_arrivals),
-            "absent_team_today": max(total_team - len(today_arrivals), 0),
+            "on_leave_team_today": on_leave_team_today,
+            "absent_team_today": max(expected_team_today - on_leave_team_today - len(today_arrivals), 0),
             "late_team_today": late_today,
             "team_trend_labels": trend_labels,
             "team_trend_values": trend_values,
@@ -188,17 +270,58 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         }
 
     @staticmethod
-    def _presence_rate(tenant, date, total_employees):
-        if total_employees == 0:
-            return 0.0
-        present = (
-            Attendance.objects.all_tenants()
-            .filter(tenant=tenant, clock_date=date, clock_type=Attendance.ClockType.ARRIVAL)
-            .values("employee_id")
-            .distinct()
-            .count()
+    def _on_leave_count(tenant, date, employee_ids=None):
+        """Employés en congé approuvé couvrant `date` — ni présents, ni
+        absents à proprement parler : ils ne sont pas attendus au travail ce
+        jour-là, donc exclus du dénominateur du taux de présence (sans quoi
+        chaque congé approuvé fait mécaniquement baisser le taux et gonfle le
+        nombre d'« absents », alors que ce n'est pas une absence).
+        `employee_ids` restreint le décompte à une équipe (vue Manager)."""
+        qs = Leave.objects.all_tenants().filter(
+            tenant=tenant, status=Leave.Status.APPROVED, start_date__lte=date, end_date__gte=date
         )
-        return round(present / total_employees * 100, 1)
+        if employee_ids is not None:
+            qs = qs.filter(employee_id__in=employee_ids)
+        return qs.values("employee_id").distinct().count()
+
+    @staticmethod
+    def _expected_headcount(tenant, date, employee_ids=None):
+        """Effectif attendu à `date` — utilisé comme dénominateur du taux de
+        présence. Le statut actuel (Actif/Suspendu/Archivé...) n'est pas
+        historisé (pas de date de changement de statut en base), donc pour une
+        date passée on ne peut se fier qu'à la date d'entrée et la date de fin
+        de contrat : un employé pas encore embauché ou dont le contrat était
+        déjà terminé à `date` est exclu. Le statut courant n'est appliqué que
+        pour la date du jour, seul instant où il reflète vraiment la réalité —
+        sans quoi le taux d'un jour passé (ex. tendance sur 30 jours) était
+        calculé avec l'effectif *actuel* au lieu de l'effectif réel de ce
+        jour-là (faussé pour toute organisation en croissance ou en décroissance)."""
+        qs = Employee.objects.all_tenants().filter(tenant=tenant, hire_date__lte=date).filter(
+            Q(contract_end_date__isnull=True) | Q(contract_end_date__gte=date)
+        )
+        if date >= timezone.localdate():
+            qs = qs.filter(status=Employee.Status.ACTIVE)
+        if employee_ids is not None:
+            qs = qs.filter(id__in=employee_ids)
+        return qs.count()
+
+    @classmethod
+    def _presence_rate(cls, tenant, date, employee_ids=None):
+        """`employee_ids` restreint le calcul à une équipe (vue Manager) — sans
+        ça, le nombre de présents portait sur tout le tenant tandis que le
+        dénominateur ne portait que sur l'équipe, ce qui pouvait afficher un
+        taux de présence d'équipe supérieur à 100 %."""
+        headcount = cls._expected_headcount(tenant, date, employee_ids=employee_ids)
+        expected = max(headcount - cls._on_leave_count(tenant, date, employee_ids=employee_ids), 0)
+        if expected == 0:
+            return 0.0
+        present_qs = Attendance.objects.all_tenants().filter(
+            tenant=tenant, clock_date=date, clock_type=Attendance.ClockType.ARRIVAL
+        )
+        if employee_ids is not None:
+            present_qs = present_qs.filter(employee_id__in=employee_ids)
+        present = present_qs.values("employee_id").distinct().count()
+        return round(present / expected * 100, 1)
 
     def _admin_context(self, tenant):
         today = timezone.localdate()
@@ -217,12 +340,14 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         late_today = Attendance.objects.all_tenants().filter(
             tenant=tenant, clock_date=today, clock_type=Attendance.ClockType.ARRIVAL, status=Attendance.Status.LATE
         ).count()
+        on_leave_today = self._on_leave_count(tenant, today)
+        expected_today = self._expected_headcount(tenant, today)
 
         trend_labels, trend_values = [], []
         for i in range(29, -1, -1):
             d = today - timedelta(days=i)
             trend_labels.append(d.strftime("%d/%m"))
-            trend_values.append(self._presence_rate(tenant, d, total_employees))
+            trend_values.append(self._presence_rate(tenant, d))
 
         reasons_qs = (
             Absence.objects.all_tenants()
@@ -248,10 +373,11 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         return {
             "total_employees": total_employees,
             "present_today": present_today,
-            "absent_today": max(total_employees - present_today, 0),
+            "on_leave_today": on_leave_today,
+            "absent_today": max(expected_today - on_leave_today - present_today, 0),
             "late_today": late_today,
-            "rate_today": self._presence_rate(tenant, today, total_employees),
-            "rate_yesterday": self._presence_rate(tenant, yesterday, total_employees),
+            "rate_today": self._presence_rate(tenant, today),
+            "rate_yesterday": self._presence_rate(tenant, yesterday),
             "pending_leaves": Leave.objects.all_tenants().filter(tenant=tenant, status=Leave.Status.PENDING).count(),
             "pending_absences": Absence.objects.all_tenants().filter(
                 tenant=tenant, status=Absence.Status.PENDING_REVIEW
@@ -307,6 +433,29 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             "active_announcements": announcement_services.active_announcements_for_employee(employee),
         })
         return context
+
+
+# RM-UI-NAV-HUB (15/08/2026) : écrans plein qui remplacent les anciens menus
+# déroulants de la barre d'onglets mobile. Taper "Organisation"/"Validations"/
+# "Mon espace" doit faire quitter complètement l'écran courant (comme un
+# onglet Facebook/Instagram), pas ouvrir une fenêtre flottante par-dessus le
+# tableau de bord. Aucune donnée propre : ces vues listent les mêmes liens
+# que les groupes de la barre du haut (desktop, laissée en menu déroulant —
+# assez de place pour ça) ; les compteurs de badge viennent des context
+# processors déjà globaux (apps.core.context_processors.sidebar_counts).
+class OrganisationMenuView(RoleRequiredMixin, TemplateView):
+    allowed_roles = ("ADMIN",)
+    template_name = "core/menu_organisation.html"
+
+
+class ValidationsMenuView(RoleRequiredMixin, TemplateView):
+    allowed_roles = ("ADMIN", "MANAGER")
+    template_name = "core/menu_validations.html"
+
+
+class WorkspaceMenuView(RoleRequiredMixin, TemplateView):
+    allowed_roles = ("MANAGER", "EMPLOYEE")
+    template_name = "core/menu_workspace.html"
 
 
 class TenantQuerysetMixin:
