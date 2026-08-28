@@ -35,6 +35,7 @@
               </button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="{% url 'agencies:update' agency.pk %}">Modifier</a></li>
+                <li><a class="dropdown-item" href="{% url 'agencies:qr' agency.pk %}">Code QR de pointage</a></li>
                 <li>
                   <form method="post" action="{% url 'agencies:toggle_active' agency.pk %}">
                     {% csrf_token %}

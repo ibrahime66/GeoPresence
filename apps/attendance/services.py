@@ -266,6 +266,7 @@ def clock(
     client_time=None,
     now=None,
     mode=Attendance.Mode.ONLINE,
+    source=Attendance.Source.APP,
 ):
     """Orchestration complète d'un pointage — CDC §9.3.6 (re-validation
     serveur de toutes les vérifications, calcul du statut, enregistrement)."""
@@ -354,6 +355,7 @@ def clock(
         overtime_minutes=overtime,
         status=status,
         mode=mode,
+        source=source or Attendance.Source.APP,
         synced_at=now if is_offline else None,
         notes=f"Synchronisé hors ligne — motif de contrôle : {pending_reason}" if pending_reason else "",
     )

@@ -37,6 +37,13 @@ class Schedule(TenantModel):
     )
     is_active = models.BooleanField("actif", default=True)
 
+    # CDC §10.2.4 : "L'emploi du temps d'un enseignant est défini par semestre
+    # ou trimestre." Texte libre plutôt qu'une liste de choix figée — les
+    # établissements ne découpent pas tous leur année scolaire pareil
+    # (trimestres, semestres, année complète...). Visible uniquement si
+    # school_scheduling_enabled (cf. apps.schedules.forms.ScheduleForm).
+    term = models.CharField("période (trimestre/semestre)", max_length=100, blank=True)
+
     # Surchargent les paramètres par défaut de l'organisation si renseignés (CDC §10.2.1).
     late_tolerance_minutes = models.PositiveSmallIntegerField(
         "tolérance de retard (min)", null=True, blank=True
@@ -85,6 +92,21 @@ class ScheduleSlot(TenantModel):
     )
 
     is_cancelled = models.BooleanField("annulé", default=False)
+
+    # CDC §10.2.4 : "Chaque créneau est lié à une matière, une salle et un
+    # groupe d'étudiants (informations stockées pour référence, non gérées
+    # par ce module)" — donc du texte libre, pas de FK vers un futur modèle
+    # Matière/Salle/Classe (hors périmètre). Visibles uniquement si
+    # school_scheduling_enabled (cf. apps.schedules.forms.ScheduleSlotForm).
+    subject = models.CharField("matière", max_length=150, blank=True)
+    room = models.CharField("salle", max_length=100, blank=True)
+    student_group = models.CharField("groupe / classe", max_length=150, blank=True)
+    # CDC §10.2.4 : "Un créneau annulé (maladie, substitution) doit être
+    # marqué comme absent ou remplacé." is_cancelled couvre le premier cas ;
+    # ce champ couvre le second — qui remplace, en texte libre (pas de FK
+    # employé : un remplaçant est souvent externe, pas forcément dans
+    # l'effectif de l'organisation).
+    substitute_note = models.CharField("remplacement", max_length=255, blank=True)
 
     class Meta:
         ordering = ["weekday", "start_time"]

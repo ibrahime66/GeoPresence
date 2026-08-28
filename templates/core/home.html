@@ -5,37 +5,41 @@
 
   <!-- ============ HERO ============ -->
   <section class="gp-hero">
-    <div>
-      <span class="gp-eyebrow"><span class="dot"></span> Multi-site &amp; multi-organisation</span>
-      <h1>Le pointage qui prouve <span class="accent">où</span> vos équipes travaillent.</h1>
-      <p class="lead">
-        Géolocalisation en temps réel, calcul automatique des retards et des heures
-        supplémentaires : une seule plateforme pour piloter la présence de vos équipes, sur un ou
-        plusieurs sites.
-      </p>
-      <div class="gp-hero-ctas">
-        <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary gp-btn-lg">Se connecter</a>
-        <a href="#comment-ca-marche" class="gp-btn gp-btn-ghost gp-btn-lg">Comment ça marche</a>
-      </div>
-      <div class="gp-trust-row">
-        <span>{% include "core/_icon.html" with icon="check" %} Isolation stricte entre organisations</span>
-        <span>{% include "core/_icon.html" with icon="check" %} Journal d'audit inaltérable</span>
-        <span>{% include "core/_icon.html" with icon="check" %} Mots de passe protégés, jamais stockés en clair</span>
-      </div>
-    </div>
-
-    <div class="gp-hero-visual">
-      <div class="gp-mock">
-        <div class="gp-mock-map">
-          <div class="gp-mock-zone"></div>
-          <img src="{% static 'img/logo-mark.png' %}" alt="" class="gp-mock-pin">
-          <div class="gp-mock-radius-label">Rayon autorisé : 200 m</div>
+    <div class="gp-hero-inner">
+      <div class="gp-reveal">
+        <span class="gp-eyebrow"><span class="dot"></span> Multi-site &amp; multi-organisation</span>
+        <h1>Le pointage qui prouve <span class="accent">où</span> vos équipes travaillent.</h1>
+        <p class="lead">
+          Géolocalisation en temps réel, calcul automatique des retards et des heures
+          supplémentaires : une seule plateforme pour piloter la présence de vos équipes, sur un ou
+          plusieurs sites.
+        </p>
+        <div class="gp-hero-ctas">
+          <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary gp-btn-lg">Se connecter</a>
+          <a href="#comment-ca-marche" class="gp-btn gp-btn-ghost gp-btn-lg">Comment ça marche</a>
         </div>
-        <div class="gp-mock-result">
-          <div class="gp-mock-check">{% include "core/_icon.html" with icon="check" color="white" %}</div>
-          <div class="gp-mock-result-text">
-            <strong>Arrivée enregistrée</strong>
-            <span>08:02 — À l'heure</span>
+        <div class="gp-trust-row">
+          <span>{% include "core/_icon.html" with icon="check" %} Isolation stricte entre organisations</span>
+          <span>{% include "core/_icon.html" with icon="check" %} Journal d'audit inaltérable</span>
+          <span>{% include "core/_icon.html" with icon="check" %} Mots de passe protégés, jamais stockés en clair</span>
+        </div>
+      </div>
+
+      <div class="gp-hero-visual gp-reveal" data-reveal-delay="1">
+        <div class="gp-mock">
+          <div class="gp-mock-map">
+            <span class="gp-mock-coords">48.858370, 2.294481</span>
+            <div class="gp-mock-zone"></div>
+            <div class="gp-mock-zone gp-mock-zone-pulse"></div>
+            <img src="{% static 'img/logo-mark.png' %}" alt="" class="gp-mock-pin">
+            <div class="gp-mock-radius-label">Rayon autorisé : 200 m</div>
+          </div>
+          <div class="gp-mock-result">
+            <div class="gp-mock-check">{% include "core/_icon.html" with icon="check" color="white" %}</div>
+            <div class="gp-mock-result-text">
+              <strong>Arrivée enregistrée</strong>
+              <span>08:02 — À l'heure</span>
+            </div>
           </div>
         </div>
       </div>
@@ -44,12 +48,12 @@
 
   <!-- ============ APERÇU DU PRODUIT ============ -->
   <section class="gp-section pt-0">
-    <div class="gp-section-head">
+    <div class="gp-section-head gp-reveal">
       <span class="gp-kicker">Aperçu</span>
       <h2>Le tableau de bord qui vous dit tout, d'un coup d'œil</h2>
       <p>Présences, retards, congés en attente : l'essentiel de votre organisation sur un seul écran.</p>
     </div>
-    <div class="gp-preview-frame">
+    <div class="gp-preview-frame gp-reveal">
       <div class="gp-preview-bar">
         <span class="gp-preview-dot"></span>
         <span class="gp-preview-dot"></span>
@@ -63,31 +67,31 @@
   </section>
 
   <!-- ============ COMMENT ÇA MARCHE ============ -->
-  <section class="gp-section" id="comment-ca-marche">
-    <div class="gp-section-head">
+  <section class="gp-section gp-tint" id="comment-ca-marche">
+    <div class="gp-section-head gp-reveal">
       <span class="gp-kicker">Comment ça marche</span>
       <h2>Trois vérifications, en moins d'une seconde</h2>
       <p>Le pointage est revalidé côté serveur à chaque étape, jamais seulement côté téléphone.</p>
     </div>
     <div class="gp-how-grid">
       <div class="gp-steps">
-        <div class="gp-step">
-          <div class="gp-step-num">1</div>
+        <div class="gp-step gp-reveal">
+          <div class="gp-step-num">01</div>
           <h3>L'employé pointe</h3>
           <p>Depuis son téléphone, en un geste : position GPS haute précision affichée en direct sur une carte interactive.</p>
         </div>
-        <div class="gp-step">
-          <div class="gp-step-num">2</div>
+        <div class="gp-step gp-reveal" data-reveal-delay="1">
+          <div class="gp-step-num">02</div>
           <h3>Le système vérifie</h3>
           <p>Zone GPS autorisée, horaire attendu, absence de doublon, cohérence de la séquence arrivée/départ.</p>
         </div>
-        <div class="gp-step">
-          <div class="gp-step-num">3</div>
+        <div class="gp-step gp-reveal" data-reveal-delay="2">
+          <div class="gp-step-num">03</div>
           <h3>Le statut est calculé</h3>
           <p>À l'heure, retard, départ anticipé ou heures supplémentaires : calculés automatiquement, sans ressaisie.</p>
         </div>
       </div>
-      <div class="gp-phone-frame">
+      <div class="gp-phone-frame gp-reveal" data-reveal-delay="1">
         <span class="gp-phone-notch"></span>
         <img
           src="{% static 'img/clock-mobile-preview.png' %}"
@@ -99,38 +103,38 @@
 
   <!-- ============ FONCTIONNALITÉS ============ -->
   <section class="gp-section" id="fonctionnalites">
-    <div class="gp-section-head">
+    <div class="gp-section-head gp-reveal">
       <span class="gp-kicker">Fonctionnalités</span>
       <h2>Tout ce qu'il faut pour piloter la présence</h2>
       <p>Pensé pour les organisations avec plusieurs sites, plusieurs équipes et des horaires qui ne se ressemblent pas.</p>
     </div>
     <div class="gp-features">
-      <div class="gp-card">
+      <div class="gp-card gp-reveal">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="pin" %}</div>
         <h3>Géofencing précis</h3>
         <p>Chaque agence définit sa zone GPS autorisée (50 à 5000 m). Un pointage hors zone est refusé et journalisé.</p>
       </div>
-      <div class="gp-card">
+      <div class="gp-card gp-reveal" data-reveal-delay="1">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="target" %}</div>
         <h3>Position vérifiée en direct</h3>
         <p>Carte GPS interactive et détection de position simulée : impossible de pointer sans être réellement sur place.</p>
       </div>
-      <div class="gp-card">
+      <div class="gp-card gp-reveal" data-reveal-delay="2">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="building" %}</div>
         <h3>Multi-site &amp; multi-organisation</h3>
         <p>Une organisation, plusieurs agences, et une isolation stricte des données entre chaque client de la plateforme.</p>
       </div>
-      <div class="gp-card">
+      <div class="gp-card gp-reveal">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="calendar" %}</div>
         <h3>Horaires flexibles</h3>
         <p>Fixes, en rotation, personnalisés ou par créneau, avec gestion automatique des équipes de nuit à cheval sur minuit.</p>
       </div>
-      <div class="gp-card">
+      <div class="gp-card gp-reveal" data-reveal-delay="1">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="clipboard" %}</div>
         <h3>Congés &amp; absences</h3>
         <p>Demandes, validations et soldes gérés de bout en bout, avec motifs et workflow manager dédié.</p>
       </div>
-      <div class="gp-card">
+      <div class="gp-card gp-reveal" data-reveal-delay="2">
         <div class="gp-card-icon">{% include "core/_icon.html" with icon="shield" %}</div>
         <h3>Journal d'audit inaltérable</h3>
         <p>Chaque connexion, chaque pointage, chaque modification est tracée, en écriture seule, sans exception.</p>
@@ -140,11 +144,11 @@
 
   <!-- ============ SECTEURS ============ -->
   <section class="gp-section pt-0">
-    <div class="gp-section-head mb-4">
+    <div class="gp-section-head mb-4 gp-reveal">
       <span class="gp-kicker">Pour qui</span>
       <h2>Une plateforme, tous les secteurs</h2>
     </div>
-    <div class="gp-pills">
+    <div class="gp-pills gp-reveal">
       <a class="gp-pill" href="{% url 'core:sector' 'entreprises' %}">Entreprises</a>
       <a class="gp-pill" href="{% url 'core:sector' 'ecoles' %}">Établissements scolaires</a>
       <a class="gp-pill" href="{% url 'core:sector' 'universites' %}">Universités</a>
@@ -161,15 +165,15 @@
   <section class="gp-security" id="securite">
     <div class="gp-section">
       <div class="gp-security-grid">
-        <div>
+        <div class="gp-reveal">
           <span class="gp-kicker">Sécurité</span>
-          <h2 class="mt-2 mb-3" style="font-size:2rem;font-weight:800;color:var(--gp-navy);">La sécurité au cœur de la plateforme</h2>
+          <h2 class="mt-2 mb-3">La sécurité au cœur de la plateforme</h2>
           <p style="color:var(--gp-gray-600);">
             Isolation des données, chiffrement et traçabilité font partie de l'architecture de GeoPresence
             depuis le premier jour, pas ajoutés après coup.
           </p>
         </div>
-        <ul>
+        <ul class="gp-reveal" data-reveal-delay="1">
           <li>{% include "core/_icon.html" with icon="check" %} Mots de passe hachés, jamais stockés en clair</li>
           <li>{% include "core/_icon.html" with icon="check" %} Verrouillage automatique après plusieurs échecs de connexion</li>
           <li>{% include "core/_icon.html" with icon="check" %} Isolation stricte des données entre organisations, fail-secure par défaut</li>
@@ -182,7 +186,7 @@
 
   <!-- ============ CTA FINALE ============ -->
   <section class="gp-section">
-    <div class="gp-cta-band">
+    <div class="gp-cta-band gp-reveal">
       <h2>Prêt à essayer GeoPresence ?</h2>
       <p>Connectez-vous pour découvrir la plateforme.</p>
       <a href="{% url 'accounts:login' %}" class="gp-btn gp-btn-primary gp-btn-lg">Se connecter</a>

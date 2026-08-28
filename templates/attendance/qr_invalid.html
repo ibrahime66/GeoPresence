@@ -1,0 +1,10 @@
+{% extends "accounts/auth_base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Code QR invalide" %} — GeoPresence{% endblock %}
+{% block auth_content %}
+<h1 class="gp-auth-title">{% trans "Ce code QR n'est plus valide" %}</h1>
+<p class="text-muted mb-4">
+  {% trans "Il a peut-être été régénéré par votre administrateur, ou l'organisation n'est plus active. Utilisez le bouton \"Pointer\" habituel dans l'application, ou contactez votre administrateur si le problème persiste." %}
+</p>
+<a href="{% url 'core:dashboard' %}" class="btn btn-primary w-100">{% trans "Retour à l'application" %}</a>
+{% endblock %}

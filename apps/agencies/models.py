@@ -1,3 +1,5 @@
+import secrets
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -82,6 +84,15 @@ class Agency(TenantModel):
         verbose_name="horaire par défaut",
     )
 
+    # RM-QR-001 : jeton d'un code QR imprimable affiché sur site. Le QR
+    # n'accorde JAMAIS de pointage à lui seul — il pré-sélectionne juste cette
+    # agence sur l'écran de pointage, la vérification GPS habituelle
+    # (check_point) s'applique ensuite normalement. Champ séparé de `id`
+    # (UUID déjà non devinable) précisément pour rester régénérable : si
+    # l'affiche imprimée est perdue/compromise, l'Admin régénère ce jeton et
+    # l'ancien QR devient aussitôt invalide, sans toucher à l'agence elle-même.
+    qr_token = models.CharField("jeton QR", max_length=64, blank=True, db_index=True)
+
     class Meta:
         verbose_name = "agence"
         verbose_name_plural = "agences"
@@ -92,6 +103,16 @@ class Agency(TenantModel):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+
+    def save(self, *args, **kwargs):
+        if not self.qr_token:
+            self.qr_token = secrets.token_urlsafe(24)
+        super().save(*args, **kwargs)
+
+    def regenerate_qr_token(self):
+        """Invalide immédiatement toute affiche imprimée existante (RM-QR-001)."""
+        self.qr_token = secrets.token_urlsafe(24)
+        self.save(update_fields=["qr_token"])
 
     def clean(self):
         super().clean()

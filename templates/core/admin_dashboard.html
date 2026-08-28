@@ -15,10 +15,20 @@
     </div>
   </div>
 
-  {% if pending_leaves or pending_absences %}
+  {% if pending_leaves or pending_absences or unstaffed_slots_count %}
   <section class="gp-home-section">
     <h2 class="gp-home-section-title">À traiter</h2>
     <div class="gp-home-actions">
+      {% if unstaffed_slots_count %}
+      <a href="{% url 'schedules:unstaffed' %}" class="gp-home-action-card">
+        <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="alert" size="20" %}</span>
+        <span class="gp-home-action-body">
+          <span class="gp-home-action-title">Cours sans professeur <span class="gp-home-action-badge">{{ unstaffed_slots_count }}</span></span>
+          <span class="gp-home-action-desc">Aucun pointage malgré la fenêtre d'arrivée dépassée</span>
+        </span>
+        {% include "core/_icon.html" with icon="chevron-right" size="18" %}
+      </a>
+      {% endif %}
       {% if pending_leaves %}
       <a href="{% url 'leaves:pending' %}" class="gp-home-action-card">
         <span class="gp-home-action-icon">{% include "core/_icon.html" with icon="calendar" size="20" %}</span>
@@ -149,6 +159,19 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
 (() => {
+  // RM-UI-THEME (18/08/2026) : Chart.js ne lit pas nos variables CSS, ses
+  // couleurs sont figées à la création du graphique — on lit donc le thème
+  // une fois ici plutôt que de coder deux jeux de couleurs séparément dans
+  // chaque config. Un graphique déjà affiché ne se recolore pas tout seul si
+  // l'utilisateur bascule le thème en cours de route (pas de vrai bug, juste
+  // pas retouché avant le prochain chargement de page).
+  const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+  const chartTick = isDark ? "#8B93A7" : "#98A2B3";
+  const chartTickStrong = isDark ? "#C3CADA" : "#475467";
+  const chartGrid = isDark ? "rgba(228,233,245,0.08)" : "rgba(16,24,40,0.055)";
+  const chartTooltipBg = isDark ? "#1B2340" : "#0A1E45";
+  const chartCardBg = isDark ? "#0E1330" : "#FFFFFF";
+
   const trendLabels = JSON.parse(document.getElementById("trend-labels").textContent);
   const trendValues = JSON.parse(document.getElementById("trend-values").textContent);
   new Chart(document.getElementById("trendChart"), {
@@ -173,18 +196,18 @@
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#0A1E45", padding: 10, cornerRadius: 8, displayColors: false,
+          backgroundColor: chartTooltipBg, padding: 10, cornerRadius: 8, displayColors: false,
           titleFont: { size: 12 }, bodyFont: { size: 12, weight: "600" },
         },
       },
       scales: {
         y: {
-          min: 0, max: 100, ticks: { callback: (v) => v + "%", color: "#98A2B3", font: { size: 11 } },
-          grid: { color: "rgba(16,24,40,0.055)", drawTicks: false },
+          min: 0, max: 100, ticks: { callback: (v) => v + "%", color: chartTick, font: { size: 11 } },
+          grid: { color: chartGrid, drawTicks: false },
           border: { display: false },
         },
         x: {
-          ticks: { color: "#98A2B3", font: { size: 11 }, maxTicksLimit: 8, autoSkip: true },
+          ticks: { color: chartTick, font: { size: 11 }, maxTicksLimit: 8, autoSkip: true },
           grid: { display: false },
           border: { display: false },
         },
@@ -202,15 +225,15 @@
         datasets: [{
           data: reasonValues,
           backgroundColor: ["#2C5CE0", "#0A1E45", "#4A72E8", "#98A2B3", "#F4B740", "#64748B"],
-          borderColor: "#FFFFFF",
+          borderColor: chartCardBg,
           borderWidth: 2,
         }],
       },
       options: {
         cutout: "68%",
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 8, usePointStyle: true, padding: 14, font: { size: 11.5 }, color: "#475467" } },
-          tooltip: { backgroundColor: "#0A1E45", padding: 10, cornerRadius: 8 },
+          legend: { position: "bottom", labels: { boxWidth: 8, usePointStyle: true, padding: 14, font: { size: 11.5 }, color: chartTickStrong } },
+          tooltip: { backgroundColor: chartTooltipBg, padding: 10, cornerRadius: 8 },
         },
       },
     });
@@ -233,11 +256,11 @@
       indexAxis: "y",
       plugins: {
         legend: { display: false },
-        tooltip: { backgroundColor: "#0A1E45", padding: 10, cornerRadius: 8, displayColors: false },
+        tooltip: { backgroundColor: chartTooltipBg, padding: 10, cornerRadius: 8, displayColors: false },
       },
       scales: {
-        x: { grid: { color: "rgba(16,24,40,0.055)" }, border: { display: false }, ticks: { color: "#98A2B3", font: { size: 11 } } },
-        y: { grid: { display: false }, border: { display: false }, ticks: { color: "#475467", font: { size: 11.5 } } },
+        x: { grid: { color: chartGrid }, border: { display: false }, ticks: { color: chartTick, font: { size: 11 } } },
+        y: { grid: { display: false }, border: { display: false }, ticks: { color: chartTickStrong, font: { size: 11.5 } } },
       },
     },
   });

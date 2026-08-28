@@ -1,9 +1,19 @@
 from django import forms
 from django.forms import BaseInlineFormSet, inlineformset_factory
 
-from apps.core.forms import BootstrapModelFormMixin
+from apps.core.forms import BootstrapModelFormMixin, apply_module_gating
 
 from .models import Schedule, ScheduleSlot, Weekday
+
+# RM-ORG-SCHOOL : un seul endroit pour la correspondance champ -> réglage,
+# réutilisé par les deux formulaires ci-dessous.
+SCHOOL_SCHEDULE_GATED_FIELDS = {"term": "school_scheduling_enabled"}
+SCHOOL_SLOT_GATED_FIELDS = {
+    "subject": "school_scheduling_enabled",
+    "room": "school_scheduling_enabled",
+    "student_group": "school_scheduling_enabled",
+    "substitute_note": "school_scheduling_enabled",
+}
 
 
 def _time_to_minutes(t):
@@ -29,12 +39,13 @@ class ScheduleForm(BootstrapModelFormMixin, forms.ModelForm):
     class Meta:
         model = Schedule
         fields = [
-            "name", "schedule_type", "is_active",
+            "name", "schedule_type", "is_active", "term",
             "late_tolerance_minutes", "early_leave_tolerance_minutes", "overtime_threshold_minutes",
         ]
 
     def __init__(self, *args, tenant=None, **kwargs):
         super().__init__(*args, **kwargs)
+        apply_module_gating(self, tenant, SCHOOL_SCHEDULE_GATED_FIELDS)
 
 
 class ScheduleSlotForm(BootstrapModelFormMixin, forms.ModelForm):
@@ -44,7 +55,7 @@ class ScheduleSlotForm(BootstrapModelFormMixin, forms.ModelForm):
             "weekday", "start_time", "end_time", "break_start_time", "break_end_time",
             "clock_in_window_before_minutes", "clock_in_window_after_minutes",
             "clock_out_window_before_minutes", "clock_out_window_after_minutes",
-            "is_cancelled",
+            "is_cancelled", "subject", "room", "student_group", "substitute_note",
         ]
         widgets = {
             "start_time": forms.TimeInput(attrs={"type": "time"}),
@@ -52,6 +63,10 @@ class ScheduleSlotForm(BootstrapModelFormMixin, forms.ModelForm):
             "break_start_time": forms.TimeInput(attrs={"type": "time"}),
             "break_end_time": forms.TimeInput(attrs={"type": "time"}),
         }
+
+    def __init__(self, *args, tenant=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_module_gating(self, tenant, SCHOOL_SLOT_GATED_FIELDS)
 
 
 class TenantInlineFormSet(BaseInlineFormSet):
@@ -62,6 +77,12 @@ class TenantInlineFormSet(BaseInlineFormSet):
     def __init__(self, *args, tenant=None, **kwargs):
         self.tenant = tenant
         super().__init__(*args, **kwargs)
+        # form_kwargs (pas un tenant=... direct sur _construct_form) : c'est
+        # aussi ce dict que Django utilise pour empty_form (le gabarit de
+        # ligne cloné en JS pour "+ Ajouter un créneau"), qui ne passe pas par
+        # _construct_form — sans ça, le module école/pharmacie serait ignoré
+        # sur les lignes ajoutées dynamiquement.
+        self.form_kwargs["tenant"] = tenant
 
     def _construct_form(self, i, **kwargs):
         form = super()._construct_form(i, **kwargs)

@@ -48,6 +48,9 @@
               <th title="Minutes acceptées après l'heure de début pour pointer l'arrivée.">Arrivée +</th>
               <th title="Minutes acceptées avant l'heure de fin pour pointer le départ.">Départ −</th>
               <th title="Minutes acceptées après l'heure de fin pour pointer le départ.">Départ +</th>
+              {% if school_scheduling_enabled %}
+              <th>Matière</th><th>Salle</th><th>Groupe</th><th>Remplacement</th>
+              {% endif %}
               <th>Annulé</th><th>Suppr.</th>
             </tr>
           </thead>
@@ -63,11 +66,17 @@
               <td class="gp-slot-num-cell">{{ slot_form.clock_in_window_after_minutes }}</td>
               <td class="gp-slot-num-cell">{{ slot_form.clock_out_window_before_minutes }}</td>
               <td class="gp-slot-num-cell">{{ slot_form.clock_out_window_after_minutes }}</td>
+              {% if school_scheduling_enabled %}
+              <td>{{ slot_form.subject }}</td>
+              <td>{{ slot_form.room }}</td>
+              <td>{{ slot_form.student_group }}</td>
+              <td>{{ slot_form.substitute_note }}</td>
+              {% endif %}
               <td class="text-center">{{ slot_form.is_cancelled }}</td>
               <td class="text-center">{% if slot_form.instance.pk %}{{ slot_form.DELETE }}{% endif %}</td>
             </tr>
             {% if slot_form.non_field_errors %}
-            <tr><td colspan="11"><div class="text-danger small">{{ slot_form.non_field_errors }}</div></td></tr>
+            <tr><td colspan="13"><div class="text-danger small">{{ slot_form.non_field_errors }}</div></td></tr>
             {% endif %}
             {% endfor %}
           </tbody>
@@ -88,6 +97,12 @@
             <td class="gp-slot-num-cell">{{ formset.empty_form.clock_in_window_after_minutes }}</td>
             <td class="gp-slot-num-cell">{{ formset.empty_form.clock_out_window_before_minutes }}</td>
             <td class="gp-slot-num-cell">{{ formset.empty_form.clock_out_window_after_minutes }}</td>
+            {% if school_scheduling_enabled %}
+            <td>{{ formset.empty_form.subject }}</td>
+            <td>{{ formset.empty_form.room }}</td>
+            <td>{{ formset.empty_form.student_group }}</td>
+            <td>{{ formset.empty_form.substitute_note }}</td>
+            {% endif %}
             <td class="text-center">{{ formset.empty_form.is_cancelled }}</td>
             <td></td>
           </tr>
