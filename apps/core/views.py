@@ -20,6 +20,8 @@ from apps.attendance.models import Attendance
 from apps.employees.models import Employee
 from apps.employees.services import get_active_employee
 from apps.leaves.models import Leave
+from apps.schedules import services as schedule_services
+from apps.tenants.org_settings import get_org_setting
 
 DEFAULT_PAGE_SIZE = 25
 
@@ -382,6 +384,14 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             "pending_absences": Absence.objects.all_tenants().filter(
                 tenant=tenant, status=Absence.Status.PENDING_REVIEW
             ).count(),
+            # RM-ORG-SCHOOL : calcul évité pour les organisations qui n'ont pas
+            # activé le module (pharmacie, restaurant...) — non seulement ça
+            # n'aurait aucun sens à leur montrer, mais ça leur épargne aussi le
+            # coût de la requête (une boucle par employé).
+            "unstaffed_slots_count": (
+                len(schedule_services.unstaffed_slots_today(tenant))
+                if get_org_setting(tenant, "school_scheduling_enabled") else 0
+            ),
             "trend_labels": trend_labels,
             "trend_values": trend_values,
             "reason_labels": reason_labels,

@@ -33,6 +33,13 @@ DEFAULTS = {
     "departments_enabled": True,
     "positions_enabled": True,
     "multi_slot_attendance_enabled": False,
+    # RM-ORG-SCHOOL (21/08/2026) : distinct de multi_slot_attendance_enabled
+    # (qui ne fait qu'autoriser plusieurs arrivées/départs par jour) — celui-ci
+    # ajoute les champs matière/salle/groupe/remplacement propres au CDC
+    # §10.2.4. Une pharmacie ou un restaurant n'a besoin d'aucun des deux ;
+    # une école pourrait en théorie vouloir l'un sans l'autre, d'où deux
+    # réglages séparés plutôt qu'un seul.
+    "school_scheduling_enabled": False,
     # CDC §6.4.3 — sécurité.
     "max_failed_login_attempts": 5,
     "lockout_base_minutes": 15,
@@ -57,8 +64,8 @@ TYPE_DEFAULTS = {
     "RESTAURANT": {"positions_enabled": False},
     "ASSOCIATION": {"positions_enabled": False},
     "NGO": {"positions_enabled": False},
-    "SCHOOL": {"multi_slot_attendance_enabled": True},
-    "UNIVERSITY": {"multi_slot_attendance_enabled": True},
+    "SCHOOL": {"multi_slot_attendance_enabled": True, "school_scheduling_enabled": True},
+    "UNIVERSITY": {"multi_slot_attendance_enabled": True, "school_scheduling_enabled": True},
 }
 
 

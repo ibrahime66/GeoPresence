@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Planning des salles — GeoPresence{% endblock %}
+{% block page_title %}Planning des salles{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Planning des salles</h1>
+    <p>Occupation des salles pour un jour de la semaine, d'après les emplois du temps en vigueur. Les créneaux qui se chevauchent dans une même salle sont signalés comme conflits.</p>
+  </div>
+</div>
+
+{% if not school_scheduling_enabled %}
+<div class="alert alert-warning">Le module « Horaires enseignants » n'est pas activé pour votre organisation. Activez-le depuis Paramètres pour utiliser cette vue.</div>
+{% else %}
+
+<div class="gp-daytabs">
+  {% for value, label in weekdays %}
+  <a href="?jour={{ value }}" class="gp-daytab {% if value == weekday %}is-active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <div class="gp-room-grid">
+      <div class="gp-room-row gp-room-grid-head">
+        <div class="gp-room-grid-corner">{{ weekday_label }}</div>
+        <div class="gp-room-axis">
+          {% for mark in hour_marks %}
+          <span class="gp-room-hour" style="left: {{ mark.left_pct }}%;">{{ mark.hour }}h</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% for room in rooms %}
+      <div class="gp-room-row">
+        <div class="gp-room-name">
+          {{ room.room }}
+          {% if room.has_conflict %}<span class="gp-badge danger">conflit</span>{% endif %}
+        </div>
+        <div class="gp-room-track">
+          {% for mark in hour_marks %}<span class="gp-room-gridline" style="left: {{ mark.left_pct }}%;"></span>{% endfor %}
+          {% for entry in room.entries %}
+          <div class="gp-room-slot {% if entry.conflict %}is-conflict{% endif %}"
+               style="left: {{ entry.offset_pct }}%; width: {{ entry.width_pct }}%;"
+               title="{{ entry.slot.start_time|time:'H:i' }}–{{ entry.slot.end_time|time:'H:i' }} · {{ entry.slot.subject|default:'(matière non précisée)' }} · {{ entry.slot.student_group|default:'—' }} · {{ entry.employee.user.full_name|default:entry.employee.user.email }}">
+            <span class="gp-room-slot-time">{{ entry.slot.start_time|time:'H:i' }}</span>
+            <span class="gp-room-slot-main">{{ entry.slot.subject|default:'—' }}</span>
+            <span class="gp-room-slot-sub">{{ entry.employee.user.full_name|default:entry.employee.user.email }}{% if entry.slot.student_group %} · {{ entry.slot.student_group }}{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="gp-room-row">
+        <div class="gp-table-empty" style="grid-column: 1 / -1;">Aucune salle occupée ce jour-là — soit aucun cours n'est planifié, soit aucun créneau n'a de salle renseignée.</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if unroomed_count %}
+<p class="text-muted-cell mt-2">{{ unroomed_count }} créneau{{ unroomed_count|pluralize:"x" }} planifié{{ unroomed_count|pluralize }} ce jour-là sans salle renseignée — non affiché{{ unroomed_count|pluralize }} ci-dessus.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

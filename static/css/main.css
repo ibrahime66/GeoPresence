@@ -1114,6 +1114,55 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 .gp-table tbody tr:hover td { background: var(--gp-gray-50); }
 .gp-table .text-muted-cell { color: var(--gp-gray-400); }
 .gp-table-empty { padding: 2.5rem 1.5rem; text-align: center; color: var(--gp-gray-600); font-size: 0.9rem; }
+.gp-sub-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; max-width: 22rem; }
+
+/* Sélecteur de jour (planning des salles) */
+.gp-daytabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+.gp-daytab {
+  padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+  color: var(--gp-gray-600); background: var(--gp-gray-100); text-decoration: none;
+  border: 1px solid transparent;
+}
+.gp-daytab:hover { color: var(--gp-blue); border-color: var(--gp-gray-200); }
+.gp-daytab.is-active { background: var(--gp-blue); color: var(--gp-white); }
+
+/* Grille visuelle d'occupation des salles — axe du temps horizontal, une
+   ligne par salle. Largeur mini pour que l'axe reste lisible ; le conteneur
+   .gp-table-scroll gère le défilement horizontal sur petit écran. */
+.gp-room-grid { min-width: 720px; font-size: 0.85rem; }
+.gp-room-row { display: grid; grid-template-columns: 140px 1fr; border-bottom: 1px solid var(--gp-gray-100); }
+.gp-room-row:last-child { border-bottom: none; }
+.gp-room-grid-head { background: var(--gp-gray-50); border-bottom: 1px solid var(--gp-gray-200); }
+.gp-room-grid-corner {
+  padding: 0.6rem 0.9rem; font-weight: 700; font-size: 0.74rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--gp-gray-600);
+}
+.gp-room-axis { position: relative; height: 34px; }
+.gp-room-hour {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  font-size: 0.72rem; font-weight: 600; color: var(--gp-gray-400); white-space: nowrap;
+}
+.gp-room-name {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem;
+  padding: 0.6rem 0.9rem; font-weight: 600; color: var(--gp-ink);
+  border-right: 1px solid var(--gp-gray-100);
+}
+.gp-room-track { position: relative; min-height: 58px; padding: 0.4rem 0; }
+.gp-room-gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--gp-gray-100); }
+.gp-room-slot {
+  position: absolute; top: 0.4rem; bottom: 0.4rem; box-sizing: border-box;
+  padding: 0.25rem 0.45rem; border-radius: 6px; overflow: hidden;
+  background: color-mix(in srgb, var(--gp-blue) 14%, var(--gp-white));
+  border: 1px solid color-mix(in srgb, var(--gp-blue) 35%, var(--gp-white));
+  display: flex; flex-direction: column; gap: 0.05rem; line-height: 1.25;
+}
+.gp-room-slot.is-conflict {
+  background: var(--gp-red-bg);
+  border-color: color-mix(in srgb, var(--gp-red) 45%, var(--gp-white));
+}
+.gp-room-slot-time { font-size: 0.68rem; font-weight: 700; color: var(--gp-gray-600); }
+.gp-room-slot-main { font-weight: 600; color: var(--gp-ink); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.gp-room-slot-sub { font-size: 0.72rem; color: var(--gp-gray-600); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 
 .gp-table-actions { display: flex; gap: 0.55rem; align-items: center; justify-content: flex-end; white-space: nowrap; }
 
