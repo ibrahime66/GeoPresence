@@ -14,3 +14,7 @@ class ClockForm(forms.Form):
     # pointage mis en file d'attente hors ligne (IndexedDB) — absent en
     # fonctionnement normal (mode ONLINE implicite).
     mode = forms.ChoiceField(choices=Attendance.Mode.choices, required=False)
+    # RM-QR-001 : renseigné par clock.js quand l'écran de pointage a été
+    # atteint via un scan de QR d'agence (cf. ClockPageView) — purement
+    # informatif, n'affecte aucune vérification (GPS toujours requis).
+    source = forms.ChoiceField(choices=Attendance.Source.choices, required=False)

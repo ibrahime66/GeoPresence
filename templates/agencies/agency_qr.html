@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Code QR — {{ agency.name }} — GeoPresence{% endblock %}
+{% block page_title %}Code QR de pointage{% endblock %}
+{% block content %}
+<div class="gp-page-header gp-qr-noprint">
+  <div>
+    <h1>Code QR — {{ agency.name }}</h1>
+    <p>À imprimer et afficher sur site. Un employé le scanne pour ouvrir directement l'écran de pointage de cette agence, puis la vérification GPS habituelle s'applique normalement, comme avec le bouton "Pointer".</p>
+  </div>
+  <div class="gp-page-header-actions">
+    <a href="{% url 'agencies:list' %}" class="btn btn-outline-secondary">Retour aux agences</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()">Imprimer</button>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-8 col-md-6 col-lg-5">
+    <div class="gp-qr-print-area">
+      <div class="gp-qr-card">
+        <span class="gp-qr-eyebrow">GeoPresence</span>
+        <h2>{{ agency.name }}</h2>
+        {% if agency.address or agency.city %}
+        <p class="gp-qr-address">{{ agency.address }}{% if agency.address and agency.city %}, {% endif %}{{ agency.city }}</p>
+        {% endif %}
+        <img class="gp-qr-image" src="{{ qr_image_data_uri }}" alt="Code QR de pointage de {{ agency.name }}">
+        <p class="gp-qr-caption">Scannez pour pointer votre arrivée ou votre départ</p>
+      </div>
+    </div>
+
+    <div class="gp-qr-noprint mt-4">
+      {% if not agency.is_active %}
+      <div class="alert alert-warning">Cette agence est actuellement <strong>inactive</strong>. Ce QR sera refusé tant qu'elle ne sera pas réactivée.</div>
+      {% endif %}
+      <form method="post" action="{% url 'agencies:qr_regenerate' agency.pk %}" onsubmit="return confirm('Régénérer le code QR de {{ agency.name|escapejs }} ? L\'affiche actuellement imprimée cessera immédiatement de fonctionner.');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm">Régénérer le code (invalide l'affiche actuelle)</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -19,6 +19,18 @@
 
           <div id="clock-offline-badge" hidden></div>
 
+          {% if qr_agency_name %}
+          <div class="alert alert-info d-flex align-items-start gap-2">
+            <span class="flex-shrink-0">{% include "core/_icon.html" with icon="target" size="18" %}</span>
+            <span>Code QR de <strong>{{ qr_agency_name }}</strong> scanné. Votre position sera vérifiée normalement avant de valider le pointage.</span>
+          </div>
+          {% elif qr_agency_mismatch %}
+          <div class="alert alert-warning d-flex align-items-start gap-2">
+            <span class="flex-shrink-0">{% include "core/_icon.html" with icon="alert" size="18" %}</span>
+            <span>Vous avez scanné le QR de <strong>{{ qr_agency_mismatch }}</strong>, mais vous n'êtes pas affecté à cette agence. Utilisez le bouton ci-dessous normalement.</span>
+          </div>
+          {% endif %}
+
           {% if today_attendances %}
           <ul class="list-group mb-3">
             {% for a in today_attendances %}
@@ -73,7 +85,8 @@
           "apiUrl": "{% url 'attendance:clock_api' %}",
           "nextClockType": {% if next_clock_type %}"{{ next_clock_type }}"{% else %}null{% endif %},
           "csrfToken": "{{ csrf_token }}",
-          "zones": {{ agency_zones_json|default:"[]"|safe }}
+          "zones": {{ agency_zones_json|default:"[]"|safe }},
+          "source": {% if qr_agency_name %}"QR"{% else %}null{% endif %}
         }
       </script>
       <script src="{% static_v 'js/attendance/clock.js' %}"></script>
