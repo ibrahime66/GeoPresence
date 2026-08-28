@@ -13,4 +13,5 @@ urlpatterns = [
     path("horaires/planning-salles/", views.RoomPlanningView.as_view(), name="room_planning"),
     path("horaires/presence-enseignants/", views.TeacherPresenceView.as_view(), name="teacher_presence"),
     path("horaires/presence-enseignants/export/<str:fmt>/", views.TeacherPresenceExportView.as_view(), name="teacher_presence_export"),
+    path("horaires/creneau/<uuid:slot_id>/exception/", views.SlotExceptionView.as_view(), name="slot_exception"),
 ]

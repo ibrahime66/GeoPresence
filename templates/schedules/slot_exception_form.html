@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Annuler ou remplacer un cours — GeoPresence{% endblock %}
+{% block page_title %}Annuler ou remplacer un cours{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Annuler ou remplacer un cours</h1>
+    <p>
+      {{ on_date|date:"l d F Y" }} · {{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}
+      {% if slot.subject %} · {{ slot.subject }}{% endif %}
+      {% if slot.student_group %} · {{ slot.student_group }}{% endif %}
+      {% if slot.room %} · salle {{ slot.room }}{% endif %}
+    </p>
+  </div>
+</div>
+
+<form method="post" novalidate style="max-width: 640px;">
+  {% csrf_token %}
+  <input type="hidden" name="original_employee_id" value="{{ original_employee_id }}">
+  <input type="hidden" name="groupe" value="{{ groupe }}">
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <div class="gp-card mb-3">
+    <div class="gp-card-body">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">{{ form.kind.label }}</label>
+        {{ form.kind }}
+        {% for error in form.kind.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ form.substitute_employee.label }}</label>
+        {{ form.substitute_employee }}
+        {% for error in form.substitute_employee.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ form.substitute_note.label }}</label>
+        {{ form.substitute_note }}
+        <div class="form-text">À utiliser seulement si le remplaçant n'est pas dans l'effectif.</div>
+        {% for error in form.substitute_note.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="mb-1">
+        <label class="form-label">{{ form.reason.label }}</label>
+        {{ form.reason }}
+        {% for error in form.reason.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="gp-form-actions">
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="{% url 'schedules:teacher_presence' %}?date={{ on_date|date:'Y-m-d' }}{% if groupe %}&groupe={{ groupe }}{% endif %}" class="btn btn-outline-secondary">Annuler</a>
+    {% if existing %}
+    <button type="submit" name="action" value="delete" class="btn btn-outline-danger ms-auto"
+            onclick="return confirm('Retirer l\'annulation / le remplacement pour cette date ?');">
+      Retirer — le cours redevient normal
+    </button>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
