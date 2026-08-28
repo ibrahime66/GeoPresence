@@ -1504,6 +1504,22 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 .gp-room-slot-main { font-weight: 600; color: var(--gp-ink); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .gp-room-slot-sub { font-size: 0.72rem; color: var(--gp-gray-600); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 
+/* Présence enseignants */
+.gp-presence-toolbar {
+  display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; align-items: center;
+  justify-content: space-between; margin-bottom: 1rem;
+}
+.gp-presence-datenav { display: flex; align-items: center; gap: 0.4rem; }
+.gp-presence-dateform { margin: 0; }
+.gp-presence-dateform input { width: 10rem; }
+.gp-presence-summary { font-size: 0.9rem; color: var(--gp-gray-600); margin-bottom: 1rem; }
+.gp-presence-summary strong { color: var(--gp-ink); }
+.gp-presence-group-head {
+  padding: 0.7rem 1.1rem; font-weight: 700; font-size: 0.85rem;
+  background: var(--gp-gray-50); border-bottom: 1px solid var(--gp-gray-200);
+}
+.gp-presence-row-missing td { background: color-mix(in srgb, var(--gp-red-bg) 60%, transparent); }
+
 .gp-table-actions { display: flex; gap: 0.55rem; align-items: center; justify-content: flex-end; white-space: nowrap; }
 
 /* Menu d'actions discret (⋮) — remplace une liste d'actions séparées par
