@@ -36,6 +36,22 @@ def get_effective_schedule(employee, on_date=None):
     return None
 
 
+def exceptions_by_slot(tenant, on_date):
+    """{slot_id: SlotException} pour les créneaux ayant une exception ponctuelle
+    (annulation / remplacement) à cette date — CDC §10.2.4. Une seule requête,
+    partagée par tous les services école ci-dessous."""
+    from .models import SlotException
+
+    return {
+        exc.slot_id: exc
+        for exc in (
+            SlotException.objects.all_tenants()
+            .filter(tenant=tenant, date=on_date)
+            .select_related("substitute_employee__user", "original_employee__user")
+        )
+    }
+
+
 def unstaffed_slots_today(tenant, now=None):
     """Créneaux planifiés aujourd'hui dont la fenêtre d'arrivée est déjà
     écoulée sans qu'aucun pointage d'arrivée n'ait été enregistré — une
@@ -53,6 +69,9 @@ def unstaffed_slots_today(tenant, now=None):
     now = now or timezone.now()
     today = timezone.localdate(now)
     weekday = today.weekday()
+    # CDC §10.2.4 : un créneau annulé OU remplacé ce jour-là a déjà été traité
+    # par la direction — ce n'est plus une "salle sans professeur".
+    excepted = exceptions_by_slot(tenant, today)
 
     alerts = []
     employees = (
@@ -65,6 +84,8 @@ def unstaffed_slots_today(tenant, now=None):
         if schedule is None:
             continue
         for slot in schedule.slots_for_weekday(weekday):
+            if slot.id in excepted:
+                continue
             expected_dt = datetime.combine(today, slot.start_time)
             if timezone.is_naive(expected_dt):
                 expected_dt = timezone.make_aware(expected_dt)
@@ -96,6 +117,9 @@ def available_substitutes(tenant, slot, on_date, exclude_employee_id=None):
     from apps.employees.models import Employee
 
     weekday = on_date.weekday()
+    # Un créneau annulé ou remplacé ce jour-là ne bloque plus l'enseignant qui
+    # devait le donner : il devient un remplaçant possible.
+    excepted = exceptions_by_slot(tenant, on_date)
     candidates = []
     employees = (
         Employee.objects.all_tenants()
@@ -110,7 +134,8 @@ def available_substitutes(tenant, slot, on_date, exclude_employee_id=None):
             candidates.append(employee)
             continue
         conflict = any(
-            _time_ranges_overlap(s.start_time, s.end_time, slot.start_time, slot.end_time)
+            s.id not in excepted
+            and _time_ranges_overlap(s.start_time, s.end_time, slot.start_time, slot.end_time)
             for s in schedule.slots_for_weekday(weekday)
         )
         if not conflict:
@@ -183,10 +208,15 @@ def teacher_presence(tenant, on_date):
     apps.attendance.services.resolve_slot au moment du pointage).
 
     Renvoie une liste d'entrées {employee, slot, arrival, departure,
-    in_progress, clocked}, triée par heure de début puis salle. Une entrée
-    par couple (enseignant, créneau) : soit prévue et pointée, soit prévue
-    non pointée (arrival=None), soit pointée sur un créneau qui n'est plus
-    dans l'horaire effectif de l'enseignant (planned absent, arrival présent).
+    in_progress, clocked, exception}, triée par heure de début puis salle. Une
+    entrée par couple (enseignant, créneau) : soit prévue et pointée, soit
+    prévue non pointée (arrival=None), soit pointée sur un créneau qui n'est
+    plus dans l'horaire effectif de l'enseignant (planned absent, arrival
+    présent).
+
+    `exception` : le SlotException (annulation / remplacement, CDC §10.2.4)
+    posé sur ce créneau à cette date, ou None. Un créneau annulé/remplacé
+    n'est pas compté comme "non pointé".
 
     `in_progress` : arrivée pointée, pas encore de départ, on est aujourd'hui
     et l'heure de fin du créneau n'est pas dépassée — "l'enseignant est en
@@ -230,7 +260,8 @@ def teacher_presence(tenant, on_date):
         elif att.clock_type == Attendance.ClockType.DEPARTURE:
             rec["departure"] = att
 
-    # 3. Fusion prévu + pointé.
+    # 3. Fusion prévu + pointé + exceptions ponctuelles.
+    excepted = exceptions_by_slot(tenant, on_date)
     now = timezone.localtime()
     is_today = on_date == timezone.localdate()
     entries = []
@@ -239,6 +270,7 @@ def teacher_presence(tenant, on_date):
         arrival = source.get("arrival") if key in clocked else None
         departure = source.get("departure") if key in clocked else None
         slot = source["slot"]
+        exception = excepted.get(slot.id)
         entries.append(
             {
                 "employee": source["employee"],
@@ -246,7 +278,11 @@ def teacher_presence(tenant, on_date):
                 "arrival": arrival,
                 "departure": departure,
                 "clocked": arrival is not None,
-                "in_progress": bool(arrival) and departure is None and is_today and now.time() <= slot.end_time,
+                "exception": exception,
+                "in_progress": (
+                    bool(arrival) and departure is None and is_today
+                    and now.time() <= slot.end_time and exception is None
+                ),
             }
         )
     entries.sort(key=lambda e: (e["slot"].start_time, (e["slot"].room or "").casefold(), str(e["employee"])))

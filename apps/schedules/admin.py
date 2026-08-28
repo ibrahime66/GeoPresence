@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import EmployeeScheduleAssignment, Schedule, ScheduleSlot
+from .models import EmployeeScheduleAssignment, Schedule, ScheduleSlot, SlotException
 
 
 class ScheduleSlotInline(admin.TabularInline):
@@ -28,3 +28,13 @@ class EmployeeScheduleAssignmentAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return EmployeeScheduleAssignment.objects.all_tenants()
+
+
+@admin.register(SlotException)
+class SlotExceptionAdmin(admin.ModelAdmin):
+    list_display = ("date", "slot", "kind", "original_employee", "substitute_employee", "reason")
+    list_filter = ("kind", "date")
+    raw_id_fields = ("slot", "original_employee", "substitute_employee")
+
+    def get_queryset(self, request):
+        return SlotException.objects.all_tenants()

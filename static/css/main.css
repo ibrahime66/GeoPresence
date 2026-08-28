@@ -1519,6 +1519,7 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
   background: var(--gp-gray-50); border-bottom: 1px solid var(--gp-gray-200);
 }
 .gp-presence-row-missing td { background: color-mix(in srgb, var(--gp-red-bg) 60%, transparent); }
+.gp-presence-row-exception td { background: var(--gp-gray-50); color: var(--gp-gray-600); }
 
 .gp-table-actions { display: flex; gap: 0.55rem; align-items: center; justify-content: flex-end; white-space: nowrap; }
 
