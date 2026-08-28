@@ -172,3 +172,82 @@ def room_day_planning(tenant, weekday):
                     a["conflict"] = b["conflict"] = has_conflict = True
         rooms.append({"room": room, "entries": entries, "has_conflict": has_conflict})
     return rooms, unroomed_count
+
+
+def teacher_presence(tenant, on_date):
+    """RM-ORG-SCHOOL : pour une date donnée, qui enseigne (ou devrait enseigner)
+    quoi, où, et a-t-il pointé. Croise les créneaux "cours" prévus ce jour-là
+    (créneaux avec matière OU salle OU groupe renseigné — ce qui écarte
+    naturellement le personnel non-enseignant) avec les pointages du jour
+    reliés à ces créneaux (Attendance.schedule_slot, déjà rempli par
+    apps.attendance.services.resolve_slot au moment du pointage).
+
+    Renvoie une liste d'entrées {employee, slot, arrival, departure,
+    in_progress, clocked}, triée par heure de début puis salle. Une entrée
+    par couple (enseignant, créneau) : soit prévue et pointée, soit prévue
+    non pointée (arrival=None), soit pointée sur un créneau qui n'est plus
+    dans l'horaire effectif de l'enseignant (planned absent, arrival présent).
+
+    `in_progress` : arrivée pointée, pas encore de départ, on est aujourd'hui
+    et l'heure de fin du créneau n'est pas dépassée — "l'enseignant est en
+    classe en ce moment"."""
+    from apps.attendance.models import Attendance
+    from apps.employees.models import Employee
+
+    weekday = on_date.weekday()
+
+    # 1. Créneaux "cours" prévus ce jour-là, indexés par (employé, créneau).
+    planned = {}
+    employees = (
+        Employee.objects.all_tenants()
+        .filter(tenant=tenant, status=Employee.Status.ACTIVE)
+        .select_related("user")
+    )
+    for employee in employees:
+        schedule = get_effective_schedule(employee, on_date=on_date)
+        if schedule is None:
+            continue
+        for slot in schedule.slots_for_weekday(weekday):
+            if slot.subject or slot.room or slot.student_group:
+                planned[(employee.id, slot.id)] = {"employee": employee, "slot": slot}
+
+    # 2. Pointages du jour reliés à un créneau "cours".
+    attendances = (
+        Attendance.objects.all_tenants()
+        .filter(tenant=tenant, clock_date=on_date, schedule_slot__isnull=False)
+        .exclude(schedule_slot__subject="", schedule_slot__room="", schedule_slot__student_group="")
+        .select_related("employee__user", "schedule_slot")
+        .order_by("server_time")
+    )
+    clocked = {}
+    for att in attendances:
+        key = (att.employee_id, att.schedule_slot_id)
+        rec = clocked.setdefault(
+            key, {"employee": att.employee, "slot": att.schedule_slot, "arrival": None, "departure": None}
+        )
+        if att.clock_type == Attendance.ClockType.ARRIVAL:
+            rec["arrival"] = att
+        elif att.clock_type == Attendance.ClockType.DEPARTURE:
+            rec["departure"] = att
+
+    # 3. Fusion prévu + pointé.
+    now = timezone.localtime()
+    is_today = on_date == timezone.localdate()
+    entries = []
+    for key in set(planned) | set(clocked):
+        source = clocked.get(key) or planned[key]
+        arrival = source.get("arrival") if key in clocked else None
+        departure = source.get("departure") if key in clocked else None
+        slot = source["slot"]
+        entries.append(
+            {
+                "employee": source["employee"],
+                "slot": slot,
+                "arrival": arrival,
+                "departure": departure,
+                "clocked": arrival is not None,
+                "in_progress": bool(arrival) and departure is None and is_today and now.time() <= slot.end_time,
+            }
+        )
+    entries.sort(key=lambda e: (e["slot"].start_time, (e["slot"].room or "").casefold(), str(e["employee"])))
+    return entries

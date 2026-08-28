@@ -11,4 +11,6 @@ urlpatterns = [
     path("horaires/<uuid:pk>/basculer/", views.ScheduleToggleActiveView.as_view(), name="toggle_active"),
     path("horaires/salles-sans-professeur/", views.UnstaffedSlotsView.as_view(), name="unstaffed"),
     path("horaires/planning-salles/", views.RoomPlanningView.as_view(), name="room_planning"),
+    path("horaires/presence-enseignants/", views.TeacherPresenceView.as_view(), name="teacher_presence"),
+    path("horaires/presence-enseignants/export/<str:fmt>/", views.TeacherPresenceExportView.as_view(), name="teacher_presence_export"),
 ]
