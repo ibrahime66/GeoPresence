@@ -1295,9 +1295,23 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
 /* ---------- Titre de page (bandeau discret sous la barre principale —
    alimenté par {% block page_title %}, inchangé depuis l'ancienne topbar) --- */
 .gp-titlebar { border-bottom: 1px solid var(--gp-gray-200); background: var(--gp-white); }
-.gp-titlebar-inner { max-width: 1400px; margin: 0 auto; padding: 0.85rem 1.5rem; font-weight: 700; color: var(--gp-navy); font-size: 1.05rem; }
-.gp-titlebar-inner:empty { display: none; }
-.gp-titlebar:has(.gp-titlebar-inner:empty) { display: none; }
+.gp-titlebar-inner {
+  max-width: 1400px; margin: 0 auto; padding: 0.85rem 1.5rem;
+  font-weight: 700; color: var(--gp-navy); font-size: 1.05rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.gp-titlebar-title:empty { display: none; }
+/* Bouton « Retour » — masqué par défaut (attribut hidden), révélé par
+   gpGoBack/gpInitBack uniquement s'il y a un historique de navigation. */
+.gp-back-btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.32rem 0.7rem 0.32rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--gp-gray-200); background: var(--gp-gray-50);
+  color: var(--gp-gray-700); font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; flex-shrink: 0;
+}
+.gp-back-btn:hover { background: var(--gp-gray-100); color: var(--gp-navy); border-color: var(--gp-gray-400); }
+.gp-back-btn svg { transform: rotate(180deg); }
 
 .gp-content { flex: 1; padding: 1.75rem; max-width: 1400px; width: 100%; margin: 0 auto; }
 @media (max-width: 576px) { .gp-content { padding: 1.1rem; } }
