@@ -310,8 +310,32 @@ ce choix et reste inchangée.
 </header>
 
 <div class="gp-titlebar">
-    <div class="gp-titlebar-inner">{% block page_title %}{% endblock %}</div>
+    <div class="gp-titlebar-inner">
+        {% block back_button %}
+        <button type="button" class="gp-back-btn" onclick="gpGoBack()" hidden aria-label="{% trans 'Revenir à la page précédente' %}">
+            {% include "core/_icon.html" with icon="chevron-right" size="18" %}<span>{% trans "Retour" %}</span>
+        </button>
+        {% endblock %}
+        <span class="gp-titlebar-title">{% block page_title %}{% endblock %}</span>
+    </div>
 </div>
+<script>
+    // Bouton « Retour » global (RM-UI-NAV) : révélé seulement s'il existe un
+    // historique de navigation dans cet onglet — inutile sur une page ouverte
+    // directement. Repli sur le tableau de bord si l'historique ne mène nulle
+    // part d'utile (ex. page précédente hors du site).
+    function gpGoBack() {
+        var sameOrigin = false;
+        try { sameOrigin = document.referrer && new URL(document.referrer).origin === location.origin; } catch (e) {}
+        if (window.history.length > 1 && (sameOrigin || document.referrer === "")) window.history.back();
+        else window.location.href = "/dashboard/";
+    }
+    (function () {
+        var btn = document.querySelector(".gp-back-btn");
+        // Pas de bouton sur le tableau de bord (déjà la racine de l'app).
+        if (btn && window.history.length > 1 && location.pathname !== "/dashboard/") btn.hidden = false;
+    })();
+</script>
 
 <main class="gp-content">
     {% if messages %}
