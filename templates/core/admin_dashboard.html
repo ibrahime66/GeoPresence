@@ -90,7 +90,7 @@
           <span class="gp-home-panel-sub">Ce mois-ci</span>
         </div>
         {% if reason_labels %}
-        <canvas id="reasonChart" height="200"></canvas>
+        <div class="gp-chart-box gp-chart-box--doughnut"><canvas id="reasonChart"></canvas></div>
         {% else %}
         <div class="gp-home-empty">
           {% include "core/_icon.html" with icon="clipboard" size="28" %}
@@ -220,6 +220,11 @@
         }],
       },
       options: {
+        // Sans ça, Chart.js garde le canvas carré (ratio 1) et sur mobile le
+        // cercle prend toute la largeur de l'écran — on borne plutôt via la
+        // hauteur fixe de .gp-chart-box.
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: "68%",
         plugins: {
           legend: { position: "bottom", labels: { boxWidth: 8, usePointStyle: true, padding: 14, font: { size: 11.5 }, color: chartTickStrong } },

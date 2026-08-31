@@ -1759,6 +1759,11 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
   background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: 16px;
   box-shadow: var(--gp-shadow); padding: 1.2rem 1.25rem 1.35rem; display: flex; flex-direction: column;
 }
+/* Conteneur à hauteur fixe pour un graphe Chart.js en maintainAspectRatio:false —
+   empêche le doughnut « Absences par motif » de devenir un cercle plein écran
+   sur mobile. */
+.gp-chart-box { position: relative; width: 100%; height: 260px; }
+.gp-chart-box--doughnut { max-width: 300px; margin: 0 auto; }
 .gp-home-panel-head { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
 .gp-home-panel-head h3 { font-size: 0.95rem; font-weight: 700; color: var(--gp-navy); margin: 0; }
 .gp-home-panel-sub { font-size: 0.78rem; color: var(--gp-gray-400); }
