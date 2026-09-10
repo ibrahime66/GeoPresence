@@ -66,10 +66,10 @@
           {% for leave in leaves %}
           <tr>
             <td class="fw-semibold">{{ leave.leave_type.name }}</td>
-            <td>{{ leave.start_date }}</td>
-            <td>{{ leave.end_date }}</td>
-            <td>{{ leave.working_days }}</td>
-            <td>
+            <td data-label="Du">{{ leave.start_date }}</td>
+            <td data-label="Au">{{ leave.end_date }}</td>
+            <td data-label="Jours">{{ leave.working_days }}</td>
+            <td data-label="Statut">
               {% if leave.status == "PENDING" %}<span class="gp-badge warning"><span class="dot"></span>En attente</span>
               {% elif leave.status == "APPROVED" %}<span class="gp-badge success"><span class="dot"></span>Approuvé</span>
               {% elif leave.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>Rejeté</span>

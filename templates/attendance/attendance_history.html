@@ -66,19 +66,19 @@
         {% for a in attendances %}
         <tr>
           <td class="fw-semibold">{{ a.employee }}</td>
-          <td class="text-nowrap">{{ a.clock_date|date:"d/m/Y" }}</td>
-          <td>{{ a.get_clock_type_display }}</td>
-          <td>{{ a.server_time|date:"H:i" }}</td>
-          <td>
+          <td class="text-nowrap" data-label="Date">{{ a.clock_date|date:"d/m/Y" }}</td>
+          <td data-label="Type">{{ a.get_clock_type_display }}</td>
+          <td data-label="Heure">{{ a.server_time|date:"H:i" }}</td>
+          <td data-label="Statut">
             {% if a.status == "LATE" %}<span class="gp-badge warning"><span class="dot"></span>{{ a.get_status_display }}</span>
             {% elif a.status == "ON_TIME" %}<span class="gp-badge success"><span class="dot"></span>{{ a.get_status_display }}</span>
             {% elif a.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>{{ a.get_status_display }}</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ a.get_status_display }}</span>{% endif %}
           </td>
-          <td>{{ a.agency.name }}</td>
-          <td>{{ a.late_minutes|default:"—" }}</td>
-          <td>{{ a.early_leave_minutes|default:"—" }}</td>
-          <td>{{ a.overtime_minutes|default:"—" }}</td>
+          <td data-label="Agence">{{ a.agency.name }}</td>
+          <td data-label="Retard">{{ a.late_minutes|default:"—" }}</td>
+          <td data-label="Départ anticipé">{{ a.early_leave_minutes|default:"—" }}</td>
+          <td data-label="Heures sup.">{{ a.overtime_minutes|default:"—" }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="9"><div class="gp-table-empty">Aucun pointage pour ces filtres.</div></td></tr>

@@ -21,9 +21,9 @@
         {% for position in positions %}
         <tr>
           <td class="fw-semibold">{{ position.title }}</td>
-          <td>{{ position.department|default:"—" }}</td>
-          <td>{{ position.default_schedule|default:"—" }}</td>
-          <td>
+          <td data-label="Département">{{ position.department|default:"—" }}</td>
+          <td data-label="Horaire par défaut">{{ position.default_schedule|default:"—" }}</td>
+          <td data-label="Statut">
             {% if position.is_active %}<span class="gp-badge success"><span class="dot"></span>Actif</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>Inactif</span>{% endif %}
           </td>

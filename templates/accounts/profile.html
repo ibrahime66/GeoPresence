@@ -80,10 +80,10 @@
             {{ s.device_type|default:"—" }}
             {% if s.session_key == current_session_key %}<span class="gp-badge info ms-1"><span class="dot"></span>{% trans "Cet appareil" %}</span>{% endif %}
           </td>
-          <td>{{ s.browser }} / {{ s.os }}</td>
-          <td class="text-muted-cell">{{ s.ip_address|default:"—" }}</td>
-          <td class="text-nowrap">{{ s.created_at|date:"d/m/Y H:i" }}</td>
-          <td class="text-nowrap">{{ s.last_activity_at|date:"d/m/Y H:i" }}</td>
+          <td data-label="{% trans 'Navigateur / OS' %}">{{ s.browser }} / {{ s.os }}</td>
+          <td class="text-muted-cell" data-label="{% trans 'Adresse IP' %}">{{ s.ip_address|default:"—" }}</td>
+          <td class="text-nowrap" data-label="{% trans 'Connecté depuis' %}">{{ s.created_at|date:"d/m/Y H:i" }}</td>
+          <td class="text-nowrap" data-label="{% trans 'Dernière activité' %}">{{ s.last_activity_at|date:"d/m/Y H:i" }}</td>
           <td>
             {% if s.session_key != current_session_key %}
             <form method="post" action="{% url 'accounts:session_revoke' s.pk %}" onsubmit="return confirm('{% trans "Révoquer cette session ? Cet appareil sera déconnecté immédiatement." %}');">

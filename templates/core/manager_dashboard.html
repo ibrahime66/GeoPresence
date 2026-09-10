@@ -152,14 +152,14 @@
           {% for row in team_rows %}
           <tr>
             <td class="fw-semibold">{{ row.employee.user.full_name|default:row.employee.user.email }}</td>
-            <td>{{ row.employee.department|default:"—" }}</td>
-            <td>{{ row.employee.primary_agency }}</td>
-            <td>
+            <td data-label="Département">{{ row.employee.department|default:"—" }}</td>
+            <td data-label="Agence">{{ row.employee.primary_agency }}</td>
+            <td data-label="Statut aujourd'hui">
               {% if row.status == "LATE" %}<span class="gp-badge warning"><span class="dot"></span>Retard</span>
               {% elif row.status %}<span class="gp-badge success"><span class="dot"></span>{{ row.arrival.get_status_display }}</span>
               {% else %}<span class="gp-badge danger"><span class="dot"></span>Pas encore pointé</span>{% endif %}
             </td>
-            <td>{% if row.arrival %}{{ row.arrival.server_time|date:"H:i" }}{% else %}—{% endif %}</td>
+            <td data-label="Heure">{% if row.arrival %}{{ row.arrival.server_time|date:"H:i" }}{% else %}—{% endif %}</td>
           </tr>
           {% empty %}
           <tr><td colspan="5"><div class="gp-table-empty">Aucun membre dans l'équipe.</div></td></tr>

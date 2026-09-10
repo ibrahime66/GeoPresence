@@ -22,9 +22,9 @@
         {% for absence in absences %}
         <tr>
           <td class="fw-semibold">{{ absence.employee }}</td>
-          <td>{{ absence.date }}</td>
-          <td>{{ absence.display_reason|default:"—" }}</td>
-          <td class="text-muted-cell">{{ absence.employee_comment|default:"—" }}</td>
+          <td data-label="Date">{{ absence.date }}</td>
+          <td data-label="Motif">{{ absence.display_reason|default:"—" }}</td>
+          <td class="text-muted-cell" data-label="Commentaire">{{ absence.employee_comment|default:"—" }}</td>
           <td>
             <div class="gp-table-actions">
               <form method="post" action="{% url 'absences:review' absence.pk %}">

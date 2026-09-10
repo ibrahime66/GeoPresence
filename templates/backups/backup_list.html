@@ -41,15 +41,15 @@
       <tbody>
         {% for backup in backups %}
         <tr>
-          <td class="text-nowrap">{{ backup.created_at|date:"d/m/Y H:i" }}</td>
-          <td class="fw-semibold">{{ backup.filename }}{% if backup.comment %}<div class="text-muted-cell small">{{ backup.comment }}</div>{% endif %}</td>
-          <td>{% if backup.is_manual %}<span class="gp-badge info"><span class="dot"></span>Manuelle</span>{% else %}<span class="gp-badge neutral"><span class="dot"></span>Automatique</span>{% endif %}</td>
-          <td>{{ backup.size_bytes|filesizeformat }}</td>
-          <td>
+          <td class="text-nowrap fw-semibold">{{ backup.created_at|date:"d/m/Y H:i" }}</td>
+          <td data-label="Fichier">{{ backup.filename }}{% if backup.comment %}<div class="text-muted-cell small">{{ backup.comment }}</div>{% endif %}</td>
+          <td data-label="Type">{% if backup.is_manual %}<span class="gp-badge info"><span class="dot"></span>Manuelle</span>{% else %}<span class="gp-badge neutral"><span class="dot"></span>Automatique</span>{% endif %}</td>
+          <td data-label="Taille">{{ backup.size_bytes|filesizeformat }}</td>
+          <td data-label="Statut">
             {% if backup.status == "SUCCESS" %}<span class="gp-badge success"><span class="dot"></span>Réussie</span>
             {% else %}<span class="gp-badge danger"><span class="dot"></span>Échouée</span>{% endif %}
           </td>
-          <td>
+          <td data-label="Intégrité">
             {% if backup.last_verification_ok == True %}<span class="gp-badge success"><span class="dot"></span>Vérifiée</span>
             {% elif backup.last_verification_ok == False %}<span class="gp-badge danger"><span class="dot"></span>Altérée</span>
             {% else %}<span class="text-muted-cell">Non vérifiée</span>{% endif %}
