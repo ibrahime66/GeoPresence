@@ -1468,6 +1468,65 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 .gp-table tbody tr:hover td { background: var(--gp-gray-50); }
 .gp-table .text-muted-cell { color: var(--gp-gray-400); }
 .gp-table-empty { padding: 2.5rem 1.5rem; text-align: center; color: var(--gp-gray-600); font-size: 0.9rem; }
+
+/* Sur mobile : chaque ligne de tableau devient une carte empilée (label : valeur)
+   plutôt qu'un tableau à défilement horizontal. Chaque <td> porte data-label
+   (repris du <th> correspondant) ; sans data-label la valeur s'empile seule,
+   ce qui reste préférable au défilement latéral. Ajouter .gp-table--keep-scroll
+   sur un tableau vraiment large (grille) pour garder l'ancien comportement. */
+@media (max-width: 700px) {
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) thead {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); border: 0;
+  }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll),
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody,
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tr,
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) td { display: block; width: 100%; }
+
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody tr {
+    position: relative; padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--gp-gray-200);
+  }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody tr:last-child { border-bottom: none; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody tr:hover td { background: transparent; }
+
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td {
+    display: flex; gap: 1rem; justify-content: space-between; align-items: baseline;
+    padding: 0.3rem 0; border: none; text-align: right;
+  }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td[data-label]::before {
+    content: attr(data-label); flex-shrink: 0; text-align: left;
+    font-size: 0.78rem; font-weight: 600; color: var(--gp-gray-600);
+  }
+  /* 1re cellule = titre de la carte */
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td:first-child {
+    display: block; padding: 0 2.5rem 0.5rem 0; font-weight: 700; font-size: 1rem; text-align: left;
+  }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td:first-child::before { display: none; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td:empty { display: none; }
+
+  /* Menu d'actions (⋮) : coin haut-droit de la carte */
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td.gp-row-menu {
+    position: absolute; top: 0.55rem; right: 0.5rem; width: auto; padding: 0;
+  }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td.gp-row-menu::before { display: none; }
+
+  /* Boutons d'action en ligne (approuver / rejeter, annuler…) : pleine largeur en bas */
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td:has(.gp-table-actions),
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td:has(.gp-row-action-btn) { padding-top: 0.7rem; display: block; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td:has(.gp-table-actions)::before,
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) tbody td:has(.gp-row-action-btn)::before { display: none; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) .gp-table-actions { width: 100%; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) .gp-table-actions form { flex: 1; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) .gp-table-actions .btn,
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) td:has(.gp-row-action-btn) .gp-row-action-btn { width: 100%; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) td:has(.gp-row-action-btn) form { width: 100%; }
+
+  /* Ligne « aucun résultat » (colspan) */
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) td[colspan] { padding: 0; text-align: center; }
+  .gp-table-card .gp-table:not(.gp-table--keep-scroll) td[colspan]::before { display: none; }
+}
 .gp-sub-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; max-width: 22rem; }
 
 /* Sélecteur de jour (planning des salles) */

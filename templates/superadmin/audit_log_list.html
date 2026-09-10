@@ -50,13 +50,13 @@
       <tbody>
         {% for log in logs %}
         <tr>
-          <td class="text-nowrap">{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
-          <td class="fw-semibold">{{ log.action }}</td>
-          <td>{% if log.result == "SUCCESS" %}<span class="gp-badge success"><span class="dot"></span>OK</span>{% else %}<span class="gp-badge danger"><span class="dot"></span>Échec</span>{% endif %}</td>
-          <td>{{ log.tenant.display_name|default:"—" }}</td>
-          <td class="text-muted-cell">{{ log.user_email|default:"—" }}</td>
-          <td class="text-muted-cell">{{ log.description }}</td>
-          <td class="text-muted-cell">{{ log.ip_address|default:"—" }}</td>
+          <td class="text-nowrap fw-semibold">{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
+          <td data-label="Action">{{ log.action }}</td>
+          <td data-label="Résultat">{% if log.result == "SUCCESS" %}<span class="gp-badge success"><span class="dot"></span>OK</span>{% else %}<span class="gp-badge danger"><span class="dot"></span>Échec</span>{% endif %}</td>
+          <td data-label="Organisation">{{ log.tenant.display_name|default:"—" }}</td>
+          <td class="text-muted-cell" data-label="Utilisateur">{{ log.user_email|default:"—" }}</td>
+          <td class="text-muted-cell" data-label="Description">{{ log.description }}</td>
+          <td class="text-muted-cell" data-label="IP">{{ log.ip_address|default:"—" }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="7"><div class="gp-table-empty">Aucun événement.</div></td></tr>

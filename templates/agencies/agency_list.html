@@ -20,11 +20,11 @@
         {% for agency in agencies %}
         <tr>
           <td class="fw-semibold">{{ agency.name }}</td>
-          <td class="text-muted-cell">{{ agency.code }}</td>
-          <td>{{ agency.get_agency_type_display }}</td>
-          <td>{{ agency.city }}</td>
-          <td>{{ agency.radius_meters }} m</td>
-          <td>
+          <td class="text-muted-cell" data-label="Code">{{ agency.code }}</td>
+          <td data-label="Type">{{ agency.get_agency_type_display }}</td>
+          <td data-label="Ville">{{ agency.city }}</td>
+          <td data-label="Rayon">{{ agency.radius_meters }} m</td>
+          <td data-label="Statut">
             {% if agency.is_active %}<span class="gp-badge success"><span class="dot"></span>Active</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>Inactive</span>{% endif %}
           </td>

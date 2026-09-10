@@ -20,7 +20,7 @@
         {% for a in announcements %}
         <tr>
           <td class="fw-semibold">{{ a.title }}</td>
-          <td class="text-muted-cell">
+          <td class="text-muted-cell" data-label="Ciblage">
             {% if a.agencies.exists or a.departments.exists or a.employees.exists %}
               {% if a.agencies.exists %}{{ a.agencies.count }} agence(s){% endif %}
               {% if a.departments.exists %} · {{ a.departments.count }} département(s){% endif %}
@@ -29,9 +29,9 @@
               Toute l'organisation
             {% endif %}
           </td>
-          <td class="text-nowrap">{{ a.publish_at|date:"d/m/Y H:i" }}</td>
-          <td class="text-nowrap">{{ a.expire_at|date:"d/m/Y H:i"|default:"—" }}</td>
-          <td>
+          <td class="text-nowrap" data-label="Publication">{{ a.publish_at|date:"d/m/Y H:i" }}</td>
+          <td class="text-nowrap" data-label="Expiration">{{ a.expire_at|date:"d/m/Y H:i"|default:"—" }}</td>
+          <td data-label="Statut">
             {% if a.publish_at > now %}<span class="gp-badge info"><span class="dot"></span>Programmée</span>
             {% elif a.expire_at and a.expire_at <= now %}<span class="gp-badge neutral"><span class="dot"></span>Expirée</span>
             {% else %}<span class="gp-badge success"><span class="dot"></span>Active</span>{% endif %}
