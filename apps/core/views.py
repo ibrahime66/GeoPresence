@@ -234,13 +234,11 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         # pas dans l'autre.
         expected_team_today = self._expected_headcount(user.tenant, today, employee_ids=team_ids)
 
-        trend_labels, trend_values = [], []
-        for i in range(6, -1, -1):
-            d = today - timedelta(days=i)
-            trend_labels.append(d.strftime("%d/%m"))
-            trend_values.append(
-                self._presence_rate(user.tenant, d, employee_ids=team_ids) if total_team else 0.0
-            )
+        if total_team:
+            trend_labels, trend_values = self._presence_trend(user.tenant, 7, employee_ids=team_ids)
+        else:
+            trend_labels = [(today - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)]
+            trend_values = [0.0] * 7
 
         pending_leaves_qs = Leave.objects.all_tenants().filter(
             tenant=user.tenant, status=Leave.Status.PENDING, employee__manager=user,
@@ -308,26 +306,62 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         return qs.count()
 
     @classmethod
-    def _presence_rate(cls, tenant, date, employee_ids=None):
-        """`employee_ids` restreint le calcul à une équipe (vue Manager) — sans
-        ça, le nombre de présents portait sur tout le tenant tandis que le
-        dénominateur ne portait que sur l'équipe, ce qui pouvait afficher un
-        taux de présence d'équipe supérieur à 100 %."""
-        headcount = cls._expected_headcount(tenant, date, employee_ids=employee_ids)
-        expected = max(headcount - cls._on_leave_count(tenant, date, employee_ids=employee_ids), 0)
-        if expected == 0:
-            return 0.0
+    def _presence_trend(cls, tenant, days, employee_ids=None):
+        """Taux de présence jour par jour sur les `days` derniers jours (le
+        dernier point = aujourd'hui). Audit sécurité §21 : 3 requêtes au total
+        au lieu de 3 × `days` (l'ancienne version appelait `_presence_rate`
+        dans une boucle, ~90 requêtes pour la tendance 30 jours du tableau de
+        bord Admin).
+
+        `employee_ids` restreint le calcul à une équipe (vue Manager) — sans
+        ça, les présents portaient sur tout le tenant et le dénominateur sur
+        l'équipe, d'où un taux parfois > 100 %.
+
+        Renvoie (labels, values)."""
+        today = timezone.localdate()
+        start_date = today - timedelta(days=days - 1)
+
         present_qs = Attendance.objects.all_tenants().filter(
-            tenant=tenant, clock_date=date, clock_type=Attendance.ClockType.ARRIVAL
+            tenant=tenant, clock_type=Attendance.ClockType.ARRIVAL,
+            clock_date__gte=start_date, clock_date__lte=today,
         )
         if employee_ids is not None:
             present_qs = present_qs.filter(employee_id__in=employee_ids)
-        present = present_qs.values("employee_id").distinct().count()
-        return round(present / expected * 100, 1)
+        present_by_day = dict(
+            present_qs.values_list("clock_date").annotate(n=Count("employee_id", distinct=True))
+        )
+
+        emp_qs = Employee.objects.all_tenants().filter(tenant=tenant)
+        if employee_ids is not None:
+            emp_qs = emp_qs.filter(id__in=employee_ids)
+        emp_rows = list(emp_qs.values_list("hire_date", "contract_end_date", "status"))
+
+        leave_qs = Leave.objects.all_tenants().filter(
+            tenant=tenant, status=Leave.Status.APPROVED,
+            start_date__lte=today, end_date__gte=start_date,
+        )
+        if employee_ids is not None:
+            leave_qs = leave_qs.filter(employee_id__in=employee_ids)
+        leave_rows = list(leave_qs.values_list("employee_id", "start_date", "end_date"))
+
+        labels, values = [], []
+        for i in range(days - 1, -1, -1):
+            d = today - timedelta(days=i)
+            labels.append(d.strftime("%d/%m"))
+            require_active = d >= today
+            headcount = sum(
+                1 for hire, end, status in emp_rows
+                if hire and hire <= d and (end is None or end >= d)
+                and (not require_active or status == Employee.Status.ACTIVE)
+            )
+            on_leave = len({eid for eid, s, e in leave_rows if s <= d <= e})
+            expected = max(headcount - on_leave, 0)
+            present = present_by_day.get(d, 0)
+            values.append(round(present / expected * 100, 1) if expected else 0.0)
+        return labels, values
 
     def _admin_context(self, tenant):
         today = timezone.localdate()
-        yesterday = today - timedelta(days=1)
         month_start = today.replace(day=1)
 
         total_employees = Employee.objects.all_tenants().filter(tenant=tenant, status=Employee.Status.ACTIVE).count()
@@ -345,11 +379,7 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         on_leave_today = self._on_leave_count(tenant, today)
         expected_today = self._expected_headcount(tenant, today)
 
-        trend_labels, trend_values = [], []
-        for i in range(29, -1, -1):
-            d = today - timedelta(days=i)
-            trend_labels.append(d.strftime("%d/%m"))
-            trend_values.append(self._presence_rate(tenant, d))
+        trend_labels, trend_values = self._presence_trend(tenant, 30)
 
         reasons_qs = (
             Absence.objects.all_tenants()
@@ -378,8 +408,9 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             "on_leave_today": on_leave_today,
             "absent_today": max(expected_today - on_leave_today - present_today, 0),
             "late_today": late_today,
-            "rate_today": self._presence_rate(tenant, today),
-            "rate_yesterday": self._presence_rate(tenant, yesterday),
+            # Derniers points de la tendance = aujourd'hui / hier (déjà calculés).
+            "rate_today": trend_values[-1],
+            "rate_yesterday": trend_values[-2] if len(trend_values) > 1 else 0.0,
             "pending_leaves": Leave.objects.all_tenants().filter(tenant=tenant, status=Leave.Status.PENDING).count(),
             "pending_absences": Absence.objects.all_tenants().filter(
                 tenant=tenant, status=Absence.Status.PENDING_REVIEW

@@ -33,7 +33,7 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 | 18 | ⚪ | Données de prod à nettoyer (orgs + comptes en double) | ⚠️ décision requise | — | — |
 | 19 | ⚪ | Pas d'autorisation niveau objet (filtres `tenant=` manuels) | 📋 recommandation (test de non-régression) | — | — |
 | 20 | ⚪ | `TenantModel` : manager par défaut non filtré (admin) | 📋 risque réduit par §2 (admin hors prod) | — | — |
-| 21 | ⚪ | Dashboard admin : ~115 requêtes SQL / chargement | ⬜ chantier perf séparé | — | — |
+| 21 | ⚪ | Dashboard admin : ~115 requêtes SQL / chargement | ✅ corrigé (115 → 22) | #7 | ⏳ |
 | 22 | ⚪ | `attendance_history` mobile : logo au milieu de page | ✅ non-bug (artefact capture fullPage) | — | — |
 | 23 | ⚪ | Commentaire geofencing ↔ code divergent (flag inexistant) | ✅ corrigé (=§3) | #7 | ✅ 11/09 |
 
