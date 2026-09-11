@@ -17,7 +17,7 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 | 2 | 🔴 | `/admin/` contourne verrouillage + rate-limit + CAPTCHA | ✅ corrigé | #7 | ✅ 11/09 |
 | 3 | 🔴 | `gps_accuracy` non borné → géofencing contournable | ✅ corrigé | #7 | ✅ 11/09 |
 | 4 | 🔴 | `mode=OFFLINE` piloté par le client sur l'endpoint en ligne | ✅ corrigé | #7 | ✅ 11/09 |
-| 5 | 🟡 | CAPTCHA désactivé en prod | ⚙️ action ops (clés hCaptcha) | — | — |
+| 5 | 🟡 | CAPTCHA désactivé en prod | ✅ corrigé (clés posées) | #7 | ✅ 11/09 |
 | 6 | 🟡 | Pas de rate-limit sur la demande de reset mot de passe | ✅ corrigé | #7 | ⏳ |
 | 7 | 🟡 | Énumération de comptes par timing au login | ✅ corrigé | #7 | ⏳ |
 | 8 | 🟡 | XSS stocké potentiel : `agency_zones_json\|safe` | ✅ corrigé | #7 | ⏳ |
