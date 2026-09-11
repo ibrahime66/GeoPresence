@@ -7,6 +7,10 @@
   "use strict";
 
   const config = JSON.parse(document.getElementById("clock-config").textContent);
+  // Zones GPS émises séparément via {{ ...|json_script }} (audit sécurité §8) —
+  // échappement sûr des libellés de zone dans le <script>.
+  const zonesEl = document.getElementById("clock-zones");
+  config.zones = zonesEl ? JSON.parse(zonesEl.textContent) : [];
 
   // Icônes hébergées localement plutôt que sur cdn.jsdelivr.net : la
   // Content-Security-Policy (img-src) n'autorise que 'self'/data:/tuiles

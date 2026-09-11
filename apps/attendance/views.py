@@ -1,5 +1,4 @@
 import hmac
-import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse
@@ -55,21 +54,20 @@ class ClockPageView(LoginRequiredMixin, TemplateView):
             context["today_attendances"] = Attendance.objects.all_tenants().filter(
                 employee=employee, clock_date=clock_date
             ).order_by("server_time")
-            # json.dumps plutôt qu'une interpolation directe de gabarit : les
-            # DecimalField latitude/longitude s'afficheraient avec le
-            # séparateur décimal localisé (virgule en fr-FR) via {{ }}, ce qui
-            # casserait le JSON produit pour clock.js.
-            context["agency_zones_json"] = json.dumps(
-                [
-                    {
-                        "label": zone["label"],
-                        "latitude": float(zone["latitude"]),
-                        "longitude": float(zone["longitude"]),
-                        "radius": zone["radius"],
-                    }
-                    for zone in employee.primary_agency.zones()
-                ]
-            )
+            # Émis via {{ ...|json_script }} côté template (audit sécurité §8) :
+            # un `label` de zone / nom d'agence contenant « </script> » ne doit
+            # pas pouvoir sortir du bloc <script>. json_script échappe ces
+            # séquences ; float() garde un séparateur décimal « . » quel que
+            # soit le locale.
+            context["agency_zones"] = [
+                {
+                    "label": zone["label"],
+                    "latitude": float(zone["latitude"]),
+                    "longitude": float(zone["longitude"]),
+                    "radius": zone["radius"],
+                }
+                for zone in employee.primary_agency.zones()
+            ]
             if qr_agency_id:
                 assigned_ids = {str(employee.primary_agency_id)} | {
                     str(a_id) for a_id in employee.secondary_agencies.values_list("id", flat=True)

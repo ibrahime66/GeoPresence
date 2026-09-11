@@ -17,12 +17,12 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 | 2 | 🔴 | `/admin/` contourne verrouillage + rate-limit + CAPTCHA | ✅ corrigé | #7 | ✅ 11/09 |
 | 3 | 🔴 | `gps_accuracy` non borné → géofencing contournable | ✅ corrigé | #7 | ✅ 11/09 |
 | 4 | 🔴 | `mode=OFFLINE` piloté par le client sur l'endpoint en ligne | ✅ corrigé | #7 | ✅ 11/09 |
-| 5 | 🟡 | CAPTCHA désactivé en prod | ⬜ à faire | — | — |
-| 6 | 🟡 | Pas de rate-limit sur la demande de reset mot de passe | ⬜ à faire | — | — |
-| 7 | 🟡 | Énumération de comptes par timing au login | ⬜ à faire | — | — |
-| 8 | 🟡 | XSS stocké potentiel : `agency_zones_json\|safe` | ⬜ à faire | — | — |
-| 9 | 🟡 | CSP `script-src 'unsafe-inline'` | ⬜ à faire | — | — |
-| 10 | 🟡 | DoS verrouillage de compte ciblé | ⬜ à faire | — | — |
+| 5 | 🟡 | CAPTCHA désactivé en prod | ⚙️ action ops (clés hCaptcha) | — | — |
+| 6 | 🟡 | Pas de rate-limit sur la demande de reset mot de passe | ✅ corrigé | #7 | ⏳ |
+| 7 | 🟡 | Énumération de comptes par timing au login | ✅ corrigé | #7 | ⏳ |
+| 8 | 🟡 | XSS stocké potentiel : `agency_zones_json\|safe` | ✅ corrigé | #7 | ⏳ |
+| 9 | 🟡 | CSP `script-src 'unsafe-inline'` | 🕒 chantier séparé (nonces CSP) | — | — |
+| 10 | 🟡 | DoS verrouillage de compte ciblé | ↳ atténué par §1 (rate-limit par IP réel) | #7 | ⏳ |
 | 11 | 🔵 | `CSRF_TRUSTED_ORIGINS` non défini | ⬜ à faire | — | — |
 | 12 | 🔵 | `BackupDownloadView` sans confinement de chemin | ⬜ à faire | — | — |
 | 13 | 🔵 | Org DELETED réactivable par POST direct | ⬜ à faire | — | — |

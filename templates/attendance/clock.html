@@ -80,12 +80,12 @@
 
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
       <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+      {{ agency_zones|json_script:"clock-zones" }}
       <script id="clock-config" type="application/json">
         {
           "apiUrl": "{% url 'attendance:clock_api' %}",
           "nextClockType": {% if next_clock_type %}"{{ next_clock_type }}"{% else %}null{% endif %},
           "csrfToken": "{{ csrf_token }}",
-          "zones": {{ agency_zones_json|default:"[]"|safe }},
           "source": {% if qr_agency_name %}"QR"{% else %}null{% endif %}
         }
       </script>

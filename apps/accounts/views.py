@@ -26,6 +26,8 @@ from .constants import (
     LOGIN_RATE_LIMIT_MAX_ATTEMPTS,
     LOGIN_RATE_LIMIT_WINDOW_SECONDS,
     PASSWORD_RESET_TOKEN_LIFETIME_MINUTES,
+    PWRESET_RATE_LIMIT_MAX,
+    PWRESET_RATE_LIMIT_WINDOW,
     REPEATED_LOCKOUT_THRESHOLD,
 )
 from .forms import BootstrapPasswordChangeForm, BootstrapSetPasswordForm, LoginForm, PasswordResetRequestForm
@@ -96,6 +98,11 @@ class LoginView(FormView):
         user = User.objects.filter(email=email).first()
 
         if user is None:
+            # Égalise le temps de réponse avec le cas « e-mail connu, mot de
+            # passe faux » (audit sécurité §7) : sans ce hachage bidon, le fait
+            # qu'Argon2 ne tourne pas rend un compte inexistant distinguable
+            # par simple mesure du temps de réponse (cf. Django #20760).
+            User().set_password(password)
             captcha.register_failure(email)
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description=f"E-mail inconnu : {email}"
@@ -281,11 +288,23 @@ class PasswordResetRequestView(FormView):
 
     def form_valid(self, form):
         request = self.request
+        ip = ratelimit.get_client_ip(request)
+
+        # Audit sécurité §6 : sans limite, ce formulaire public permet de
+        # bombarder d'e-mails de réinitialisation n'importe quel compte (et de
+        # noyer le journal d'audit). Réponse identique au cas nominal — on ne
+        # révèle jamais qu'on a été limité (cohérent avec RM-AUTH-005).
+        if ratelimit.hit("pwreset_ip", ip, limit=PWRESET_RATE_LIMIT_MAX, window_seconds=PWRESET_RATE_LIMIT_WINDOW):
+            audit.log_event(
+                request, audit.PASSWORD_RESET_REQUESTED, AuditLog.Result.FAILURE,
+                description=f"Limite de débit dépassée (IP {ip})",
+            )
+            return redirect("accounts:password_reset_sent")
 
         # CDC §13.4 : CAPTCHA systématique sur ce formulaire public (pas de
         # seuil de tentatives — neutralisé si hCaptcha n'est pas configuré).
         if captcha.is_enabled() and not captcha.verify(
-            request.POST.get("h-captcha-response", ""), ratelimit.get_client_ip(request)
+            request.POST.get("h-captcha-response", ""), ip
         ):
             form.add_error(None, "Merci de valider le CAPTCHA avant de continuer.")
             return self.form_invalid(form)

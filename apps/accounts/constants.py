@@ -16,6 +16,10 @@ CAPTCHA_FAILURE_THRESHOLD = 3
 LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 60
 
+# Audit sécurité §6 : demandes de réinitialisation de mot de passe par IP.
+PWRESET_RATE_LIMIT_MAX = 5
+PWRESET_RATE_LIMIT_WINDOW = 3600
+
 PASSWORD_RESET_TOKEN_LIFETIME_MINUTES = 30
 
 # CDC §13.2.1 : avertissement d'expiration — nombre de jours avant échéance,
