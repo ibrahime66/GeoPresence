@@ -13,7 +13,7 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 
 | # | Sévérité | Titre | Statut | PR | Déployé |
 |---|----------|-------|--------|----|---------|
-| 1 | 🔴 | IP client réelle jamais lue (`REMOTE_ADDR` = `127.0.0.1`) | ⬜ à faire | — | — |
+| 1 | 🔴 | IP client réelle jamais lue (`REMOTE_ADDR` = `127.0.0.1`) | ✅ corrigé | #7 | ⏳ |
 | 2 | 🔴 | `/admin/` contourne verrouillage + rate-limit + CAPTCHA | ⬜ à faire | — | — |
 | 3 | 🔴 | `gps_accuracy` non borné → géofencing contournable | ⬜ à faire | — | — |
 | 4 | 🔴 | `mode=OFFLINE` piloté par le client sur l'endpoint en ligne | ⬜ à faire | — | — |
