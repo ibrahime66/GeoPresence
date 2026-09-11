@@ -23,19 +23,19 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 | 8 | 🟡 | XSS stocké potentiel : `agency_zones_json\|safe` | ✅ corrigé | #7 | ⏳ |
 | 9 | 🟡 | CSP `script-src 'unsafe-inline'` | 🕒 chantier séparé (nonces CSP) | — | — |
 | 10 | 🟡 | DoS verrouillage de compte ciblé | ↳ atténué par §1 (rate-limit par IP réel) | #7 | ⏳ |
-| 11 | 🔵 | `CSRF_TRUSTED_ORIGINS` non défini | ⬜ à faire | — | — |
-| 12 | 🔵 | `BackupDownloadView` sans confinement de chemin | ⬜ à faire | — | — |
-| 13 | 🔵 | Org DELETED réactivable par POST direct | ⬜ à faire | — | — |
-| 14 | 🔵 | Matricule employé : race condition `count()+1` | ⬜ à faire | — | — |
-| 15 | 🔵 | Admin Django monté en prod (surface) | ⬜ à faire | — | — |
-| 16 | 🔵 | `seed_demo.py` mot de passe en dur | ⬜ à faire | — | — |
+| 11 | 🔵 | `CSRF_TRUSTED_ORIGINS` non défini | ✅ corrigé | #7 | ⏳ |
+| 12 | 🔵 | `BackupDownloadView` sans confinement de chemin | ✅ corrigé | #7 | ⏳ |
+| 13 | 🔵 | Org DELETED réactivable par POST direct | ✅ corrigé | #7 | ⏳ |
+| 14 | 🔵 | Matricule employé : race condition `count()+1` | ✅ corrigé | #7 | ⏳ |
+| 15 | 🔵 | Admin Django monté en prod (surface) | ✅ corrigé (=§2) | #7 | ✅ 11/09 |
+| 16 | 🔵 | `seed_demo.py` mot de passe en dur | ✅ corrigé | #7 | ⏳ |
 | 17 | ⚪ | Index `(tenant, created_at)` manquant sur plusieurs tables | ⬜ à faire | — | — |
 | 18 | ⚪ | Données de prod à nettoyer (orgs + comptes en double) | ⬜ à faire | — | — |
 | 19 | ⚪ | Pas d'autorisation niveau objet (filtres `tenant=` manuels) | ⬜ à faire | — | — |
 | 20 | ⚪ | `TenantModel` : manager par défaut non filtré (admin) | ⬜ à faire | — | — |
 | 21 | ⚪ | Dashboard admin : ~115 requêtes SQL / chargement | ⬜ à faire | — | — |
 | 22 | ⚪ | `attendance_history` mobile : logo au milieu de page | ⬜ à faire | — | — |
-| 23 | ⚪ | Commentaire geofencing ↔ code divergent (flag inexistant) | ⬜ à faire | — | — |
+| 23 | ⚪ | Commentaire geofencing ↔ code divergent (flag inexistant) | ✅ corrigé (=§3) | #7 | ✅ 11/09 |
 
 ---
 

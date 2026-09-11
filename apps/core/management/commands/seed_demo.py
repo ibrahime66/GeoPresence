@@ -1,7 +1,7 @@
 from datetime import date, time
 from decimal import Decimal
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from apps.absences.models import Absence
 from apps.accounts.models import User
@@ -22,6 +22,13 @@ class Command(BaseCommand):
     help = "Crée un jeu de données de démo complet (organisation, agence, horaire, comptes) pour tester l'application manuellement. Supprime et recrée toute donnée de démo existante (slug 'demo-corp')."
 
     def handle(self, *args, **options):
+        # Audit sécurité §16 : cette commande crée des comptes au mot de passe
+        # connu (« Demo1234! ») — jamais en production.
+        from django.conf import settings
+
+        if not settings.DEBUG:
+            raise CommandError("seed_demo est réservé au développement (DEBUG=True).")
+
         # Ordre important : les employés protègent (PROTECT) agences/départements/
         # horaires contre la suppression tant qu'ils existent — il faut donc
         # supprimer tout ce qui référence un Employee avant l'Organization elle-même.
