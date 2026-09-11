@@ -10,10 +10,15 @@ REPEATED_LOCKOUT_THRESHOLD = 2
 # CDC §13.4 : CAPTCHA après 3 tentatives échouées sur un même e-mail.
 CAPTCHA_FAILURE_THRESHOLD = 3
 
-# CDC §13.3.1 : limitation de débit — max 10 tentatives de connexion par
-# minute et par IP (protection anti brute-force globale, pas un paramètre
-# métier par organisation).
-LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10
+# CDC §13.3.1 : limitation de débit anti brute-force globale par IP — compte
+# les ÉCHECS de connexion uniquement (pas les tentatives réussies, cf. audit
+# perf/charge de 2026-09 : de nombreux employés derrière une même IP
+# partagée — box d'agence, Wi-Fi d'école... — ne doivent jamais se bloquer
+# mutuellement en se connectant normalement). Le verrouillage de compte
+# (max_failed_login_attempts, par organisation) et le CAPTCHA par e-mail
+# restent la défense principale contre le brute-force ciblé ; ce seuil-ci ne
+# fait que couper un scan massif depuis une seule IP.
+LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 30
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = 60
 
 # Audit sécurité §6 : demandes de réinitialisation de mot de passe par IP.

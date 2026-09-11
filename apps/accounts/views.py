@@ -74,15 +74,17 @@ class LoginView(FormView):
         password = form.cleaned_data["password"]
         ip = ratelimit.get_client_ip(request)
 
-        # CDC §13.3.1 : max 10 tentatives/minute/IP, tous formulaires de
-        # connexion confondus — la vérification la plus large passe en premier.
-        if ratelimit.hit(
-            "login_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
-        ):
+        # Anti brute-force par IP (CDC §13.3.1) — ne compte que les ÉCHECS
+        # (cf. constants.LOGIN_RATE_LIMIT_MAX_ATTEMPTS) : on lit le compteur
+        # SANS l'incrémenter ici, pour qu'une simple tentative de connexion
+        # (réussie ou non) ne consomme jamais le budget d'une autre personne
+        # derrière la même IP partagée. Chaque échec l'incrémente plus bas
+        # (cf. `_register_login_failure`).
+        if ratelimit.get_count("login_fail_ip", ip) >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS:
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description=f"Limite de débit dépassée (IP {ip})"
             )
-            form.add_error(None, "Trop de tentatives depuis cette adresse. Réessayez dans une minute.")
+            form.add_error(None, "Trop de tentatives échouées depuis cette adresse. Réessayez dans une minute.")
             return self.form_invalid(form)
 
         # CDC §13.4 : CAPTCHA après 3 échecs sur cet e-mail. Neutralisé tant
@@ -104,6 +106,9 @@ class LoginView(FormView):
             # par simple mesure du temps de réponse (cf. Django #20760).
             User().set_password(password)
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description=f"E-mail inconnu : {email}"
             )
@@ -112,6 +117,9 @@ class LoginView(FormView):
 
         if user.tenant_id and user.tenant.status != Organization.Status.ACTIVE:
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Organisation suspendue"
             )
@@ -120,6 +128,9 @@ class LoginView(FormView):
 
         if not user.is_active:
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Compte inactif"
             )
@@ -129,6 +140,9 @@ class LoginView(FormView):
         now = timezone.now()
         if user.locked_until and user.locked_until > now:
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Compte verrouillé"
             )
@@ -138,6 +152,9 @@ class LoginView(FormView):
 
         if not user.check_password(password):
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             user.failed_login_attempts += 1
             max_attempts = get_org_setting(user.tenant, "max_failed_login_attempts")
             if user.failed_login_attempts >= max_attempts:

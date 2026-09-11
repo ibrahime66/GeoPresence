@@ -25,3 +25,11 @@ def hit(bucket, key, *, limit, window_seconds):
         cache.set(cache_key, 1, timeout=window_seconds)
         count = 1
     return count > limit
+
+
+def get_count(bucket, key):
+    """Lit le compteur actuel de `key` dans `bucket` SANS l'incrémenter — pour
+    décider de bloquer une requête qui ne doit pas elle-même compter comme une
+    tentative (ex. vérifier qu'une IP n'est pas déjà bloquée avant même de
+    tester des identifiants, cf. apps.accounts.views.LoginView)."""
+    return cache.get(f"{CACHE_PREFIX}:{bucket}:{key}", 0)

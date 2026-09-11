@@ -233,3 +233,14 @@ Artefact de la barre de nav `position: fixed` capturée par le rendu — cosmét
   → Aucune suppression faite : ce sont les propres données de test d'Ibrahime, à lui de dire quoi garder.
 - **§19** : ajouter `apps/core/tests.py::test_no_cross_tenant_leak` qui, pour un panel de vues, vérifie qu'un utilisateur du tenant A ne reçoit jamais d'objet du tenant B.
 - **§21** : réécrire la boucle de 30 jours de `_admin_context._presence_rate` en une seule requête `values('clock_date').annotate(...)`.
+
+---
+
+## Suivi de charge — 500 connexions/pointages simultanés (2026-09-11)
+
+Question d'Ibrahime : que se passe-t-il si 500 employés se connectent et pointent en même temps ? Deux problèmes réels identifiés et corrigés :
+
+1. **Rate-limit login par IP partagée.** `LOGIN_RATE_LIMIT_MAX_ATTEMPTS` comptait *toute* tentative (réussie ou non) par IP — 500 employés derrière une même box/Wi-Fi (école, entreprise) se bloquaient mutuellement dès la 10ᵉ connexion/minute. Corrigé : ne compte plus que les échecs (`ratelimit.get_count` en lecture seule avant traitement, `ratelimit.hit` seulement sur chaque branche d'échec), seuil remonté à 30/min. Vérifié : 20/20 connexions réussies depuis la même IP ne bloquent plus rien ; 40 échecs consécutifs se font toujours bloquer à partir du 30ᵉ.
+2. **Workers Gunicorn `sync` sur 1 vCPU** = 3 requêtes en vol max (le VPS n'a qu'1 cœur, pas 2 comme supposé lors de l'audit initial). Passage en `gthread` (3 workers × 8 threads = 24 requêtes en vol, même empreinte mémoire) — le temps d'une requête Django est surtout de l'attente réseau (MySQL/Redis), pas du calcul, `gthread` en profite directement.
+
+Restent, si la charge réelle le justifie un jour : upgrade vCPU (Argon2 `parallelism=2` n'utilise qu'1 cœur actuellement), réduction des ~15 requêtes SQL par pointage.
