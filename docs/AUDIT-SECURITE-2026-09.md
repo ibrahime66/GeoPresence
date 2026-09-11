@@ -13,10 +13,10 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 
 | # | Sévérité | Titre | Statut | PR | Déployé |
 |---|----------|-------|--------|----|---------|
-| 1 | 🔴 | IP client réelle jamais lue (`REMOTE_ADDR` = `127.0.0.1`) | ✅ corrigé | #7 | ⏳ |
-| 2 | 🔴 | `/admin/` contourne verrouillage + rate-limit + CAPTCHA | ✅ corrigé | #7 | ⏳ |
-| 3 | 🔴 | `gps_accuracy` non borné → géofencing contournable | ✅ corrigé | #7 | ⏳ |
-| 4 | 🔴 | `mode=OFFLINE` piloté par le client sur l'endpoint en ligne | ✅ corrigé | #7 | ⏳ |
+| 1 | 🔴 | IP client réelle jamais lue (`REMOTE_ADDR` = `127.0.0.1`) | ✅ corrigé | #7 | ✅ 11/09 |
+| 2 | 🔴 | `/admin/` contourne verrouillage + rate-limit + CAPTCHA | ✅ corrigé | #7 | ✅ 11/09 |
+| 3 | 🔴 | `gps_accuracy` non borné → géofencing contournable | ✅ corrigé | #7 | ✅ 11/09 |
+| 4 | 🔴 | `mode=OFFLINE` piloté par le client sur l'endpoint en ligne | ✅ corrigé | #7 | ✅ 11/09 |
 | 5 | 🟡 | CAPTCHA désactivé en prod | ⬜ à faire | — | — |
 | 6 | 🟡 | Pas de rate-limit sur la demande de reset mot de passe | ⬜ à faire | — | — |
 | 7 | 🟡 | Énumération de comptes par timing au login | ⬜ à faire | — | — |
