@@ -30,7 +30,7 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 | 15 | 🔵 | Admin Django monté en prod (surface) | ✅ corrigé (=§2) | #7 | ✅ 11/09 |
 | 16 | 🔵 | `seed_demo.py` mot de passe en dur | ✅ corrigé | #7 | ⏳ |
 | 17 | ⚪ | Index `(tenant, created_at)` manquant sur plusieurs tables | 📋 documenté (impact quasi nul) | — | — |
-| 18 | ⚪ | Données de prod à nettoyer (orgs + comptes en double) | ⚠️ décision requise | — | — |
+| 18 | ⚪ | Données de prod à nettoyer (orgs + comptes en double) | ⚠️ à trancher par Ibrahime (détail ci-dessous) | — | — |
 | 19 | ⚪ | Pas d'autorisation niveau objet (filtres `tenant=` manuels) | 📋 recommandation (test de non-régression) | — | — |
 | 20 | ⚪ | `TenantModel` : manager par défaut non filtré (admin) | 📋 risque réduit par §2 (admin hors prod) | — | — |
 | 21 | ⚪ | Dashboard admin : ~115 requêtes SQL / chargement | ✅ corrigé (115 → 22) | #7 | ⏳ |
@@ -226,6 +226,10 @@ Artefact de la barre de nav `position: fixed` capturée par le rendu — cosmét
 - **§5** : nécessite un compte hCaptcha + les clés `HCAPTCHA_SITE_KEY` / `HCAPTCHA_SECRET_KEY` dans `.env` prod. Action d'Ibrahime.
 - **§9** : passer la CSP en mode nonce (retirer `'unsafe-inline'` de `script-src`) impose de sortir tout le JS inline / `onclick=` des templates. Chantier dédié.
 - **§17** : correctif = faire hériter chaque `class Meta` de `TenantModel.Meta` (avec `abstract = False`) OU rajouter `models.Index(fields=['tenant','created_at'])` explicitement + une migration par modèle (~13). Aucune requête actuelle n'ordonne par `created_at` sur ces tables -> impact réel négligeable, à faire lors d'un passage sur les modèles.
-- **§18** : suppression de `ibrahimebarry520@glail.com` (typo, inactif), fusion/suppression des orgs « Revyon Tech » doublons — à faire sur demande explicite (données de prod).
+- **§18** — état exact de la prod (2026-09-11, aucune donnée réelle : 0 pointage partout, instance encore en test) :
+  - 3 orgs, toutes des tests d'Ibrahime : `Revyon Tech` (slug `Revyon_Tech_Guinee_conakry`, ACTIVE, 1 employé), `Revyon tech` (slug `Mon_premier_test`, ACTIVE, 3 employés), `Revyon Tech` (slug `Revyon_tech_guinee`, DELETED).
+  - `ibrahimebarry520@glail.com` : compte EMPLOYEE inactif, domaine mal tapé (« glail »), 0 pointage, jamais connecté → probable erreur de saisie.
+  - `salimdiaby3028@gmail.com` / `salimoudiaby3028@gmail.com` : 2 comptes ADMIN, tous deux actifs et connectés le 31/08 à 1 s d'intervalle → doublon probable.
+  → Aucune suppression faite : ce sont les propres données de test d'Ibrahime, à lui de dire quoi garder.
 - **§19** : ajouter `apps/core/tests.py::test_no_cross_tenant_leak` qui, pour un panel de vues, vérifie qu'un utilisateur du tenant A ne reçoit jamais d'objet du tenant B.
 - **§21** : réécrire la boucle de 30 jours de `_admin_context._presence_rate` en une seule requête `values('clock_date').annotate(...)`.
