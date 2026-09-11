@@ -29,12 +29,12 @@ On corrige du plus critique au plus faible. Une PR (ou un lot de PR) par bloc.
 | 14 | 🔵 | Matricule employé : race condition `count()+1` | ✅ corrigé | #7 | ⏳ |
 | 15 | 🔵 | Admin Django monté en prod (surface) | ✅ corrigé (=§2) | #7 | ✅ 11/09 |
 | 16 | 🔵 | `seed_demo.py` mot de passe en dur | ✅ corrigé | #7 | ⏳ |
-| 17 | ⚪ | Index `(tenant, created_at)` manquant sur plusieurs tables | ⬜ à faire | — | — |
-| 18 | ⚪ | Données de prod à nettoyer (orgs + comptes en double) | ⬜ à faire | — | — |
-| 19 | ⚪ | Pas d'autorisation niveau objet (filtres `tenant=` manuels) | ⬜ à faire | — | — |
-| 20 | ⚪ | `TenantModel` : manager par défaut non filtré (admin) | ⬜ à faire | — | — |
-| 21 | ⚪ | Dashboard admin : ~115 requêtes SQL / chargement | ⬜ à faire | — | — |
-| 22 | ⚪ | `attendance_history` mobile : logo au milieu de page | ⬜ à faire | — | — |
+| 17 | ⚪ | Index `(tenant, created_at)` manquant sur plusieurs tables | 📋 documenté (impact quasi nul) | — | — |
+| 18 | ⚪ | Données de prod à nettoyer (orgs + comptes en double) | ⚠️ décision requise | — | — |
+| 19 | ⚪ | Pas d'autorisation niveau objet (filtres `tenant=` manuels) | 📋 recommandation (test de non-régression) | — | — |
+| 20 | ⚪ | `TenantModel` : manager par défaut non filtré (admin) | 📋 risque réduit par §2 (admin hors prod) | — | — |
+| 21 | ⚪ | Dashboard admin : ~115 requêtes SQL / chargement | ⬜ chantier perf séparé | — | — |
+| 22 | ⚪ | `attendance_history` mobile : logo au milieu de page | ✅ non-bug (artefact capture fullPage) | — | — |
 | 23 | ⚪ | Commentaire geofencing ↔ code divergent (flag inexistant) | ✅ corrigé (=§3) | #7 | ✅ 11/09 |
 
 ---
@@ -217,3 +217,15 @@ Artefact de la barre de nav `position: fixed` capturée par le rendu — cosmét
 - Sauvegardes : AES-256, checksum vérifié avant restauration, mot de passe MySQL via env (pas argv).
 - En-têtes : HSTS, CSP, Permissions-Policy, `Cache-Control: no-store` sur les pages authentifiées, cookies `Secure` + `HttpOnly` + `SameSite=Strict`.
 - Secrets hors git, `.env` en `600`, `DEBUG=False` en prod, `ALLOWED_HOSTS` correct.
+
+
+---
+
+## Notes de résolution
+
+- **§5** : nécessite un compte hCaptcha + les clés `HCAPTCHA_SITE_KEY` / `HCAPTCHA_SECRET_KEY` dans `.env` prod. Action d'Ibrahime.
+- **§9** : passer la CSP en mode nonce (retirer `'unsafe-inline'` de `script-src`) impose de sortir tout le JS inline / `onclick=` des templates. Chantier dédié.
+- **§17** : correctif = faire hériter chaque `class Meta` de `TenantModel.Meta` (avec `abstract = False`) OU rajouter `models.Index(fields=['tenant','created_at'])` explicitement + une migration par modèle (~13). Aucune requête actuelle n'ordonne par `created_at` sur ces tables -> impact réel négligeable, à faire lors d'un passage sur les modèles.
+- **§18** : suppression de `ibrahimebarry520@glail.com` (typo, inactif), fusion/suppression des orgs « Revyon Tech » doublons — à faire sur demande explicite (données de prod).
+- **§19** : ajouter `apps/core/tests.py::test_no_cross_tenant_leak` qui, pour un panel de vues, vérifie qu'un utilisateur du tenant A ne reçoit jamais d'objet du tenant B.
+- **§21** : réécrire la boucle de 30 jours de `_admin_context._presence_rate` en une seule requête `values('clock_date').annotate(...)`.
