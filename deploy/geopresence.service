@@ -9,6 +9,12 @@ Group=geopresence
 WorkingDirectory=/home/geopresence/app
 EnvironmentFile=/home/geopresence/app/.env
 ExecStart=/home/geopresence/app/venv/bin/gunicorn config.wsgi:application -c deploy/gunicorn.conf.py
+# `systemctl reload geopresence` -> HUP : Gunicorn recharge sans coupure
+# (le master garde la socket ouverte, les workers finissent leurs requêtes en
+# cours avant d'être remplacés par des workers qui réimportent le code).
+# À utiliser pour tout déploiement de code/templates. Un `restart` complet
+# n'est nécessaire que si gunicorn.conf.py ou .env changent (~2 s de 502).
+ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
 RestartSec=5
 
