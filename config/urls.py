@@ -3,8 +3,19 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
+urlpatterns = []
+
+# Audit sécurité §2 : l'admin Django (`/admin/login/`) court-circuite tout le
+# durcissement anti-brute-force de LoginView (verrouillage progressif,
+# rate-limit, CAPTCHA) — ModelBackend ne vérifie que `is_active`. Toute
+# l'exploitation d'une organisation passe par l'app `superadmin`, jamais par
+# l'admin Django : on ne l'expose donc qu'en développement. En cas de besoin
+# ponctuel en prod, passer par `manage.py shell` ou réactiver derrière une
+# restriction d'IP Nginx.
+if settings.DEBUG:
+    urlpatterns += [path("admin/", admin.site.urls)]
+
+urlpatterns += [
     # Bascule de langue pour les visiteurs anonymes (page de connexion...) —
     # CDC §24.2. Vue standard Django (django.views.i18n.set_language),
     # POST-only, stocke le choix en session. Les utilisateurs authentifiés
