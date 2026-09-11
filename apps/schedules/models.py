@@ -2,6 +2,7 @@ from datetime import date as date_cls
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import UniqueConstraint
 
 from apps.core.models import TenantModel
 
@@ -36,6 +37,13 @@ class Schedule(TenantModel):
         "type d'horaire", max_length=10, choices=ScheduleType.choices, default=ScheduleType.FIXED
     )
     is_active = models.BooleanField("actif", default=True)
+
+    # CDC §10.2.4 : "L'emploi du temps d'un enseignant est défini par semestre
+    # ou trimestre." Texte libre plutôt qu'une liste de choix figée — les
+    # établissements ne découpent pas tous leur année scolaire pareil
+    # (trimestres, semestres, année complète...). Visible uniquement si
+    # school_scheduling_enabled (cf. apps.schedules.forms.ScheduleForm).
+    term = models.CharField("période (trimestre/semestre)", max_length=100, blank=True)
 
     # Surchargent les paramètres par défaut de l'organisation si renseignés (CDC §10.2.1).
     late_tolerance_minutes = models.PositiveSmallIntegerField(
@@ -85,6 +93,21 @@ class ScheduleSlot(TenantModel):
     )
 
     is_cancelled = models.BooleanField("annulé", default=False)
+
+    # CDC §10.2.4 : "Chaque créneau est lié à une matière, une salle et un
+    # groupe d'étudiants (informations stockées pour référence, non gérées
+    # par ce module)" — donc du texte libre, pas de FK vers un futur modèle
+    # Matière/Salle/Classe (hors périmètre). Visibles uniquement si
+    # school_scheduling_enabled (cf. apps.schedules.forms.ScheduleSlotForm).
+    subject = models.CharField("matière", max_length=150, blank=True)
+    room = models.CharField("salle", max_length=100, blank=True)
+    student_group = models.CharField("groupe / classe", max_length=150, blank=True)
+    # CDC §10.2.4 : "Un créneau annulé (maladie, substitution) doit être
+    # marqué comme absent ou remplacé." is_cancelled couvre le premier cas ;
+    # ce champ couvre le second — qui remplace, en texte libre (pas de FK
+    # employé : un remplaçant est souvent externe, pas forcément dans
+    # l'effectif de l'organisation).
+    substitute_note = models.CharField("remplacement", max_length=255, blank=True)
 
     class Meta:
         ordering = ["weekday", "start_time"]
@@ -149,3 +172,75 @@ class EmployeeScheduleAssignment(TenantModel):
                         "Chevauchement avec une affectation existante "
                         f"({other.valid_from} → {other.valid_until or '∞'})."
                     )
+
+
+class SlotException(TenantModel):
+    """CDC §10.2.4 : « Un créneau annulé (maladie, substitution) doit être
+    marqué comme absent ou remplacé. » Exception PONCTUELLE (une date précise)
+    à un créneau récurrent — à ne pas confondre avec ScheduleSlot.is_cancelled
+    qui annule le créneau pour toutes les semaines.
+
+    Visible uniquement pour les organisations avec school_scheduling_enabled
+    (RM-ORG-SCHOOL). Consommée par apps.schedules.services (alerte cours sans
+    professeur, planning des salles, présence enseignants) via
+    exceptions_by_slot()."""
+
+    class Kind(models.TextChoices):
+        CANCELLED = "CANCELLED", "Annulé"
+        SUBSTITUTED = "SUBSTITUTED", "Remplacé"
+
+    slot = models.ForeignKey(
+        ScheduleSlot, on_delete=models.CASCADE, related_name="exceptions", verbose_name="créneau"
+    )
+    date = models.DateField("date")
+    kind = models.CharField("type", max_length=12, choices=Kind.choices)
+
+    # Enseignant initialement prévu ce jour-là, figé à la création — garde une
+    # trace même si l'affectation d'horaire change ensuite. `related_name="+"` :
+    # pas d'accesseur inverse (cf. TenantModel).
+    original_employee = models.ForeignKey(
+        "employees.Employee", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="+", verbose_name="enseignant prévu",
+    )
+    # Remplaçant : FK si dans l'effectif, sinon texte libre (remplaçant externe
+    # — même raisonnement que ScheduleSlot.substitute_note). Renseigné seulement
+    # si kind == SUBSTITUTED.
+    substitute_employee = models.ForeignKey(
+        "employees.Employee", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="+", verbose_name="remplaçant (interne)",
+    )
+    substitute_note = models.CharField("remplaçant (externe)", max_length=255, blank=True)
+    reason = models.CharField("motif", max_length=255, blank=True)
+
+    created_by = models.ForeignKey(
+        "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-date"]
+        constraints = [
+            UniqueConstraint(fields=["tenant", "slot", "date"], name="schedules_slotexception_slot_date_uniq"),
+        ]
+
+    def __str__(self):
+        return f"{self.slot} — {self.get_kind_display()} {self.date}"
+
+    @property
+    def substitute_label(self):
+        if self.substitute_employee_id:
+            return self.substitute_employee.user.full_name or self.substitute_employee.user.email
+        return self.substitute_note
+
+    def clean(self):
+        super().clean()
+        if self.slot_id and self.tenant_id and self.slot.tenant_id != self.tenant_id:
+            raise ValidationError("Le créneau doit appartenir à la même organisation.")
+        if self.slot_id and self.date and self.date.weekday() != self.slot.weekday:
+            raise ValidationError("La date ne tombe pas le même jour de la semaine que le créneau.")
+        if self.kind == self.Kind.SUBSTITUTED and not (self.substitute_employee_id or self.substitute_note):
+            raise ValidationError("Un remplacement doit indiquer un remplaçant (interne ou externe).")
+        if self.kind == self.Kind.CANCELLED:
+            self.substitute_employee = None
+            self.substitute_note = ""
+        if self.substitute_employee_id and self.substitute_employee.tenant_id != self.tenant_id:
+            raise ValidationError("Le remplaçant doit appartenir à la même organisation.")

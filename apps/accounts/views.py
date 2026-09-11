@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import FormView, TemplateView
 
@@ -25,6 +26,8 @@ from .constants import (
     LOGIN_RATE_LIMIT_MAX_ATTEMPTS,
     LOGIN_RATE_LIMIT_WINDOW_SECONDS,
     PASSWORD_RESET_TOKEN_LIFETIME_MINUTES,
+    PWRESET_RATE_LIMIT_MAX,
+    PWRESET_RATE_LIMIT_WINDOW,
     REPEATED_LOCKOUT_THRESHOLD,
 )
 from .forms import BootstrapPasswordChangeForm, BootstrapSetPasswordForm, LoginForm, PasswordResetRequestForm
@@ -71,15 +74,17 @@ class LoginView(FormView):
         password = form.cleaned_data["password"]
         ip = ratelimit.get_client_ip(request)
 
-        # CDC §13.3.1 : max 10 tentatives/minute/IP, tous formulaires de
-        # connexion confondus — la vérification la plus large passe en premier.
-        if ratelimit.hit(
-            "login_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
-        ):
+        # Anti brute-force par IP (CDC §13.3.1) — ne compte que les ÉCHECS
+        # (cf. constants.LOGIN_RATE_LIMIT_MAX_ATTEMPTS) : on lit le compteur
+        # SANS l'incrémenter ici, pour qu'une simple tentative de connexion
+        # (réussie ou non) ne consomme jamais le budget d'une autre personne
+        # derrière la même IP partagée. Chaque échec l'incrémente plus bas
+        # (cf. `_register_login_failure`).
+        if ratelimit.get_count("login_fail_ip", ip) >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS:
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description=f"Limite de débit dépassée (IP {ip})"
             )
-            form.add_error(None, "Trop de tentatives depuis cette adresse. Réessayez dans une minute.")
+            form.add_error(None, "Trop de tentatives échouées depuis cette adresse. Réessayez dans une minute.")
             return self.form_invalid(form)
 
         # CDC §13.4 : CAPTCHA après 3 échecs sur cet e-mail. Neutralisé tant
@@ -95,7 +100,15 @@ class LoginView(FormView):
         user = User.objects.filter(email=email).first()
 
         if user is None:
+            # Égalise le temps de réponse avec le cas « e-mail connu, mot de
+            # passe faux » (audit sécurité §7) : sans ce hachage bidon, le fait
+            # qu'Argon2 ne tourne pas rend un compte inexistant distinguable
+            # par simple mesure du temps de réponse (cf. Django #20760).
+            User().set_password(password)
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, description=f"E-mail inconnu : {email}"
             )
@@ -104,6 +117,9 @@ class LoginView(FormView):
 
         if user.tenant_id and user.tenant.status != Organization.Status.ACTIVE:
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Organisation suspendue"
             )
@@ -112,6 +128,9 @@ class LoginView(FormView):
 
         if not user.is_active:
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Compte inactif"
             )
@@ -121,6 +140,9 @@ class LoginView(FormView):
         now = timezone.now()
         if user.locked_until and user.locked_until > now:
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             audit.log_event(
                 request, audit.LOGIN_FAILURE, AuditLog.Result.FAILURE, user=user, description="Compte verrouillé"
             )
@@ -130,6 +152,9 @@ class LoginView(FormView):
 
         if not user.check_password(password):
             captcha.register_failure(email)
+            ratelimit.hit(
+                "login_fail_ip", ip, limit=LOGIN_RATE_LIMIT_MAX_ATTEMPTS, window_seconds=LOGIN_RATE_LIMIT_WINDOW_SECONDS
+            )
             user.failed_login_attempts += 1
             max_attempts = get_org_setting(user.tenant, "max_failed_login_attempts")
             if user.failed_login_attempts >= max_attempts:
@@ -173,7 +198,20 @@ class LoginView(FormView):
 
         if user.must_change_password:
             return redirect("accounts:force_password_change")
-        return redirect("core:dashboard")
+        return redirect(self._safe_next_url() or "core:dashboard")
+
+    def _safe_next_url(self):
+        """RM-QR-001 (entre autres) : ramène l'utilisateur exactement là où il
+        allait avant d'être stoppé par LoginRequiredMixin (ex. scan d'un QR
+        d'agence) plutôt que toujours sur le tableau de bord. Validation
+        stricte (host/scheme) : `next` est une donnée utilisateur, jamais
+        suivie sans vérification (open redirect, CDC sécurité)."""
+        next_url = self.request.POST.get("next") or self.request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={self.request.get_host()}, require_https=self.request.is_secure()
+        ):
+            return next_url
+        return None
 
     @staticmethod
     def _notify_lockout(user, duration_minutes):
@@ -267,11 +305,23 @@ class PasswordResetRequestView(FormView):
 
     def form_valid(self, form):
         request = self.request
+        ip = ratelimit.get_client_ip(request)
+
+        # Audit sécurité §6 : sans limite, ce formulaire public permet de
+        # bombarder d'e-mails de réinitialisation n'importe quel compte (et de
+        # noyer le journal d'audit). Réponse identique au cas nominal — on ne
+        # révèle jamais qu'on a été limité (cohérent avec RM-AUTH-005).
+        if ratelimit.hit("pwreset_ip", ip, limit=PWRESET_RATE_LIMIT_MAX, window_seconds=PWRESET_RATE_LIMIT_WINDOW):
+            audit.log_event(
+                request, audit.PASSWORD_RESET_REQUESTED, AuditLog.Result.FAILURE,
+                description=f"Limite de débit dépassée (IP {ip})",
+            )
+            return redirect("accounts:password_reset_sent")
 
         # CDC §13.4 : CAPTCHA systématique sur ce formulaire public (pas de
         # seuil de tentatives — neutralisé si hCaptcha n'est pas configuré).
         if captcha.is_enabled() and not captcha.verify(
-            request.POST.get("h-captcha-response", ""), ratelimit.get_client_ip(request)
+            request.POST.get("h-captcha-response", ""), ip
         ):
             form.add_error(None, "Merci de valider le CAPTCHA avant de continuer.")
             return self.form_invalid(form)

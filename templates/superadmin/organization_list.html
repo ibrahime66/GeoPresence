@@ -20,11 +20,11 @@
         {% for org in organizations %}
         <tr>
           <td class="fw-semibold">{{ org.display_name }}</td>
-          <td class="text-muted-cell">{{ org.slug }}</td>
-          <td>{{ org.get_org_type_display }}</td>
-          <td>{{ org.country }}</td>
-          <td>{{ org.created_at|date:"d/m/Y" }}</td>
-          <td>
+          <td class="text-muted-cell" data-label="Slug">{{ org.slug }}</td>
+          <td data-label="Type">{{ org.get_org_type_display }}</td>
+          <td data-label="Pays">{{ org.country }}</td>
+          <td data-label="Créée le">{{ org.created_at|date:"d/m/Y" }}</td>
+          <td data-label="Statut">
             {% if org.status == "ACTIVE" %}<span class="gp-badge success"><span class="dot"></span>Active</span>
             {% elif org.status == "SUSPENDED" %}<span class="gp-badge warning"><span class="dot"></span>Suspendue</span>
             {% elif org.status == "DELETED" %}<span class="gp-badge danger"><span class="dot"></span>Supprimée</span>

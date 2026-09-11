@@ -1,9 +1,19 @@
 from django import forms
 from django.forms import BaseInlineFormSet, inlineformset_factory
 
-from apps.core.forms import BootstrapModelFormMixin
+from apps.core.forms import BootstrapModelFormMixin, apply_module_gating
 
-from .models import Schedule, ScheduleSlot, Weekday
+from .models import Schedule, ScheduleSlot, SlotException, Weekday
+
+# RM-ORG-SCHOOL : un seul endroit pour la correspondance champ -> réglage,
+# réutilisé par les deux formulaires ci-dessous.
+SCHOOL_SCHEDULE_GATED_FIELDS = {"term": "school_scheduling_enabled"}
+SCHOOL_SLOT_GATED_FIELDS = {
+    "subject": "school_scheduling_enabled",
+    "room": "school_scheduling_enabled",
+    "student_group": "school_scheduling_enabled",
+    "substitute_note": "school_scheduling_enabled",
+}
 
 
 def _time_to_minutes(t):
@@ -29,12 +39,13 @@ class ScheduleForm(BootstrapModelFormMixin, forms.ModelForm):
     class Meta:
         model = Schedule
         fields = [
-            "name", "schedule_type", "is_active",
+            "name", "schedule_type", "is_active", "term",
             "late_tolerance_minutes", "early_leave_tolerance_minutes", "overtime_threshold_minutes",
         ]
 
     def __init__(self, *args, tenant=None, **kwargs):
         super().__init__(*args, **kwargs)
+        apply_module_gating(self, tenant, SCHOOL_SCHEDULE_GATED_FIELDS)
 
 
 class ScheduleSlotForm(BootstrapModelFormMixin, forms.ModelForm):
@@ -44,7 +55,7 @@ class ScheduleSlotForm(BootstrapModelFormMixin, forms.ModelForm):
             "weekday", "start_time", "end_time", "break_start_time", "break_end_time",
             "clock_in_window_before_minutes", "clock_in_window_after_minutes",
             "clock_out_window_before_minutes", "clock_out_window_after_minutes",
-            "is_cancelled",
+            "is_cancelled", "subject", "room", "student_group", "substitute_note",
         ]
         widgets = {
             "start_time": forms.TimeInput(attrs={"type": "time"}),
@@ -52,6 +63,42 @@ class ScheduleSlotForm(BootstrapModelFormMixin, forms.ModelForm):
             "break_start_time": forms.TimeInput(attrs={"type": "time"}),
             "break_end_time": forms.TimeInput(attrs={"type": "time"}),
         }
+
+    def __init__(self, *args, tenant=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_module_gating(self, tenant, SCHOOL_SLOT_GATED_FIELDS)
+
+
+class SlotExceptionForm(BootstrapModelFormMixin, forms.ModelForm):
+    """CDC §10.2.4 : annuler ou faire remplacer un cours pour UNE date précise.
+    `slot`, `date`, `tenant`, `original_employee` et `created_by` sont posés
+    par la vue avant validation (comme TenantFormMixin) — seuls le type, le
+    remplaçant et le motif sont saisis ici."""
+
+    class Meta:
+        model = SlotException
+        fields = ["kind", "substitute_employee", "substitute_note", "reason"]
+        widgets = {
+            "kind": forms.RadioSelect,
+            "reason": forms.TextInput(attrs={"placeholder": "Maladie, sortie scolaire, formation..."}),
+            "substitute_note": forms.TextInput(attrs={"placeholder": "Nom d'un remplaçant hors effectif"}),
+        }
+
+    def __init__(self, *args, tenant=None, substitute_queryset=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if substitute_queryset is None:
+            from apps.employees.models import Employee
+
+            substitute_queryset = (
+                Employee.objects.all_tenants()
+                .filter(tenant=tenant, status=Employee.Status.ACTIVE)
+                .select_related("user")
+                .order_by("user__first_name", "user__last_name")
+            )
+        self.fields["substitute_employee"].queryset = substitute_queryset
+        self.fields["substitute_employee"].required = False
+        self.fields["substitute_employee"].label = "Remplaçant (dans l'effectif)"
+        self.fields["substitute_employee"].empty_label = "— aucun —"
 
 
 class TenantInlineFormSet(BaseInlineFormSet):
@@ -62,6 +109,12 @@ class TenantInlineFormSet(BaseInlineFormSet):
     def __init__(self, *args, tenant=None, **kwargs):
         self.tenant = tenant
         super().__init__(*args, **kwargs)
+        # form_kwargs (pas un tenant=... direct sur _construct_form) : c'est
+        # aussi ce dict que Django utilise pour empty_form (le gabarit de
+        # ligne cloné en JS pour "+ Ajouter un créneau"), qui ne passe pas par
+        # _construct_form — sans ça, le module école/pharmacie serait ignoré
+        # sur les lignes ajoutées dynamiquement.
+        self.form_kwargs["tenant"] = tenant
 
     def _construct_form(self, i, **kwargs):
         form = super()._construct_form(i, **kwargs)

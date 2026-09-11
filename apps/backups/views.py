@@ -46,7 +46,11 @@ class BackupDownloadView(RoleRequiredMixin, View):
 
     def get(self, request, pk):
         backup = get_object_or_404(Backup, pk=pk, status=Backup.Status.SUCCESS)
-        path = Path(settings.BACKUP_DIR) / backup.filename
-        if not path.exists():
+        # Audit sécurité §12 : confine le chemin dans BACKUP_DIR même si
+        # `filename` (généré par la commande de sauvegarde) contenait un jour
+        # une séquence « ../ ».
+        backup_dir = Path(settings.BACKUP_DIR).resolve()
+        path = (backup_dir / backup.filename).resolve()
+        if not path.is_relative_to(backup_dir) or not path.is_file():
             raise Http404("Fichier de sauvegarde introuvable sur le disque.")
-        return FileResponse(open(path, "rb"), as_attachment=True, filename=backup.filename)
+        return FileResponse(open(path, "rb"), as_attachment=True, filename=Path(backup.filename).name)

@@ -86,6 +86,10 @@ LOGOUT_REDIRECT_URL = "core:home"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Doit précéder tout code qui lit REMOTE_ADDR (rate-limiting, audit, IP des
+    # pointages/sessions) — répare l'IP client derrière le reverse-proxy Nginx
+    # (audit sécurité §1). Sans effet en connexion directe (dev).
+    "apps.security.middleware.RealClientIPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     # LocaleMiddleware doit se trouver après SessionMiddleware et avant
     # CommonMiddleware (exigence Django) — détecte la langue depuis la

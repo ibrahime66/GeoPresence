@@ -165,6 +165,12 @@ class OrganizationReactivateView(RoleRequiredMixin, View):
 
     def post(self, request, pk):
         org = get_object_or_404(Organization, pk=pk)
+        # Audit sécurité §13 : une suppression est définitive (conservation
+        # légale). Seule une organisation SUSPENDUE peut être réactivée — pas
+        # une DELETED, même par POST direct.
+        if org.status != Organization.Status.SUSPENDED:
+            messages.error(request, "Seule une organisation suspendue peut être réactivée.")
+            return redirect("superadmin:organization_list")
         org.status = Organization.Status.ACTIVE
         org.save(update_fields=["status"])
         audit.log_event(

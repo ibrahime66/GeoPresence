@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Présence enseignants — GeoPresence{% endblock %}
+{% block page_title %}Présence enseignants{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Présence enseignants</h1>
+    <p>Qui enseigne quoi, où, et a pointé — d'après les emplois du temps en vigueur et les pointages reliés à chaque créneau.</p>
+  </div>
+  {% if school_scheduling_enabled %}
+  <div class="gp-page-header-actions">
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Exporter</button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'schedules:teacher_presence_export' 'csv' %}?date={{ on_date|date:'Y-m-d' }}">CSV</a></li>
+        <li><a class="dropdown-item" href="{% url 'schedules:teacher_presence_export' 'xlsx' %}?date={{ on_date|date:'Y-m-d' }}">Excel (.xlsx)</a></li>
+        <li><a class="dropdown-item" href="{% url 'schedules:teacher_presence_export' 'pdf' %}?date={{ on_date|date:'Y-m-d' }}">PDF</a></li>
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if not school_scheduling_enabled %}
+<div class="alert alert-warning">Le module « Horaires enseignants » n'est pas activé pour votre organisation. Activez-le depuis Paramètres pour utiliser cette vue.</div>
+{% else %}
+
+<div class="gp-presence-toolbar">
+  <div class="gp-presence-datenav">
+    <a class="btn btn-sm btn-outline-secondary" href="?date={{ prev_date|date:'Y-m-d' }}&groupe={{ group_mode }}" aria-label="Jour précédent">‹</a>
+    <form method="get" class="gp-presence-dateform">
+      <input type="hidden" name="groupe" value="{{ group_mode }}">
+      <input type="date" name="date" value="{{ on_date|date:'Y-m-d' }}" class="form-control form-control-sm" onchange="this.form.submit()">
+    </form>
+    <a class="btn btn-sm btn-outline-secondary" href="?date={{ next_date|date:'Y-m-d' }}&groupe={{ group_mode }}" aria-label="Jour suivant">›</a>
+    {% if not is_today %}<a class="btn btn-sm btn-link" href="?groupe={{ group_mode }}">Aujourd'hui</a>{% endif %}
+  </div>
+  <div class="gp-daytabs mb-0">
+    {% for key, label in group_modes %}
+    <a href="?date={{ on_date|date:'Y-m-d' }}&groupe={{ key }}" class="gp-daytab {% if key == group_mode %}is-active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<p class="gp-presence-summary">
+  <strong>{{ clocked_count }}</strong> créneau{{ clocked_count|pluralize:"x" }} pointé{{ clocked_count|pluralize }}
+  · <strong>{{ missing_count }}</strong> non pointé{{ missing_count|pluralize }}
+  {% if cancelled_count %}· <strong>{{ cancelled_count }}</strong> annulé{{ cancelled_count|pluralize }}{% endif %}
+  {% if substituted_count %}· <strong>{{ substituted_count }}</strong> remplacé{{ substituted_count|pluralize }}{% endif %}
+  {% if is_today %}· <strong>{{ in_progress_count }}</strong> en classe maintenant{% endif %}
+  <span class="text-muted-cell">(sur {{ total_slots }} créneau{{ total_slots|pluralize:"x" }} de cours ce jour-là)</span>
+</p>
+
+{% for group in groups %}
+<div class="gp-table-card mb-3">
+  <div class="gp-presence-group-head">{{ group.label }}</div>
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead>
+        <tr><th>Horaire</th><th>Matière</th><th>Classe</th><th>Salle</th><th>Enseignant</th><th>Arrivée</th><th>État</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for e in group.entries %}
+        <tr class="{% if e.exception %}gp-presence-row-exception{% elif not e.clocked %}gp-presence-row-missing{% endif %}">
+          <td class="text-nowrap fw-semibold">{{ e.slot.start_time|time:"H:i" }}–{{ e.slot.end_time|time:"H:i" }}</td>
+          <td data-label="Matière">{{ e.slot.subject|default:"—" }}</td>
+          <td data-label="Classe">{{ e.slot.student_group|default:"—" }}</td>
+          <td data-label="Salle">{{ e.slot.room|default:"—" }}</td>
+          <td data-label="Enseignant">
+            {{ e.employee.user.full_name|default:e.employee.user.email }}
+            {% if e.exception.kind == "SUBSTITUTED" %}
+            <div class="text-muted-cell small">→ {{ e.exception.substitute_label }}</div>
+            {% endif %}
+          </td>
+          <td data-label="Arrivée">
+            {% if e.exception %}
+              <span class="text-muted-cell">—</span>
+            {% elif e.arrival %}
+              {{ e.arrival.server_time|date:"H:i" }}
+              {% if e.arrival.status == "LATE" %}<span class="gp-badge warning"><span class="dot"></span>Retard</span>
+              {% elif e.arrival.status == "ON_TIME" %}<span class="gp-badge success"><span class="dot"></span>À l'heure</span>
+              {% elif e.arrival.status == "OUT_OF_SCHEDULE" %}<span class="gp-badge neutral"><span class="dot"></span>Hors horaire</span>
+              {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ e.arrival.get_status_display }}</span>{% endif %}
+            {% else %}
+              <span class="text-muted-cell">—</span>
+            {% endif %}
+          </td>
+          <td data-label="État">
+            {% if e.exception.kind == "CANCELLED" %}<span class="gp-badge neutral"><span class="dot"></span>Annulé</span>{% if e.exception.reason %} <span class="text-muted-cell small">{{ e.exception.reason }}</span>{% endif %}
+            {% elif e.exception.kind == "SUBSTITUTED" %}<span class="gp-badge info"><span class="dot"></span>Remplacé</span>{% if e.exception.reason %} <span class="text-muted-cell small">{{ e.exception.reason }}</span>{% endif %}
+            {% elif e.in_progress %}<span class="gp-badge info"><span class="dot"></span>En classe</span>
+            {% elif e.departure %}<span class="text-muted-cell">Parti {{ e.departure.server_time|date:"H:i" }}</span>
+            {% elif e.clocked %}<span class="text-muted-cell">Pointé</span>
+            {% else %}<span class="gp-badge danger"><span class="dot"></span>Non pointé</span>{% endif %}
+          </td>
+          <td class="text-nowrap">
+            <a class="btn btn-sm btn-link p-0" href="{% url 'schedules:slot_exception' e.slot.id %}?date={{ on_date|date:'Y-m-d' }}&employe={{ e.employee.id }}&groupe={{ group_mode }}">
+              {% if e.exception %}Modifier{% else %}Annuler / Remplacer{% endif %}
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% empty %}
+<div class="gp-table-card">
+  <div class="gp-table-empty">Aucun créneau de cours planifié ce jour-là (ou aucun créneau n'a de matière, salle ni classe renseignée).</div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

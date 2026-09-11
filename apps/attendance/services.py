@@ -3,9 +3,26 @@ from decimal import Decimal
 
 from django.utils import timezone
 
+from apps.agencies import geofencing
 from apps.schedules.services import get_effective_schedule
 
 from .models import Attendance
+
+
+_PENDING_LABELS = {
+    "out_of_zone": "hors zone GPS autorisée",
+    "sync_delay_exceeded": "synchronisé hors ligne au-delà du délai maximum",
+    "low_gps_precision": "précision GPS annoncée anormalement faible",
+}
+
+
+def _pending_note(pending_reason, is_offline):
+    """Note lisible attachée à un pointage mis EN_ATTENTE_VALIDATION — remonte
+    dans les écrans de validation pour expliquer pourquoi un contrôle humain
+    est requis."""
+    label = _PENDING_LABELS.get(pending_reason, pending_reason)
+    prefix = "Synchronisé hors ligne — " if is_offline else ""
+    return f"{prefix}motif de contrôle : {label}"
 
 
 class ClockRejected(Exception):
@@ -266,6 +283,7 @@ def clock(
     client_time=None,
     now=None,
     mode=Attendance.Mode.ONLINE,
+    source=Attendance.Source.APP,
 ):
     """Orchestration complète d'un pointage — CDC §9.3.6 (re-validation
     serveur de toutes les vérifications, calcul du statut, enregistrement)."""
@@ -286,8 +304,30 @@ def clock(
         # (RM-POINT-009 : c'est un signal de fraude, pas un problème réseau).
         raise ClockRejected("Position GPS simulée détectée, pointage refusé.", "gps_mocked")
 
+    # Audit sécurité §4 : `mode` est fourni par le client. Un vrai pointage hors
+    # ligne est REJOUÉ après coup (clock.js le met en file IndexedDB puis
+    # resynchronise sur l'évènement "online") — son heure client est donc
+    # nettement antérieure à maintenant. Si l'appel se prétend hors ligne mais
+    # que l'heure client colle à l'instant présent (ou est absente), c'est le
+    # flux en ligne normal : on ignore le drapeau, sinon un client malveillant
+    # se déclare "hors ligne" pour transformer un rejet hors zone en simple
+    # mise en attente de validation.
+    if mode == Attendance.Mode.OFFLINE and (
+        client_time is None or (now - client_time) < timedelta(minutes=2)
+    ):
+        mode = Attendance.Mode.ONLINE
+
     is_offline = mode == Attendance.Mode.OFFLINE
     pending_reason = ""
+
+    # Audit sécurité §3 : `gps_accuracy` est fourni par le client et sert à
+    # élargir le rayon autorisé (absorption de l'imprécision GPS). Une valeur
+    # aberrante (bien au-delà de ce qu'un GPS smartphone produit) élargirait le
+    # rayon jusqu'à couvrir n'importe quelle position — la contribution est
+    # plafonnée dans geofencing.effective_radius_meters, et le pointage
+    # correspondant part en contrôle manuel.
+    if gps_accuracy is not None and float(gps_accuracy) > geofencing.MAX_GPS_ACCURACY_METERS:
+        pending_reason = "low_gps_precision"
 
     agency, distance, zone = _find_matching_agency(employee, latitude, longitude, gps_accuracy)
     if agency is None:
@@ -354,8 +394,9 @@ def clock(
         overtime_minutes=overtime,
         status=status,
         mode=mode,
+        source=source or Attendance.Source.APP,
         synced_at=now if is_offline else None,
-        notes=f"Synchronisé hors ligne — motif de contrôle : {pending_reason}" if pending_reason else "",
+        notes=_pending_note(pending_reason, is_offline) if pending_reason else "",
     )
     attendance.full_clean()
     attendance.save()

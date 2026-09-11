@@ -152,14 +152,14 @@
           {% for row in team_rows %}
           <tr>
             <td class="fw-semibold">{{ row.employee.user.full_name|default:row.employee.user.email }}</td>
-            <td>{{ row.employee.department|default:"—" }}</td>
-            <td>{{ row.employee.primary_agency }}</td>
-            <td>
+            <td data-label="Département">{{ row.employee.department|default:"—" }}</td>
+            <td data-label="Agence">{{ row.employee.primary_agency }}</td>
+            <td data-label="Statut aujourd'hui">
               {% if row.status == "LATE" %}<span class="gp-badge warning"><span class="dot"></span>Retard</span>
               {% elif row.status %}<span class="gp-badge success"><span class="dot"></span>{{ row.arrival.get_status_display }}</span>
               {% else %}<span class="gp-badge danger"><span class="dot"></span>Pas encore pointé</span>{% endif %}
             </td>
-            <td>{% if row.arrival %}{{ row.arrival.server_time|date:"H:i" }}{% else %}—{% endif %}</td>
+            <td data-label="Heure">{% if row.arrival %}{{ row.arrival.server_time|date:"H:i" }}{% else %}—{% endif %}</td>
           </tr>
           {% empty %}
           <tr><td colspan="5"><div class="gp-table-empty">Aucun membre dans l'équipe.</div></td></tr>
@@ -180,6 +180,10 @@
   if (!canvas) return;
   const labels = JSON.parse(document.getElementById("team-trend-labels").textContent);
   const values = JSON.parse(document.getElementById("team-trend-values").textContent);
+  // RM-UI-THEME : cf. commentaire équivalent dans admin_dashboard.html.
+  const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+  const chartTick = isDark ? "#8B93A7" : "#98A2B3";
+  const chartGrid = isDark ? "rgba(228,233,245,0.08)" : "rgba(16,24,40,0.055)";
   new Chart(canvas, {
     type: "line",
     data: {
@@ -196,7 +200,10 @@
     },
     options: {
       plugins: { legend: { display: false } },
-      scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + "%" } } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: (v) => v + "%", color: chartTick }, grid: { color: chartGrid } },
+        x: { ticks: { color: chartTick }, grid: { display: false } },
+      },
     },
   });
 })();

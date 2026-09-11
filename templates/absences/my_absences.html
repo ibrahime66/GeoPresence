@@ -47,8 +47,8 @@
           {% for absence in absences %}
           <tr>
             <td class="fw-semibold">{{ absence.date }}</td>
-            <td>{{ absence.display_reason|default:"—" }}</td>
-            <td>
+            <td data-label="Motif">{{ absence.display_reason|default:"—" }}</td>
+            <td data-label="Statut">
               {% if absence.status == "PENDING_REVIEW" %}<span class="gp-badge warning"><span class="dot"></span>En attente</span>
               {% elif absence.status == "JUSTIFIED" %}<span class="gp-badge success"><span class="dot"></span>Justifiée</span>
               {% elif absence.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>Rejetée</span>

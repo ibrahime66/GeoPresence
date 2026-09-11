@@ -126,5 +126,13 @@ $ source venv/bin/activate
 $ pip install -r requirements/production.txt
 $ python manage.py migrate
 $ python manage.py collectstatic --noinput
-# systemctl restart geopresence
+# systemctl reload geopresence
 ```
+
+`reload` (HUP) recharge Gunicorn **sans coupure** : la socket reste ouverte,
+les workers finissent leurs requêtes en cours. À utiliser pour tout
+déploiement de code/templates.
+
+Un `systemctl restart` complet (≈ 2 s d'indisponibilité, erreurs 502 pour les
+visiteurs en cours de navigation) n'est nécessaire **que** si `deploy/gunicorn.conf.py`
+ou le fichier `.env` ont changé.

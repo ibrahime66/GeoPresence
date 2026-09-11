@@ -1,0 +1,23 @@
+{% comment %}
+RM-UI-THEME (18/08/2026). Doit s'exécuter le plus tôt possible dans <head>,
+avant le premier rendu — sinon flash visible de l'ancien thème le temps que
+le script s'exécute. Posé sur data-bs-theme (pas un attribut maison) : c'est
+l'attribut natif que Bootstrap 5.3 lit lui-même pour basculer ses propres
+composants (form-control, dropdown-menu, alert...) en sombre, ça évite de
+maintenir deux attributs synchronisés. gpToggleTheme() est appelée par les
+boutons de bascule (sidebar, barre d'onglets, nav publique, page de connexion).
+{% endcomment %}
+<script>
+(function () {
+  var stored = null;
+  try { stored = localStorage.getItem("gp-theme"); } catch (e) {}
+  var theme = stored || ((window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light");
+  document.documentElement.setAttribute("data-bs-theme", theme);
+})();
+function gpToggleTheme() {
+  var root = document.documentElement;
+  var next = root.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+  root.setAttribute("data-bs-theme", next);
+  try { localStorage.setItem("gp-theme", next); } catch (e) {}
+}
+</script>

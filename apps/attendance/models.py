@@ -35,6 +35,14 @@ class Attendance(TenantModel):
         ONLINE = "ONLINE", "En ligne"
         OFFLINE = "OFFLINE", "Hors ligne"
 
+    class Source(models.TextChoices):
+        APP = "APP", "Application"
+        # RM-QR-001 : pointage initié en scannant le QR imprimé d'une agence —
+        # tracé séparément pour la transparence (l'Admin peut voir comment
+        # chaque pointage est arrivé), mais soumis exactement aux mêmes
+        # vérifications GPS que APP (cf. apps.attendance.services.clock).
+        QR = "QR", "Code QR"
+
     employee = models.ForeignKey("employees.Employee", on_delete=models.PROTECT, related_name="attendances")
     agency = models.ForeignKey("agencies.Agency", on_delete=models.PROTECT, related_name="attendances")
 
@@ -77,6 +85,7 @@ class Attendance(TenantModel):
 
     status = models.CharField(max_length=20, choices=Status.choices)
     mode = models.CharField(max_length=10, choices=Mode.choices, default=Mode.ONLINE)
+    source = models.CharField(max_length=10, choices=Source.choices, default=Source.APP)
     synced_at = models.DateTimeField(null=True, blank=True)
 
     is_validated = models.BooleanField(default=False)

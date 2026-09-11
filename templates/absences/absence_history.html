@@ -71,16 +71,16 @@
         {% for absence in absences %}
         <tr>
           <td class="fw-semibold">{{ absence.employee }}</td>
-          <td>{{ absence.date }}</td>
-          <td>{{ absence.display_reason|default:"—" }}</td>
-          <td>
+          <td data-label="Date">{{ absence.date }}</td>
+          <td data-label="Motif">{{ absence.display_reason|default:"—" }}</td>
+          <td data-label="Statut">
             {% if absence.status == "JUSTIFIED" %}<span class="gp-badge success"><span class="dot"></span>Justifiée</span>
             {% elif absence.status == "REJECTED" %}<span class="gp-badge danger"><span class="dot"></span>Rejetée</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>{{ absence.get_status_display }}</span>{% endif %}
           </td>
-          <td>{{ absence.reviewed_by|default:"—" }}</td>
-          <td>{{ absence.reviewed_at|date:"d/m/Y H:i"|default:"—" }}</td>
-          <td class="text-muted-cell">{{ absence.reviewer_comment|default:"—" }}</td>
+          <td data-label="Décidé par">{{ absence.reviewed_by|default:"—" }}</td>
+          <td data-label="Décidé le">{{ absence.reviewed_at|date:"d/m/Y H:i"|default:"—" }}</td>
+          <td class="text-muted-cell" data-label="Commentaire">{{ absence.reviewer_comment|default:"—" }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="7"><div class="gp-table-empty">Aucun justificatif traité pour ces filtres.</div></td></tr>

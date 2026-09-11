@@ -128,11 +128,27 @@ class Employee(TenantModel):
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
-        if not self.matricule:
-            self.matricule = self._generate_matricule()
         if is_new and not self.leave_balance:
             self.leave_balance = self.annual_leave_days
-        super().save(*args, **kwargs)
+        if self.matricule:
+            super().save(*args, **kwargs)
+            return
+        # Audit sécurité §14 : `_generate_matricule` fait un COUNT+1, deux
+        # créations simultanées peuvent viser le même numéro et violer la
+        # contrainte d'unicité (tenant, matricule). On réessaie avec le numéro
+        # suivant plutôt que de remonter une 500.
+        from django.db import IntegrityError, transaction
+
+        for attempt in range(5):
+            self.matricule = self._generate_matricule()
+            try:
+                with transaction.atomic():
+                    super().save(*args, **kwargs)
+                return
+            except IntegrityError:
+                if attempt == 4:
+                    raise
+                self.matricule = ""
 
     def _generate_matricule(self):
         sequence = type(self).objects.all_tenants().filter(tenant=self.tenant).count() + 1

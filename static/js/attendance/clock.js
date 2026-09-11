@@ -7,6 +7,10 @@
   "use strict";
 
   const config = JSON.parse(document.getElementById("clock-config").textContent);
+  // Zones GPS émises séparément via {{ ...|json_script }} (audit sécurité §8) —
+  // échappement sûr des libellés de zone dans le <script>.
+  const zonesEl = document.getElementById("clock-zones");
+  config.zones = zonesEl ? JSON.parse(zonesEl.textContent) : [];
 
   // Icônes hébergées localement plutôt que sur cdn.jsdelivr.net : la
   // Content-Security-Policy (img-src) n'autorise que 'self'/data:/tuiles
@@ -144,6 +148,10 @@
     formData.append("is_gps_mocked", payload.isMocked ? "true" : "false");
     formData.append("client_time", payload.clientTime);
     if (mode) formData.append("mode", mode);
+    // RM-QR-001 : uniquement informatif (l'agence a déjà été pré-sélectionnée
+    // côté serveur, la vérification GPS ci-dessus est inchangée) — trace dans
+    // l'historique que ce pointage vient d'un scan plutôt que du bouton.
+    if (config.source) formData.append("source", config.source);
 
     return fetch(config.apiUrl, {
       method: "POST",

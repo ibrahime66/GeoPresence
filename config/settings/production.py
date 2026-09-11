@@ -13,6 +13,11 @@ SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+# Audit sécurité §11 : Django 4.x valide l'en-tête Origin des requêtes POST
+# HTTPS contre cette liste. Dérivé de DJANGO_ALLOWED_HOSTS (schéma https) pour
+# ne pas maintenir deux listes en parallèle.
+CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h]
+
 # CDC §13.5/§13.6 — n'a de sens que derrière HTTPS, donc absent de base.py.
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
