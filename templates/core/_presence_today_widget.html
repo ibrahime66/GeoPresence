@@ -1,0 +1,55 @@
+{% comment %}
+Widget « qui est en congé / absent aujourd'hui » — partagé entre le tableau
+de bord Admin (organisation entière) et Manager (son équipe), qui posent
+tous deux les mêmes clés de contexte : employees_on_leave_today,
+employees_absent_today (listes d'Employee, cf. apps.core.views._who_is_out_today).
+{% endcomment %}
+{% if employees_on_leave_today or employees_absent_today %}
+<section class="gp-home-section">
+  <h2 class="gp-home-section-title">Présences du jour</h2>
+  <div class="gp-home-panels is-even">
+    <div class="gp-home-panel">
+      <div class="gp-home-panel-head">
+        <h3>En congé aujourd'hui</h3>
+        <span class="gp-home-panel-sub">{{ employees_on_leave_today|length }}</span>
+      </div>
+      {% if employees_on_leave_today %}
+      <ul class="gp-people-list">
+        {% for employee in employees_on_leave_today|slice:":8" %}
+        <li>{{ employee.user.full_name|default:employee.user.email }}</li>
+        {% endfor %}
+      </ul>
+      {% if employees_on_leave_today|length > 8 %}
+      <span class="gp-people-list-more">+{{ employees_on_leave_today|length|add:"-8" }} autre{{ employees_on_leave_today|length|add:"-8"|pluralize }}</span>
+      {% endif %}
+      {% else %}
+      <div class="gp-home-empty">
+        {% include "core/_icon.html" with icon="calendar" size="28" %}
+        <span>Personne en congé aujourd'hui.</span>
+      </div>
+      {% endif %}
+    </div>
+    <div class="gp-home-panel">
+      <div class="gp-home-panel-head">
+        <h3>Absents aujourd'hui</h3>
+        <span class="gp-home-panel-sub">{{ employees_absent_today|length }}</span>
+      </div>
+      {% if employees_absent_today %}
+      <ul class="gp-people-list">
+        {% for employee in employees_absent_today|slice:":8" %}
+        <li>{{ employee.user.full_name|default:employee.user.email }}</li>
+        {% endfor %}
+      </ul>
+      {% if employees_absent_today|length > 8 %}
+      <span class="gp-people-list-more">+{{ employees_absent_today|length|add:"-8" }} autre{{ employees_absent_today|length|add:"-8"|pluralize }}</span>
+      {% endif %}
+      {% else %}
+      <div class="gp-home-empty">
+        {% include "core/_icon.html" with icon="check" size="28" %}
+        <span>Personne à signaler — tout le monde a pointé ou est en congé.</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}

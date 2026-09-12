@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Calendrier des congés — GeoPresence{% endblock %}
+{% block page_title %}Congés à valider{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Congés à valider</h1>
+    <p>Vue calendrier des congés approuvés{% if request.user.role == "MANAGER" %} pour votre équipe{% endif %} — qui est absent, et quand.</p>
+  </div>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link" href="{% url 'leaves:pending' %}">En attente</a></li>
+  <li class="nav-item"><a class="nav-link active" href="{% url 'leaves:calendar' %}">Calendrier</a></li>
+  <li class="nav-item"><a class="nav-link" href="{% url 'leaves:history' %}">Historique</a></li>
+</ul>
+
+<div class="gp-calendar-toolbar">
+  <div class="gp-calendar-nav">
+    <a href="?mois={{ prev_month|date:'Y-m' }}" class="gp-calendar-nav-btn" aria-label="Mois précédent">
+      {% include "core/_icon.html" with icon="chevron-left" size="16" %}
+    </a>
+    <h2 class="gp-calendar-title">{{ current_month|date:"F Y"|capfirst }}</h2>
+    <a href="?mois={{ next_month|date:'Y-m' }}" class="gp-calendar-nav-btn" aria-label="Mois suivant">
+      {% include "core/_icon.html" with icon="chevron-right" size="16" %}
+    </a>
+    {% if not is_current_month %}
+    <a href="{% url 'leaves:calendar' %}" class="gp-toolbar-reset">Aujourd'hui</a>
+    {% endif %}
+  </div>
+  <span class="text-muted small">{{ leaves_this_month_count }} congé{{ leaves_this_month_count|pluralize }} approuvé{{ leaves_this_month_count|pluralize }} ce mois-ci</span>
+</div>
+
+<div class="gp-calendar-card">
+  <div class="gp-calendar-weekdays">
+    <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+  </div>
+  <div class="gp-calendar-grid">
+    {% for week in weeks %}
+      {% for day in week %}
+      <div class="gp-calendar-day{% if not day.in_month %} is-outside{% endif %}{% if day.is_today %} is-today{% endif %}{% if day.is_weekend %} is-weekend{% endif %}">
+        <span class="gp-calendar-daynum">{{ day.date|date:"j" }}</span>
+        {% if day.leaves %}
+        <ul class="gp-calendar-leaves">
+          {% for leave in day.leaves|slice:":3" %}
+          <li title="{{ leave.employee.user.full_name|default:leave.employee.user.email }} — {{ leave.leave_type.name }}">
+            {{ leave.employee.user.full_name|default:leave.employee.user.email }}
+          </li>
+          {% endfor %}
+          {% if day.leaves|length > 3 %}
+          <li class="gp-calendar-more">+{{ day.leaves|length|add:"-3" }} autre{{ day.leaves|length|add:"-3"|pluralize }}</li>
+          {% endif %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+
+{% if not leaves_this_month_count %}
+<div class="gp-home-empty mt-3">
+  {% include "core/_icon.html" with icon="calendar" size="28" %}
+  <span>Aucun congé approuvé ce mois-ci.</span>
+</div>
+{% endif %}
+{% endblock %}
