@@ -29,3 +29,22 @@ class OrganizationSettingsView(RoleRequiredMixin, View):
             messages.success(request, "Paramètres de l'organisation mis à jour.")
             return redirect("tenants:settings")
         return render(request, self.template_name, {"form": form})
+
+
+class OnboardingDismissView(RoleRequiredMixin, View):
+    """Masque la check-list de démarrage du tableau de bord Admin — persisté
+    par organisation (pas par navigateur) : un second Admin de la même
+    organisation ne doit pas revoir une check-list qu'un collègue a déjà
+    fermée. Se réaffiche d'elle-même si l'org redevient incomplète (impossible
+    en pratique, rien ne "dé-crée" une agence/un horaire/un employé)."""
+
+    allowed_roles = ADMIN_ONLY
+
+    def post(self, request):
+        tenant = request.tenant
+        tenant.settings = {**(tenant.settings or {}), "onboarding_dismissed": True}
+        tenant.save(update_fields=["settings"])
+        # Toujours postée depuis le tableau de bord lui-même — pas de `next`
+        # à valider (jamais suivre une URL de redirection fournie par le
+        # client sans whitelist, cf. open redirect).
+        return redirect("core:dashboard")

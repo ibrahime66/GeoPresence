@@ -1413,6 +1413,47 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 .gp-home-empty svg { color: var(--gp-gray-200); }
 .gp-home-empty span { font-size: 0.86rem; color: var(--gp-gray-400); }
 
+/* Widget "qui est en congé / absent aujourd'hui" (liste de noms, pas un graphique). */
+.gp-people-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.gp-people-list li {
+  font-size: 0.88rem; color: var(--gp-ink); padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--gp-gray-100);
+}
+.gp-people-list li:last-child { border-bottom: none; padding-bottom: 0; }
+.gp-people-list-more { display: block; margin-top: 0.7rem; font-size: 0.78rem; color: var(--gp-gray-400); }
+
+/* ---------- Check-list de démarrage (onboarding) ---------- */
+.gp-onboarding-card {
+  background: linear-gradient(135deg, var(--gp-blue) 0%, var(--gp-navy) 100%);
+  border-radius: 16px; padding: 1.3rem 1.4rem 1.5rem; color: #fff;
+}
+.gp-onboarding-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.gp-onboarding-title { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0; }
+.gp-onboarding-sub { font-size: 0.82rem; color: rgba(255, 255, 255, 0.75); margin: 0.2rem 0 0; }
+.gp-onboarding-dismiss-btn {
+  background: rgba(255, 255, 255, 0.14); border: none; border-radius: 999px;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.85); cursor: pointer; flex-shrink: 0;
+}
+.gp-onboarding-dismiss-btn:hover { background: rgba(255, 255, 255, 0.24); color: #fff; }
+.gp-onboarding-steps { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1.1rem; }
+.gp-onboarding-step {
+  display: flex; align-items: center; gap: 0.85rem; padding: 0.75rem 0.9rem;
+  background: rgba(255, 255, 255, 0.1); border-radius: 12px; text-decoration: none; color: #fff;
+}
+.gp-onboarding-step:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.gp-onboarding-step.is-done { opacity: 0.6; }
+.gp-onboarding-step-check {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18); display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+}
+.gp-onboarding-step.is-done .gp-onboarding-step-check { background: var(--gp-green); color: #fff; }
+.gp-onboarding-step-body { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.gp-onboarding-step-title { font-size: 0.9rem; font-weight: 600; }
+.gp-onboarding-step-detail { font-size: 0.78rem; color: rgba(255, 255, 255, 0.7); }
+.gp-onboarding-step.is-done .gp-onboarding-step-title { text-decoration: line-through; }
+
 /* ---------- Fil d'activité ---------- */
 .gp-home-feed { display: flex; flex-direction: column; }
 .gp-home-feed-row {
