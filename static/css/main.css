@@ -1139,6 +1139,61 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 .gp-table th.gp-th-sortable.is-sorted-asc .gp-th-sort-icon::before { border-bottom-color: transparent; }
 .gp-table th.gp-th-sortable.is-sorted-desc .gp-th-sort-icon::after { border-top-color: transparent; }
 
+/* Vue calendrier des congés (templates/leaves/leave_calendar.html). */
+.gp-calendar-toolbar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 0.75rem; margin-bottom: 1rem;
+}
+.gp-calendar-nav { display: flex; align-items: center; gap: 0.6rem; }
+.gp-calendar-nav-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--gp-gray-200);
+  background: var(--gp-white); color: var(--gp-gray-600);
+}
+.gp-calendar-nav-btn:hover { background: var(--gp-gray-50); color: var(--gp-navy); }
+.gp-calendar-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--gp-navy); min-width: 9rem; text-align: center; }
+.gp-calendar-card {
+  background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: var(--gp-radius);
+  box-shadow: var(--gp-shadow); overflow: hidden;
+}
+.gp-calendar-weekdays, .gp-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.gp-calendar-weekdays {
+  border-bottom: 1px solid var(--gp-gray-200); background: var(--gp-gray-50);
+}
+.gp-calendar-weekdays span {
+  padding: 0.55rem 0.4rem; text-align: center; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--gp-gray-600);
+}
+.gp-calendar-day {
+  min-height: 100px; padding: 0.4rem 0.45rem; border-right: 1px solid var(--gp-gray-100);
+  border-bottom: 1px solid var(--gp-gray-100); display: flex; flex-direction: column; gap: 0.3rem;
+}
+.gp-calendar-grid .gp-calendar-day:nth-child(7n) { border-right: none; }
+.gp-calendar-day.is-outside { background: var(--gp-gray-50); }
+.gp-calendar-day.is-outside .gp-calendar-daynum { color: var(--gp-gray-400); }
+.gp-calendar-day.is-weekend { background: var(--gp-gray-50); }
+.gp-calendar-daynum { font-size: 0.8rem; font-weight: 600; color: var(--gp-ink); }
+.gp-calendar-day.is-today .gp-calendar-daynum {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--gp-blue); color: #fff;
+}
+.gp-calendar-leaves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.gp-calendar-leaves li {
+  font-size: 0.72rem; line-height: 1.3; padding: 0.15rem 0.4rem; border-radius: 6px;
+  background: rgba(44, 92, 224, 0.1); color: var(--gp-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gp-calendar-leaves li.gp-calendar-more { background: none; color: var(--gp-gray-400); padding-left: 0.2rem; }
+@media (max-width: 700px) {
+  .gp-calendar-day { min-height: 68px; padding: 0.3rem; gap: 0.2rem; }
+  .gp-calendar-weekdays span { padding: 0.4rem 0.1rem; font-size: 0.62rem; }
+  .gp-calendar-leaves li { font-size: 0.62rem; padding: 0.1rem 0.25rem; }
+  .gp-calendar-title { font-size: 0.95rem; min-width: 7rem; }
+}
+@media (max-width: 480px) {
+  .gp-calendar-day { min-height: 58px; padding: 0.25rem; }
+  .gp-calendar-leaves li { padding: 0.05rem 0.2rem; }
+}
+
 .gp-table-actions { display: flex; gap: 0.55rem; align-items: center; justify-content: flex-end; white-space: nowrap; }
 
 /* Menu d'actions discret (⋮) — remplace une liste d'actions séparées par

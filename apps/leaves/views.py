@@ -1,3 +1,7 @@
+import calendar as calendar_module
+from collections import defaultdict
+from datetime import datetime, timedelta
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
@@ -112,6 +116,76 @@ class PendingLeavesView(RoleRequiredMixin, TemplateView):
             qs = qs.filter(employee__manager=self.request.user)
         context.update(paginate_queryset(self.request, qs))
         context["leaves"] = context["page_obj"].object_list
+        return context
+
+
+class LeaveCalendarView(RoleRequiredMixin, TemplateView):
+    """Vue mois des congés approuvés — un tableau liste les demandes mais ne
+    montre pas visuellement qui est absent quand ; cette grille répond
+    directement à "qui est en congé cette semaine-là", ce qu'un tableau
+    oblige à reconstituer mentalement demande par demande. Mêmes règles de
+    périmètre que PendingLeavesView/LeaveHistoryView (un Manager ne voit que
+    son équipe). Ne montre que les congés APPROUVÉS : une demande en attente
+    n'est pas encore une absence certaine, l'afficher ici induirait en
+    erreur sur qui est réellement absent."""
+
+    allowed_roles = APPROVER_ROLES
+    template_name = "leaves/leave_calendar.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
+        today = timezone.localdate()
+
+        try:
+            first_day = datetime.strptime(request.GET.get("mois", ""), "%Y-%m").date().replace(day=1)
+        except ValueError:
+            first_day = today.replace(day=1)
+        last_day = first_day.replace(day=calendar_module.monthrange(first_day.year, first_day.month)[1])
+
+        # Grille complète en semaines (lundi -> dimanche), donc incluant
+        # quelques jours du mois précédent/suivant pour ne pas couper une
+        # semaine en deux visuellement.
+        month_dates = list(calendar_module.Calendar(firstweekday=0).itermonthdates(first_day.year, first_day.month))
+        grid_start, grid_end = month_dates[0], month_dates[-1]
+
+        leaves_qs = Leave.objects.all_tenants().filter(
+            tenant=request.user.tenant, status=Leave.Status.APPROVED,
+            start_date__lte=grid_end, end_date__gte=grid_start,
+        ).select_related("employee__user", "leave_type").order_by("employee__user__first_name")
+        if request.user.role == User.Role.MANAGER:
+            leaves_qs = leaves_qs.filter(employee__manager=request.user)
+
+        leaves_by_day = defaultdict(list)
+        for leave in leaves_qs:
+            day = max(leave.start_date, grid_start)
+            end = min(leave.end_date, grid_end)
+            while day <= end:
+                leaves_by_day[day].append(leave)
+                day += timedelta(days=1)
+
+        weeks, week = [], []
+        for day in month_dates:
+            week.append({
+                "date": day,
+                "in_month": day.month == first_day.month,
+                "is_today": day == today,
+                "is_weekend": day.weekday() >= 5,
+                "leaves": leaves_by_day.get(day, []),
+            })
+            if len(week) == 7:
+                weeks.append(week)
+                week = []
+
+        context.update({
+            "weeks": weeks,
+            "current_month": first_day,
+            "prev_month": (first_day - timedelta(days=1)).replace(day=1),
+            "next_month": last_day + timedelta(days=1),
+            "current_month_param": first_day.strftime("%Y-%m"),
+            "is_current_month": first_day == today.replace(day=1),
+            "leaves_this_month_count": leaves_qs.filter(start_date__lte=last_day, end_date__gte=first_day).count(),
+        })
         return context
 
 
