@@ -9,6 +9,7 @@
   </div>
   <div class="gp-page-header-actions">
     {% if school_scheduling_enabled %}
+    <a href="{% url 'schedules:teacher_presence' %}" class="btn btn-outline-secondary">Présence enseignants</a>
     <a href="{% url 'schedules:room_planning' %}" class="btn btn-outline-secondary">Planning des salles</a>
     <a href="{% url 'schedules:unstaffed' %}" class="btn btn-outline-secondary">Cours sans professeur</a>
     {% endif %}
