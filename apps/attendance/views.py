@@ -1,18 +1,22 @@
+import hmac
 import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
 from apps.accounts.mixins import RoleRequiredMixin
 from apps.accounts.models import User
+from apps.agencies.models import Agency
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.core import exports
 from apps.core.views import paginate_queryset
 from apps.employees.services import get_active_employee
+from apps.tenants.models import Organization
 
 from . import services
 from .forms import ClockForm
@@ -38,6 +42,11 @@ class ClockPageView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         employee = get_active_employee(self.request.user)
         context["employee"] = employee
+        # RM-QR-001 : posé par QREntryView après un scan valide, une seule
+        # lecture (pop) — un rafraîchissement normal de cette page ensuite ne
+        # doit pas rester "coincé" sur l'agence scannée précédemment.
+        qr_agency_id = self.request.session.pop("qr_agency_id", None)
+        qr_agency_name = self.request.session.pop("qr_agency_name", None)
         if employee is not None:
             clock_type, clock_date, slot = services.get_clock_status(employee)
             context["next_clock_type"] = clock_type
@@ -61,6 +70,18 @@ class ClockPageView(LoginRequiredMixin, TemplateView):
                     for zone in employee.primary_agency.zones()
                 ]
             )
+            if qr_agency_id:
+                assigned_ids = {str(employee.primary_agency_id)} | {
+                    str(a_id) for a_id in employee.secondary_agencies.values_list("id", flat=True)
+                }
+                if qr_agency_id in assigned_ids:
+                    context["qr_agency_name"] = qr_agency_name
+                else:
+                    # CDC pointage : toujours expliquer pourquoi, jamais un
+                    # échec silencieux — l'employé n'est simplement pas
+                    # affecté à l'agence dont il a scanné le QR (ex. il a
+                    # scanné le QR d'un autre site en visite).
+                    context["qr_agency_mismatch"] = qr_agency_name
         return context
 
 
@@ -101,6 +122,7 @@ class ClockView(LoginRequiredMixin, View):
                 device_type=_detect_device_type(user_agent),
                 client_time=form.cleaned_data.get("client_time"),
                 mode=form.cleaned_data.get("mode") or Attendance.Mode.ONLINE,
+                source=form.cleaned_data.get("source") or Attendance.Source.APP,
             )
         except ClockRejected as exc:
             audit.log_event(
@@ -132,6 +154,41 @@ class ClockView(LoginRequiredMixin, View):
                 "agency": attendance.agency.name,
             }
         )
+
+
+class QREntryView(View):
+    """RM-QR-001 : point d'entrée public d'un QR d'agence imprimé (aucune
+    authentification requise — un employé peut scanner avant d'être connecté).
+    N'accorde jamais de pointage à lui seul : pré-sélectionne juste l'agence
+    sur l'écran de pointage habituel (ClockPageView), où la vérification GPS
+    s'applique ensuite normalement. Voir Agency.qr_token pour le pourquoi
+    d'un jeton séparé de l'UUID de l'agence (régénérable)."""
+
+    def get(self, request, agency_id, token):
+        # all_tenants() : accès public délibéré, avant toute résolution de
+        # tenant (cf. TenantMiddleware, qui ne résout le tenant que depuis un
+        # utilisateur déjà authentifié) — pas de contournement de l'isolation
+        # multi-tenant en écriture, seule une lecture d'agence par (id, jeton)
+        # exact est possible ici.
+        agency = Agency.objects.all_tenants().filter(pk=agency_id).select_related("tenant").first()
+        # compare_digest plutôt que == : évite de laisser fuiter, via le temps
+        # de réponse, la longueur du préfixe commun entre le jeton fourni et
+        # le vrai jeton (attaque par mesure de timing sur une comparaison de
+        # secret, cf. OWASP).
+        token_ok = bool(agency and agency.qr_token) and hmac.compare_digest(agency.qr_token, token)
+        if not token_ok or agency.tenant.status != Organization.Status.ACTIVE or not agency.is_active:
+            # Message volontairement générique (ni "agence inconnue" ni
+            # "jeton invalide" séparément) : ne pas donner à un attaquant
+            # d'indice sur laquelle des deux vérifications a échoué.
+            return render(request, "attendance/qr_invalid.html", status=404)
+
+        request.session["qr_agency_id"] = str(agency.id)
+        request.session["qr_agency_name"] = agency.name
+        # Pas de login ici : si l'utilisateur n'est pas connecté,
+        # LoginRequiredMixin sur ClockPageView le redirige vers la connexion
+        # avec ?next= déjà pointé sur le pointage — la session ci-dessus
+        # survit à ce détour et sera lue au premier chargement de la page.
+        return redirect("attendance:clock_page")
 
 
 def _filtered_attendance_queryset(request):

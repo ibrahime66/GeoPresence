@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import FormView, TemplateView
 
@@ -173,7 +174,20 @@ class LoginView(FormView):
 
         if user.must_change_password:
             return redirect("accounts:force_password_change")
-        return redirect("core:dashboard")
+        return redirect(self._safe_next_url() or "core:dashboard")
+
+    def _safe_next_url(self):
+        """RM-QR-001 (entre autres) : ramène l'utilisateur exactement là où il
+        allait avant d'être stoppé par LoginRequiredMixin (ex. scan d'un QR
+        d'agence) plutôt que toujours sur le tableau de bord. Validation
+        stricte (host/scheme) : `next` est une donnée utilisateur, jamais
+        suivie sans vérification (open redirect, CDC sécurité)."""
+        next_url = self.request.POST.get("next") or self.request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={self.request.get_host()}, require_https=self.request.is_secure()
+        ):
+            return next_url
+        return None
 
     @staticmethod
     def _notify_lockout(user, duration_minutes):

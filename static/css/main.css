@@ -32,8 +32,9 @@
   --gp-white: #FFFFFF;
 
   /* Texte lisible sur les éléments d'accent (boutons, avatars). Tokens de
-     navigation (--nav-*) : définis sur .gp-app-body, cf. plus bas — la barre
-     de nav est en thème clair fixe, indépendant du reste de l'app. */
+     navigation (--nav-*) : définis sur .gp-app-body, cf. plus bas — suit
+     maintenant le mode sombre comme le reste de l'app (cf. bloc
+     [data-bs-theme="dark"] .gp-app-body). */
   --gp-accent-text: #FFFFFF;
 
   --gp-radius: 12px;
@@ -42,13 +43,31 @@
   --gp-focus-ring: 0 0 0 3px rgba(11, 99, 246, 0.35);
 }
 
-/* Palette sombre — définie mais NON activée (aucune règle n'applique encore
-   data-theme="dark" à <html>). Sert de fondation prête à l'emploi pour une
-   future bascule mode sombre, sans risquer de casser un écran non encore
-   vérifié en contraste sombre. */
-[data-theme="dark"] {
+/* Mode sombre (RM-UI-THEME, 18/08/2026) — activé via l'attribut natif
+   data-bs-theme sur <html> (posé par templates/core/_theme_init.html) :
+   Bootstrap applique automatiquement son propre habillage sombre aux
+   composants natifs (form-control, dropdown-menu, alert...) sur cet
+   attribut, on branche donc notre propre système de jetons dessus plutôt
+   que d'inventer un attribut séparé à garder synchronisé. Inversion
+   sémantique assumée : --gp-navy (normalement texte sombre sur fond clair)
+   devient un ton clair, --gp-white (normalement fond clair) devient un fond
+   sombre — tout le reste de l'app référence déjà exclusivement ces
+   variables, donc ce seul bloc suffit à retourner la quasi-totalité des
+   écrans sans les toucher un par un. */
+[data-bs-theme="dark"] {
   --gp-navy: #E4E9F5;
   --gp-navy-deep: #FFFFFF;
+  --gp-blue: #6C8EEB;
+  --gp-blue-bright: #8DA8F0;
+  --gp-green: #2FE070;
+  --gp-green-deep: #4ADE80;
+  --gp-amber: #F0B858;
+  --gp-amber-bg: #3A2E10;
+  --gp-red: #F87171;
+  --gp-red-bg: #3A1418;
+  --gp-orange: #FB923C;
+  --gp-orange-deep: #FDBA74;
+  --gp-orange-bg: #3A2410;
   --gp-ink: #F1F4F9;
   --gp-gray-700: #D0D5DD;
   --gp-gray-600: #98A2B3;
@@ -59,6 +78,27 @@
   --gp-white: #0E1330;
   --gp-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 3px rgba(0, 0, 0, 0.32);
   --gp-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --gp-focus-ring: 0 0 0 3px rgba(108, 142, 235, 0.4);
+  color-scheme: dark;
+}
+[data-bs-theme="dark"] body { background: var(--gp-white); }
+/* La sidebar/barre du haut/barre d'onglets étaient volontairement en thème
+   clair fixe (cf. commentaire plus bas) — elles suivent maintenant le mode
+   sombre comme le reste de l'app, la bascule étant désormais une vraie
+   préférence utilisateur et non plus un détail d'implémentation interne. */
+[data-bs-theme="dark"] .gp-app-body {
+  --nav-accent: #6C8EEB;
+  --nav-accent-soft: rgba(108, 142, 235, 0.14);
+  --nav-accent-soft-strong: rgba(108, 142, 235, 0.2);
+  --nav-accent-border: rgba(108, 142, 235, 0.32);
+  --nav-ink: #E4E9F5;
+  --nav-text: #C3CADA;
+  --nav-text-soft: #8B93A7;
+  --nav-text-faint: #667085;
+  --nav-bg: #0E1330;
+  --nav-bg-soft: #1B2340;
+  --nav-border: #2A3350;
+  --nav-red: #F87171;
 }
 
 body {
@@ -82,7 +122,11 @@ body {
 .gp-chat-suggestion-btn:focus-visible,
 .gp-pagination a:focus-visible,
 .gp-footer-col a:focus-visible,
-.gp-home-action-card:focus-visible {
+.gp-home-action-card:focus-visible,
+.gp-sidebar-brand:focus-visible,
+.gp-sidebar-link:focus-visible,
+.gp-sidebar-profile-link:focus-visible,
+.gp-sidebar-logout-btn:focus-visible {
   outline: none;
   box-shadow: var(--gp-focus-ring);
   border-radius: 6px;
@@ -131,7 +175,18 @@ a {
 
 /* ================= Page d'accueil publique ================= */
 
-.gp-landing { overflow-x: hidden; }
+/* Identité typographique propre à la vitrine publique (pas de fuite vers le
+   reste de l'app, qui reste Inter seul) — Unbounded pour les titres, une
+   géométrique large plus affirmée qu'Inter, JetBrains Mono pour les repères
+   courts (eyebrow, kicker, numéros d'étape), en écho direct au sujet du
+   produit : coordonnées GPS, précision, lecture de capteur. */
+.gp-landing {
+  overflow-x: hidden;
+  --gp-font-display: "Unbounded", "Inter", sans-serif;
+  --gp-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --gp-tint: #EEF3FF;
+}
+[data-bs-theme="dark"] .gp-landing { --gp-tint: #131B36; }
 
 .gp-nav {
   position: sticky;
@@ -141,6 +196,7 @@ a {
   backdrop-filter: saturate(180%) blur(8px);
   border-bottom: 1px solid var(--gp-gray-200);
 }
+[data-bs-theme="dark"] .gp-nav { background: rgba(14, 19, 48, 0.86); }
 .gp-nav-inner {
   max-width: 1180px;
   margin: 0 auto;
@@ -172,6 +228,20 @@ a {
 }
 .gp-nav-links a:hover { color: var(--gp-navy); }
 
+.gp-nav-actions { display: flex; align-items: center; gap: 0.75rem; }
+.gp-theme-toggle-btn {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  background: var(--gp-gray-100);
+  border: 1px solid var(--gp-gray-200);
+  color: var(--gp-gray-700);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.gp-theme-toggle-btn:hover { background: var(--gp-gray-200); color: var(--gp-navy); }
+
 .gp-btn {
   display: inline-flex;
   align-items: center;
@@ -201,49 +271,64 @@ a {
 .gp-btn-lg { padding: 0.85rem 1.75rem; font-size: 1.02rem; border-radius: 10px; }
 
 /* ---------- Hero ---------- */
+/* Bleu clair texturé — ni dégradé, ni aplat uni, ni bleu sombre. La grille de
+   points reprend exactement le motif de .gp-mock-map plus bas (le même
+   "papier millimétré GPS" que la carte du mockup) : un vrai choix ancré dans
+   le sujet du produit, pas une texture décorative arbitraire. Couleurs
+   fixes (pas var(--gp-*)) : ce bandeau reste dans cette teinte claire dans
+   les deux thèmes, cf. bloc [data-bs-theme="dark"] plus bas. */
 .gp-hero {
+  background-color: #E4ECFF;
+  background-image: radial-gradient(circle, #C9DBFA 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+  padding: 4.5rem 0 5rem;
+}
+.gp-hero-inner {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 4.5rem 1.5rem 3rem;
+  padding: 0 1.5rem;
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   gap: 3rem;
   align-items: center;
 }
 @media (max-width: 900px) {
-  .gp-hero { grid-template-columns: 1fr; padding-top: 2.5rem; text-align: center; }
+  .gp-hero-inner { grid-template-columns: 1fr; text-align: center; }
   .gp-hero-visual { order: -1; }
 }
 
 .gp-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  background: var(--gp-gray-100);
-  color: var(--gp-navy);
-  border: 1px solid var(--gp-gray-200);
+  gap: 0.5rem;
+  background: rgba(10, 30, 69, 0.05);
+  color: #0A1E45;
+  border: 1px solid rgba(10, 30, 69, 0.12);
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-family: var(--gp-font-mono);
+  font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 .gp-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gp-green); display: inline-block; }
 
 .gp-hero h1 {
-  font-size: 2.75rem;
-  line-height: 1.12;
-  font-weight: 800;
-  color: var(--gp-navy);
-  margin: 1.1rem 0 1.1rem;
-  letter-spacing: -0.02em;
+  font-family: var(--gp-font-display);
+  font-size: 2.6rem;
+  line-height: 1.18;
+  font-weight: 700;
+  color: #0A1E45;
+  margin: 1.25rem 0 1.25rem;
+  letter-spacing: -0.01em;
 }
-.gp-hero h1 .accent { color: var(--gp-blue); }
-@media (max-width: 560px) { .gp-hero h1 { font-size: 2.1rem; } }
+.gp-hero h1 .accent { color: #2C5CE0; }
+@media (max-width: 560px) { .gp-hero h1 { font-size: 2rem; } }
 
 .gp-hero p.lead {
   font-size: 1.12rem;
-  color: var(--gp-gray-600);
+  color: #475467;
   max-width: 46ch;
   margin-bottom: 1.75rem;
 }
@@ -251,28 +336,39 @@ a {
 
 .gp-hero-ctas { display: flex; gap: 0.85rem; flex-wrap: wrap; }
 @media (max-width: 900px) { .gp-hero-ctas { justify-content: center; } }
+.gp-hero .gp-btn-ghost { color: #0A1E45; border-color: rgba(10, 30, 69, 0.18); }
+.gp-hero .gp-btn-ghost:hover { background: rgba(10, 30, 69, 0.05); color: #0A1E45; }
 
 .gp-trust-row {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
   margin-top: 2rem;
-  color: var(--gp-gray-600);
+  color: #475467;
   font-size: 0.88rem;
 }
 .gp-trust-row span { display: flex; align-items: flex-start; gap: 0.5rem; }
 .gp-trust-row svg { flex: none; color: var(--gp-green); margin-top: 0.15rem; }
+@media (max-width: 900px) { .gp-trust-row span { justify-content: center; } }
 
-/* ---------- Mockup visuel du hero (pas une capture, une illustration fidèle) ---------- */
+/* ---------- Mockup visuel du hero (pas une capture, une illustration fidèle) ----------
+   Fond fixe (#FFFFFF, pas var(--gp-white)) : cette carte représente un écran
+   d'appareil, comme une capture — elle ne doit pas s'inverser avec le thème,
+   un téléphone ne change pas de couleur quand on bascule le mode sombre. */
 .gp-mock {
-  background: var(--gp-white);
+  background: #FFFFFF;
   border: 1px solid var(--gp-gray-200);
   border-radius: 20px;
-  box-shadow: var(--gp-shadow-lg);
+  box-shadow: 0 30px 70px -20px rgba(2, 8, 30, 0.55);
   padding: 1.1rem;
   max-width: 380px;
   margin: 0 auto;
+  animation: gp-mock-float 6s ease-in-out infinite;
 }
+/* Flottement continu très léger — la carte "respire" au lieu de rester
+   figée, comme les visuels de héros des sites premium (ex. stripe.com). */
+@keyframes gp-mock-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) { .gp-mock { animation: none; } }
 .gp-mock-map {
   position: relative;
   height: 220px;
@@ -283,6 +379,18 @@ a {
   background-size: 16px 16px;
   overflow: hidden;
 }
+.gp-mock-coords {
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: 1;
+  background: rgba(10, 30, 69, 0.85);
+  color: #B9C4DA;
+  font-family: var(--gp-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.01em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
 .gp-mock-zone {
   position: absolute;
   top: 50%; left: 50%;
@@ -292,6 +400,15 @@ a {
   background: rgba(11, 99, 246, 0.08);
   transform: translate(-50%, -50%);
 }
+/* Deuxième anneau, purement décoratif, qui pulse doucement pour suggérer une
+   zone "en direct" — signature visuelle du hero, un seul endroit sur toute
+   la vitrine publique où ce mouvement d'ambiance apparaît. */
+.gp-mock-zone-pulse { animation: gp-zone-pulse 2.8s ease-out infinite; }
+@keyframes gp-zone-pulse {
+  0% { width: 168px; height: 168px; opacity: 0.5; }
+  100% { width: 260px; height: 260px; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .gp-mock-zone-pulse { animation: none; display: none; } }
 .gp-mock-pin {
   position: absolute;
   top: 50%; left: 50%;
@@ -299,16 +416,19 @@ a {
   transform: translate(-50%, -66%);
   filter: drop-shadow(0 4px 6px rgba(10,30,69,.25));
 }
+/* Couleurs fixes sur .gp-mock-radius-label/-result(-text) : toujours dans le
+   même illustration figée en clair que .gp-mock/.gp-mock-map, cf. plus haut. */
 .gp-mock-radius-label {
   position: absolute;
   bottom: 10px; left: 10px;
-  background: var(--gp-white);
-  border: 1px solid var(--gp-gray-200);
+  background: #FFFFFF;
+  border: 1px solid #E4E7EC;
   border-radius: 999px;
   padding: 0.2rem 0.6rem;
-  font-size: 0.72rem;
+  font-family: var(--gp-font-mono);
+  font-size: 0.68rem;
   font-weight: 600;
-  color: var(--gp-gray-700);
+  color: #344054;
 }
 .gp-mock-result {
   margin-top: 1rem;
@@ -324,12 +444,12 @@ a {
   flex: none;
   width: 30px; height: 30px;
   border-radius: 50%;
-  background: var(--gp-green);
+  background: #16C74E;
   display: flex; align-items: center; justify-content: center;
 }
 .gp-mock-result-text { line-height: 1.25; }
-.gp-mock-result-text strong { display: block; color: var(--gp-ink); font-size: 0.92rem; }
-.gp-mock-result-text span { color: var(--gp-gray-600); font-size: 0.8rem; }
+.gp-mock-result-text strong { display: block; color: #101828; font-size: 0.92rem; }
+.gp-mock-result-text span { color: #475467; font-size: 0.8rem; }
 
 /* ---------- Sections génériques ---------- */
 .gp-section {
@@ -337,25 +457,35 @@ a {
   margin: 0 auto;
   padding: 4.5rem 1.5rem;
 }
+/* Bande alternée pour casser la monotonie du blanc répété section après
+   section — pleine largeur ; le contenu direct retrouve le padding latéral
+   perdu en même temps que le max-width du parent. */
+.gp-tint { background: var(--gp-tint); max-width: none; padding-left: 0; padding-right: 0; }
+.gp-tint > .gp-section-head { padding: 0 1.5rem; }
+.gp-tint > .gp-how-grid { max-width: 1180px; margin-left: auto; margin-right: auto; padding: 0 1.5rem; }
 .gp-section-head {
   max-width: 640px;
   margin: 0 auto 3rem;
   text-align: center;
 }
 .gp-kicker {
+  display: inline-block;
   color: var(--gp-blue);
-  font-weight: 700;
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
+  font-family: var(--gp-font-mono);
+  font-weight: 600;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .gp-section-head h1,
 .gp-section-head h2 {
-  font-size: 2rem;
-  font-weight: 800;
+  font-family: var(--gp-font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
   color: var(--gp-navy);
-  margin: 0.5rem 0 0.75rem;
-  letter-spacing: -0.01em;
+  margin: 0.6rem 0 0.75rem;
+  letter-spacing: -0.005em;
+  line-height: 1.25;
 }
 .gp-section-head p { color: var(--gp-gray-600); font-size: 1.02rem; }
 
@@ -383,25 +513,26 @@ a {
 @media (max-width: 800px) { .gp-steps { grid-template-columns: 1fr; } }
 .gp-how-grid .gp-steps { grid-template-columns: 1fr; gap: 1.75rem; }
 
+/* Couleurs fixes (bezel de téléphone) : même raison que .gp-hero/.gp-mock. */
 .gp-phone-frame {
   position: relative; flex: none; width: 250px;
-  background: var(--gp-navy); border-radius: 34px;
+  background: #0A1E45; border-radius: 34px;
   padding: 22px 9px 9px;
   box-shadow: 0 24px 50px -14px rgba(10, 30, 69, 0.35);
 }
 .gp-phone-notch {
   position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-  width: 60px; height: 16px; background: var(--gp-navy-deep); border-radius: 10px;
+  width: 60px; height: 16px; background: #071233; border-radius: 10px;
 }
 .gp-phone-img { display: block; width: 100%; height: auto; border-radius: 22px; }
 .gp-step-num {
-  width: 40px; height: 40px;
-  border-radius: 10px;
-  background: var(--gp-navy);
-  color: var(--gp-white);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700;
-  margin-bottom: 1rem;
+  display: inline-block;
+  font-family: var(--gp-font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gp-blue);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.6rem;
 }
 .gp-step h3 { font-size: 1.1rem; font-weight: 700; color: var(--gp-navy); margin-bottom: 0.4rem; }
 .gp-step p { color: var(--gp-gray-600); font-size: 0.95rem; margin: 0; }
@@ -418,6 +549,7 @@ a {
 .gp-card {
   background: var(--gp-white);
   border: 1px solid var(--gp-gray-200);
+  border-top: 2px solid var(--gp-blue);
   border-radius: var(--gp-radius);
   padding: 1.5rem;
 }
@@ -427,14 +559,16 @@ a {
    (pas cliquables), ce qui distrait sans raison (cf. consigne micro-interactions). */
 .gp-features .gp-card { transition: box-shadow 0.15s ease, transform 0.15s ease; }
 .gp-features .gp-card:hover { box-shadow: var(--gp-shadow-lg); transform: translateY(-2px); }
+/* Icône nue, sans pastille carrée — l'habillage "icône dans un carré pâle
+   arrondi" est le tell visuel le plus reconnaissable d'une page SaaS
+   générée par IA, on l'évite délibérément ici. */
 .gp-card-icon {
-  width: 42px; height: 42px;
-  border-radius: 10px;
-  background: var(--gp-gray-100);
+  width: 30px; height: 30px;
   color: var(--gp-blue);
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 1rem;
 }
+.gp-card-icon svg { width: 28px; height: 28px; }
 .gp-card h3 { font-size: 1.02rem; font-weight: 700; color: var(--gp-navy); margin-bottom: 0.4rem; }
 .gp-card p { color: var(--gp-gray-600); font-size: 0.9rem; margin: 0; }
 
@@ -469,6 +603,10 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
   align-items: center;
 }
 @media (max-width: 800px) { .gp-security-grid { grid-template-columns: 1fr; } }
+.gp-security-grid h2 {
+  font-family: var(--gp-font-display); font-size: 1.9rem; font-weight: 700;
+  color: var(--gp-navy); line-height: 1.25;
+}
 .gp-security ul { list-style: none; padding: 0; margin: 1.25rem 0 0; }
 .gp-security li {
   display: flex; align-items: flex-start; gap: 0.65rem;
@@ -478,17 +616,18 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
 }
 .gp-security li svg { flex: none; color: var(--gp-green); margin-top: 0.15rem; }
 
-/* ---------- CTA finale ---------- */
+/* ---------- CTA finale (couleurs fixes, même raison que .gp-hero) ---------- */
 .gp-cta-band {
-  background: var(--gp-navy);
+  background: #0A1E45;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
   max-width: 1180px;
   margin: 0 auto 5rem;
   padding: 3.5rem 2rem;
   text-align: center;
-  color: var(--gp-white);
+  color: #FFFFFF;
 }
-.gp-cta-band h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.6rem; }
+.gp-cta-band h2 { font-family: var(--gp-font-display); font-size: 1.7rem; font-weight: 700; margin-bottom: 0.6rem; }
 .gp-cta-band p { color: #B9C4DA; margin-bottom: 1.75rem; }
 
 /* ---------- Footer ---------- */
@@ -519,11 +658,29 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
 }
 .gp-footer-col button:hover { color: var(--gp-navy); }
 
+/* ---------- Révélation au défilement (JS : voir _landing_base.html) ----------
+   Un seul mouvement, jamais répété au-delà de la première apparition (pas de
+   re-déclenchement en remontant, cf. consigne micro-interactions). Courbe
+   "ease-out-expo" et légère mise à l'échelle plutôt qu'un simple fondu
+   linéaire : rythme plus posé, dans l'esprit du défilement de stripe.com,
+   sans reprendre ses formes ni ses couleurs. */
+.gp-reveal {
+  opacity: 0;
+  transform: translateY(22px) scale(0.985);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gp-reveal.is-visible { opacity: 1; transform: translateY(0) scale(1); }
+.gp-reveal[data-reveal-delay="1"] { transition-delay: 0.1s; }
+.gp-reveal[data-reveal-delay="2"] { transition-delay: 0.2s; }
+@media (prefers-reduced-motion: reduce) {
+  .gp-reveal { opacity: 1; transform: none; transition: none; }
+}
+
 /* ---------- Bandeau de consentement cookies (Google Analytics) ---------- */
 .gp-consent-banner {
   position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 1000;
   max-width: 760px; margin: 0 auto;
-  background: var(--gp-navy); color: rgba(255, 255, 255, 0.9);
+  background: #0A1E45; color: rgba(255, 255, 255, 0.9);
   border-radius: 14px; padding: 1.1rem 1.4rem;
   box-shadow: 0 24px 60px -12px rgba(10, 30, 69, 0.4);
   display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem;
@@ -576,15 +733,17 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
 
 .gp-auth-shell { min-height: 100vh; display: flex; }
 
-/* ---- Panneau de marque (visible à partir de 960px, façon Facebook/Stripe) ---- */
+/* ---- Panneau de marque (visible à partir de 960px, façon Facebook/Stripe) ----
+   Couleurs fixes, même raison que .gp-hero : ce panneau reste sombre dans les
+   deux thèmes. ---- */
 .gp-auth-aside {
   display: none;
   position: relative;
   flex: 0 0 42%;
   max-width: 560px;
   padding: 3rem;
-  background: var(--gp-navy);
-  color: var(--gp-white);
+  background: #0A1E45;
+  color: #FFFFFF;
   overflow: hidden;
 }
 @media (min-width: 960px) {
@@ -596,7 +755,7 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
   align-items: center;
   gap: 0.55rem;
   text-decoration: none;
-  color: var(--gp-white);
+  color: #FFFFFF;
   font-weight: 800;
   font-size: 1.1rem;
 }
@@ -619,7 +778,7 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
   width: 38px; height: 38px;
   border-radius: 50%;
   background: var(--gp-blue-bright);
-  color: var(--gp-navy);
+  color: #0A1E45;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -682,7 +841,8 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
 @media (min-width: 960px) { .gp-auth-logo-mobile { display: none; } }
 
 .gp-auth-logo-mobile-row { margin-bottom: 0.5rem; }
-.gp-lang-switch { margin-bottom: 1.25rem; }
+.gp-auth-topbar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.25rem; }
+.gp-lang-switch { margin-bottom: 0; }
 .gp-lang-switch select { width: auto; min-width: 140px; display: inline-block; }
 
 .gp-auth-title {
@@ -777,14 +937,14 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
 
 .gp-shell { display: flex; min-height: 100vh; }
 
-/* ---------- Navigation — barre horizontale (RM-UI-NAV, refonte du
-   11/08/2026, remplace la sidebar verticale). Tokens partagés par la barre
-   du haut ET la barre d'onglets mobile, posés sur .gp-app-body (ancêtre
-   commun) plutôt que dupliqués : le reste de l'app (dashboard, cartes,
-   formulaires, tableaux) continue d'utiliser --gp-navy/--gp-blue partagés
-   sans aucun changement. Aucune couleur par organisation (cf. décision
-   produit) : --nav-accent est une constante GeoPresence, jamais une donnée
-   tenant. */
+/* ---------- Navigation. RM-UI-NAV-DESKTOP (18/08/2026) : sidebar verticale
+   fixe sur desktop (≥992px), barre du haut compacte + barre d'onglets sur
+   mobile (<992px, inchangées). Tokens --nav-* partagés par les trois, posés
+   sur .gp-app-body (ancêtre commun) plutôt que dupliqués : le reste de l'app
+   (dashboard, cartes, formulaires, tableaux) continue d'utiliser
+   --gp-navy/--gp-blue partagés sans aucun changement. Aucune couleur par
+   organisation (cf. décision produit) : --nav-accent est une constante
+   GeoPresence, jamais une donnée tenant. */
 .gp-app-body {
   --nav-accent: #2C5CE0;
   --nav-accent-soft: rgba(44, 92, 224, 0.07);
@@ -803,7 +963,176 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
   min-height: 100vh;
 }
 
-/* ---------- Barre du haut ---------- */
+/* ---------- Sidebar desktop (≥992px uniquement — masquée sur mobile/tablette,
+   où .gp-navbar + .gp-bottomnav prennent le relais sans aucun changement).
+   Largeur fixe, position fixed (hors du flux) : .gp-titlebar/.gp-content
+   compensent avec un margin-left égal à cette largeur, cf. plus bas. ---------- */
+.gp-sidebar { display: none; }
+@media (min-width: 992px) {
+  .gp-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 264px;
+    background: var(--nav-bg);
+    border-right: 1px solid var(--nav-border);
+    z-index: 30;
+    overflow-y: auto;
+  }
+  .gp-navbar { display: none; }
+}
+[dir="rtl"] .gp-sidebar { left: auto; right: 0; border-right: none; border-left: 1px solid var(--nav-border); }
+
+.gp-sidebar-brand {
+  flex: none;
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 1.35rem 1.25rem 1rem;
+  text-decoration: none;
+}
+.gp-sidebar-brand img { height: 30px; width: auto; flex: none; }
+.gp-sidebar-brand-text { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.gp-sidebar-brand-name { font-weight: 800; font-size: 1rem; color: var(--nav-ink); letter-spacing: -0.01em; }
+.gp-sidebar-brand-tagline { font-size: 0.7rem; color: var(--nav-text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Organisation active : simple repère de contexte, teinte bleue fixe
+   GeoPresence — jamais dérivée de l'organisation (cf. décision produit,
+   même règle que l'ancienne pastille de la barre du haut). */
+.gp-sidebar-org {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  margin: 0 1.25rem 1.1rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--nav-accent-soft-strong);
+  border: 1px solid var(--nav-accent-border);
+  color: var(--nav-ink); font-weight: 700; font-size: 0.8rem;
+  max-width: calc(100% - 2.5rem);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gp-sidebar-org-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--nav-accent); }
+.gp-sidebar-org-platform { background: var(--nav-bg-soft); border-color: var(--nav-border); color: var(--nav-text-soft); }
+.gp-sidebar-org-platform .gp-sidebar-org-dot { background: var(--nav-text-faint); }
+
+.gp-sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; padding: 0.25rem 0.75rem 1rem; overflow-y: auto; }
+.gp-sidebar-section-title {
+  display: flex; align-items: center;
+  margin: 1rem 0.6rem 0.35rem;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--nav-text-faint);
+}
+.gp-sidebar-nav .gp-sidebar-link:first-child,
+.gp-sidebar-section-title:first-child { margin-top: 0; }
+
+.gp-sidebar-link {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.55rem 0.6rem;
+  border-left: 3px solid transparent;
+  border-radius: 8px;
+  color: var(--nav-text); text-decoration: none;
+  font-size: 0.88rem; font-weight: 600;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.gp-sidebar-link svg { flex: none; color: var(--nav-text-soft); transition: color 0.12s ease; }
+.gp-sidebar-link span { flex: 1; min-width: 0; }
+.gp-sidebar-link:hover { background: var(--nav-bg-soft); color: var(--nav-ink); text-decoration: none; }
+.gp-sidebar-link:hover svg { color: var(--nav-ink); }
+/* État actif : un simple repère à gauche + fond très pâle, jamais un gros
+   bloc plein — cf. consigne d'origine sur le style de la sidebar. */
+.gp-sidebar-link.is-active {
+  background: var(--nav-accent-soft);
+  border-left-color: var(--nav-accent);
+  color: var(--nav-accent);
+}
+.gp-sidebar-link.is-active svg { color: var(--nav-accent); }
+
+.gp-sidebar-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 17px; height: 17px; padding: 0 0.3rem;
+  border-radius: 999px; background: var(--nav-accent); color: #FFFFFF;
+  font-size: 0.65rem; font-weight: 700; margin-inline-start: 0.35rem;
+}
+.gp-sidebar-item-badge {
+  margin-inline-start: auto; flex: none;
+  min-width: 20px; height: 20px; padding: 0 0.4rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: var(--nav-accent-soft-strong); color: var(--nav-accent);
+  font-size: 0.72rem; font-weight: 700;
+}
+
+/* ---------- Zone profil, épinglée en bas de sidebar ---------- */
+.gp-sidebar-profile { flex: none; border-top: 1px solid var(--nav-border); padding: 0.75rem; }
+.gp-sidebar-profile-link {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  text-decoration: none; color: inherit;
+}
+.gp-sidebar-profile-link:hover { background: var(--nav-bg-soft); text-decoration: none; color: inherit; }
+.gp-sidebar-profile-link svg { flex: none; color: var(--nav-text-faint); }
+.gp-sidebar-avatar {
+  position: relative;
+  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--nav-accent); color: var(--gp-accent-text);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.82rem;
+}
+/* Signature visuelle unique de l'app (un seul endroit, jamais un motif
+   répété) — reprend le rôle de l'ancien anneau de l'avatar de la barre du
+   haut, qui ne s'affiche plus nulle part côté desktop maintenant que la
+   sidebar la remplace. L'avatar de la barre d'onglets mobile n'a
+   délibérément pas cet anneau. */
+.gp-sidebar-avatar::before {
+  content: "";
+  position: absolute; inset: -4px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--nav-accent-border);
+  pointer-events: none;
+}
+.gp-sidebar-profile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.gp-sidebar-user-name { font-weight: 700; font-size: 0.85rem; color: var(--nav-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gp-sidebar-user-role { font-size: 0.74rem; color: var(--nav-text-soft); }
+
+.gp-sidebar-logout-form { margin: 0.15rem 0 0; }
+.gp-sidebar-logout-btn {
+  width: 100%;
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.5rem; border-radius: 8px;
+  background: none; border: none; text-align: start;
+  color: var(--nav-text); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.gp-sidebar-logout-btn svg { flex: none; color: var(--nav-text-soft); }
+.gp-sidebar-logout-btn:hover { background: rgba(220, 53, 69, 0.08); color: var(--nav-red); }
+.gp-sidebar-logout-btn:hover svg { color: var(--nav-red); }
+
+/* Même gabarit que .gp-sidebar-logout-btn mais sans le survol rouge (pas une
+   action destructive) — classe séparée plutôt qu'un modificateur, pour ne
+   pas risquer de faire hériter le rouge par erreur ailleurs. */
+.gp-sidebar-toggle-btn {
+  width: 100%; margin-bottom: 0.15rem;
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.5rem; border-radius: 8px;
+  background: none; border: none; text-align: start;
+  color: var(--nav-text); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.gp-sidebar-toggle-btn svg { flex: none; color: var(--nav-text-soft); }
+.gp-sidebar-toggle-btn:hover { background: var(--nav-bg-soft); color: var(--nav-ink); }
+.gp-sidebar-toggle-btn:hover svg { color: var(--nav-ink); }
+
+/* ---------- Bascule de thème : icône + libellé affichent l'ACTION (ce que
+   le clic va activer), pas l'état courant — "Mode sombre" + lune tant qu'on
+   est en clair, "Mode clair" + soleil une fois en sombre. Piloté uniquement
+   par l'attribut data-bs-theme (posé par _theme_init.html), aucun JS de
+   bascule d'icône nécessaire. ---------- */
+.gp-theme-icon-sun, .gp-theme-label-to-light { display: none; }
+[data-bs-theme="dark"] .gp-theme-icon-sun,
+[data-bs-theme="dark"] .gp-theme-label-to-light { display: inline-flex; }
+[data-bs-theme="dark"] .gp-theme-icon-moon,
+[data-bs-theme="dark"] .gp-theme-label-to-dark { display: none; }
+.gp-theme-toggle-item { display: flex; align-items: center; gap: 0.6rem; width: 100%; background: none; border: none; }
+
+/* ---------- Barre du haut (mobile/tablette <992px uniquement) ---------- */
 .gp-navbar {
   flex: none;
   position: sticky; top: 0; z-index: 40;
@@ -973,6 +1302,17 @@ a.gp-pill:hover, a.gp-pill:focus-visible {
 .gp-content { flex: 1; padding: 1.75rem; max-width: 1400px; width: 100%; margin: 0 auto; }
 @media (max-width: 576px) { .gp-content { padding: 1.1rem; } }
 @media (max-width: 991px) { .gp-content { padding-bottom: 5.5rem; } }
+/* Décalage pour la sidebar fixe (cf. règle .gp-sidebar plus haut) — placé ici,
+   après la règle de base, pour ne pas se faire écraser par elle dans la
+   cascade (même spécificité, l'ordre dans le fichier tranche). */
+@media (min-width: 992px) {
+  .gp-titlebar, .gp-content { margin-left: 264px; margin-right: 0; }
+  /* width:auto (pas 100%) : avec un margin-left fixe, width:100% se rajoute
+     par-dessus au lieu de s'y soustraire et déborde du viewport de 264px —
+     width:auto laisse le bloc combler exactement l'espace restant. */
+  .gp-content { width: auto; }
+  [dir="rtl"] .gp-titlebar, [dir="rtl"] .gp-content { margin-left: 0; margin-right: 264px; }
+}
 
 /* ---------- Barre d'onglets mobile (<992px), façon Instagram — mêmes liens
    que la barre du haut, juste regroupés différemment pour tenir en 4-5
@@ -1276,7 +1616,10 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 }
 .gp-chat-thread { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 .gp-chat-bubble { max-width: 78%; padding: 0.75rem 1rem; border-radius: 14px; font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; }
-.gp-chat-bubble.user { align-self: flex-end; background: var(--gp-navy); color: var(--gp-white); border-bottom-right-radius: 4px; }
+/* var(--gp-blue), pas var(--gp-navy) : une bulle "envoyée" doit rester dans
+   la couleur de marque dans les deux thèmes (comme la plupart des messageries),
+   pas s'inverser en bulle claire en mode sombre. */
+.gp-chat-bubble.user { align-self: flex-end; background: var(--gp-blue); color: #FFFFFF; border-bottom-right-radius: 4px; }
 .gp-chat-bubble.assistant { align-self: flex-start; background: var(--gp-gray-100); color: var(--gp-ink); border-bottom-left-radius: 4px; }
 [dir="rtl"] .gp-chat-bubble.user { border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; }
 [dir="rtl"] .gp-chat-bubble.assistant { border-bottom-left-radius: 14px; border-bottom-right-radius: 4px; }
@@ -1492,4 +1835,27 @@ table.gp-table { width: 100%; border-collapse: collapse; margin: 0; font-size: 0
 @keyframes gp-home-rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Code QR de pointage par agence (RM-QR-001, 15/08/2026) — affiche imprimable
+   ========================================================================== */
+.gp-qr-card {
+  background: var(--gp-white); border: 1px solid var(--gp-gray-200); border-radius: 16px;
+  box-shadow: var(--gp-shadow); padding: 2rem 1.75rem; text-align: center;
+}
+.gp-qr-eyebrow { display: block; font-size: 0.78rem; font-weight: 700; color: var(--gp-blue); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+.gp-qr-card h2 { font-size: 1.3rem; font-weight: 800; color: var(--gp-navy); margin: 0 0 0.3rem; }
+.gp-qr-address { font-size: 0.88rem; color: var(--gp-gray-600); margin: 0 0 1.5rem; }
+.gp-qr-image { width: 100%; max-width: 280px; height: auto; image-rendering: pixelated; margin: 0 auto; display: block; }
+.gp-qr-caption { margin: 1.25rem 0 0; font-size: 0.92rem; font-weight: 600; color: var(--gp-gray-700); }
+
+/* Isolation d'impression : seule .gp-qr-print-area doit apparaître sur le
+   papier — pas la nav, pas les boutons "Imprimer"/"Régénérer". */
+@media print {
+  .gp-qr-noprint, .gp-navbar, .gp-titlebar, .gp-bottomnav { display: none !important; }
+  body * { visibility: hidden; }
+  .gp-qr-print-area, .gp-qr-print-area * { visibility: visible; }
+  .gp-qr-print-area { position: absolute; top: 0; left: 0; width: 100%; padding: 2rem; }
+  .gp-qr-card { box-shadow: none; border: 2px solid #000; }
 }

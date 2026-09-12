@@ -144,6 +144,10 @@
     formData.append("is_gps_mocked", payload.isMocked ? "true" : "false");
     formData.append("client_time", payload.clientTime);
     if (mode) formData.append("mode", mode);
+    // RM-QR-001 : uniquement informatif (l'agence a déjà été pré-sélectionnée
+    // côté serveur, la vérification GPS ci-dessus est inchangée) — trace dans
+    // l'historique que ce pointage vient d'un scan plutôt que du bouton.
+    if (config.source) formData.append("source", config.source);
 
     return fetch(config.apiUrl, {
       method: "POST",

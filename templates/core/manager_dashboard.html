@@ -180,6 +180,10 @@
   if (!canvas) return;
   const labels = JSON.parse(document.getElementById("team-trend-labels").textContent);
   const values = JSON.parse(document.getElementById("team-trend-values").textContent);
+  // RM-UI-THEME : cf. commentaire équivalent dans admin_dashboard.html.
+  const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+  const chartTick = isDark ? "#8B93A7" : "#98A2B3";
+  const chartGrid = isDark ? "rgba(228,233,245,0.08)" : "rgba(16,24,40,0.055)";
   new Chart(canvas, {
     type: "line",
     data: {
@@ -196,7 +200,10 @@
     },
     options: {
       plugins: { legend: { display: false } },
-      scales: { y: { min: 0, max: 100, ticks: { callback: (v) => v + "%" } } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: (v) => v + "%", color: chartTick }, grid: { color: chartGrid } },
+        x: { ticks: { color: chartTick }, grid: { display: false } },
+      },
     },
   });
 })();
