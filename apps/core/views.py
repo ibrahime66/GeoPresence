@@ -14,6 +14,7 @@ from django.views.generic import TemplateView
 
 from apps.absences.models import Absence
 from apps.accounts.mixins import RoleRequiredMixin
+from apps.agencies.models import Agency
 from apps.announcements import services as announcement_services
 from apps.attendance import services as attendance_services
 from apps.attendance.models import Attendance
@@ -21,6 +22,7 @@ from apps.employees.models import Employee
 from apps.employees.services import get_active_employee
 from apps.leaves.models import Leave
 from apps.schedules import services as schedule_services
+from apps.schedules.models import Schedule
 from apps.tenants.org_settings import get_org_setting
 
 DEFAULT_PAGE_SIZE = 25
@@ -233,6 +235,9 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         # ou dont le contrat est déjà terminé pouvait être compté dans l'un et
         # pas dans l'autre.
         expected_team_today = self._expected_headcount(user.tenant, today, employee_ids=team_ids)
+        team_on_leave_today, team_absent_today = (
+            self._who_is_out_today(user.tenant, employee_ids=team_ids) if total_team else ([], [])
+        )
 
         if total_team:
             trend_labels, trend_values = self._presence_trend(user.tenant, 7, employee_ids=team_ids)
@@ -262,6 +267,8 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             "present_team_today": len(today_arrivals),
             "on_leave_team_today": on_leave_team_today,
             "absent_team_today": max(expected_team_today - on_leave_team_today - len(today_arrivals), 0),
+            "employees_on_leave_today": team_on_leave_today,
+            "employees_absent_today": team_absent_today,
             "late_team_today": late_today,
             "team_trend_labels": trend_labels,
             "team_trend_values": trend_values,
@@ -285,17 +292,17 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         return qs.values("employee_id").distinct().count()
 
     @staticmethod
-    def _expected_headcount(tenant, date, employee_ids=None):
-        """Effectif attendu à `date` — utilisé comme dénominateur du taux de
-        présence. Le statut actuel (Actif/Suspendu/Archivé...) n'est pas
-        historisé (pas de date de changement de statut en base), donc pour une
-        date passée on ne peut se fier qu'à la date d'entrée et la date de fin
-        de contrat : un employé pas encore embauché ou dont le contrat était
-        déjà terminé à `date` est exclu. Le statut courant n'est appliqué que
-        pour la date du jour, seul instant où il reflète vraiment la réalité —
-        sans quoi le taux d'un jour passé (ex. tendance sur 30 jours) était
-        calculé avec l'effectif *actuel* au lieu de l'effectif réel de ce
-        jour-là (faussé pour toute organisation en croissance ou en décroissance)."""
+    def _expected_employees_qs(tenant, date, employee_ids=None):
+        """Employés attendus à `date` — le statut actuel (Actif/Suspendu/
+        Archivé...) n'est pas historisé (pas de date de changement de statut
+        en base), donc pour une date passée on ne peut se fier qu'à la date
+        d'entrée et la date de fin de contrat : un employé pas encore
+        embauché ou dont le contrat était déjà terminé à `date` est exclu. Le
+        statut courant n'est appliqué que pour la date du jour, seul instant
+        où il reflète vraiment la réalité — sans quoi le taux d'un jour passé
+        (ex. tendance sur 30 jours) était calculé avec l'effectif *actuel* au
+        lieu de l'effectif réel de ce jour-là (faussé pour toute organisation
+        en croissance ou en décroissance)."""
         qs = Employee.objects.all_tenants().filter(tenant=tenant, hire_date__lte=date).filter(
             Q(contract_end_date__isnull=True) | Q(contract_end_date__gte=date)
         )
@@ -303,7 +310,43 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             qs = qs.filter(status=Employee.Status.ACTIVE)
         if employee_ids is not None:
             qs = qs.filter(id__in=employee_ids)
-        return qs.count()
+        return qs
+
+    @classmethod
+    def _expected_headcount(cls, tenant, date, employee_ids=None):
+        """Utilisé comme dénominateur du taux de présence — cf.
+        `_expected_employees_qs` pour la définition de "attendu"."""
+        return cls._expected_employees_qs(tenant, date, employee_ids=employee_ids).count()
+
+    @classmethod
+    def _who_is_out_today(cls, tenant, employee_ids=None):
+        """Widget « qui est en congé / absent aujourd'hui » — mêmes règles
+        d'effectif attendu que `_expected_headcount`/`_presence_rate`, pour
+        que les noms listés ici correspondent exactement aux compteurs
+        affichés à côté (ex. « absent_today »). Renvoie (en_congé, absents),
+        deux listes d'Employee — un absent est un employé attendu, pas en
+        congé approuvé, sans pointage d'arrivée aujourd'hui."""
+        today = timezone.localdate()
+        expected = cls._expected_employees_qs(tenant, today, employee_ids=employee_ids).select_related("user")
+
+        on_leave_ids = set(
+            Leave.objects.all_tenants()
+            .filter(tenant=tenant, status=Leave.Status.APPROVED, start_date__lte=today, end_date__gte=today)
+            .values_list("employee_id", flat=True)
+        )
+        present_ids = set(
+            Attendance.objects.all_tenants()
+            .filter(tenant=tenant, clock_date=today, clock_type=Attendance.ClockType.ARRIVAL)
+            .values_list("employee_id", flat=True)
+        )
+
+        on_leave, absent = [], []
+        for employee in expected.order_by("user__first_name", "user__last_name"):
+            if employee.id in on_leave_ids:
+                on_leave.append(employee)
+            elif employee.id not in present_ids:
+                absent.append(employee)
+        return on_leave, absent
 
     @classmethod
     def _presence_trend(cls, tenant, days, employee_ids=None):
@@ -360,6 +403,50 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             values.append(round(present / expected * 100, 1) if expected else 0.0)
         return labels, values
 
+    @staticmethod
+    def _onboarding_steps(tenant):
+        """Check-list affichée à un Admin tant que l'organisation n'a pas les
+        trois briques de base : sans agence, aucun pointage n'est possible ;
+        sans horaire, un pointage est enregistré "hors horaire" ; sans
+        employé, il n'y a personne à faire pointer. Masquée automatiquement
+        dès que les trois sont là — pas besoin d'un drapeau "terminé" en base,
+        seul un "masquer" explicite (onboarding_dismissed) est persisté."""
+        return [
+            {
+                "label": "Créer une agence",
+                "detail": "Le site où vos employés pointent, avec sa zone GPS autorisée.",
+                "done": Agency.objects.all_tenants().filter(tenant=tenant).exists(),
+                "url_name": "agencies:create",
+            },
+            {
+                "label": "Configurer un horaire",
+                "detail": "Les plages de travail à affecter à vos employés.",
+                "done": Schedule.objects.all_tenants().filter(tenant=tenant).exists(),
+                "url_name": "schedules:create",
+            },
+            {
+                "label": "Ajouter un employé",
+                "detail": "Crée son compte et lui envoie ses accès par e-mail.",
+                "done": Employee.objects.all_tenants().filter(tenant=tenant).exists(),
+                "url_name": "employees:create",
+            },
+        ]
+
+    @classmethod
+    def _onboarding_context(cls, tenant):
+        steps = cls._onboarding_steps(tenant)
+        done_count = sum(1 for s in steps if s["done"])
+        complete = done_count == len(steps)
+        return {
+            "onboarding_steps": steps,
+            "onboarding_done_count": done_count,
+            # Auto-masquée dès que tout est fait ; sinon respecte un "masquer"
+            # explicite (persisté par org, cf. OnboardingDismissView — pas par
+            # navigateur, pour qu'un second Admin de la même organisation ne
+            # revoie pas la check-list qu'un collègue a déjà fermée).
+            "show_onboarding": not complete and not get_org_setting(tenant, "onboarding_dismissed"),
+        }
+
     def _admin_context(self, tenant):
         today = timezone.localdate()
         month_start = today.replace(day=1)
@@ -378,6 +465,7 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
         ).count()
         on_leave_today = self._on_leave_count(tenant, today)
         expected_today = self._expected_headcount(tenant, today)
+        employees_on_leave_today, employees_absent_today = self._who_is_out_today(tenant)
 
         trend_labels, trend_values = self._presence_trend(tenant, 30)
 
@@ -411,6 +499,9 @@ class DashboardPlaceholderView(LoginRequiredMixin, TemplateView):
             # Derniers points de la tendance = aujourd'hui / hier (déjà calculés).
             "rate_today": trend_values[-1],
             "rate_yesterday": trend_values[-2] if len(trend_values) > 1 else 0.0,
+            "employees_on_leave_today": employees_on_leave_today,
+            "employees_absent_today": employees_absent_today,
+            **self._onboarding_context(tenant),
             "pending_leaves": Leave.objects.all_tenants().filter(tenant=tenant, status=Leave.Status.PENDING).count(),
             "pending_absences": Absence.objects.all_tenants().filter(
                 tenant=tenant, status=Absence.Status.PENDING_REVIEW

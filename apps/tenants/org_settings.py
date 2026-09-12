@@ -40,6 +40,12 @@ DEFAULTS = {
     # une école pourrait en théorie vouloir l'un sans l'autre, d'où deux
     # réglages séparés plutôt qu'un seul.
     "school_scheduling_enabled": False,
+    # UX : check-list de démarrage (agence/horaire/employé) sur le tableau de
+    # bord Admin — se masque automatiquement une fois les 3 étapes faites ;
+    # ce drapeau ne sert qu'à respecter un "masquer" explicite avant ça. Pas
+    # exposé dans OrganizationSettingsForm : c'est un état d'usage, pas un
+    # réglage métier à choisir.
+    "onboarding_dismissed": False,
     # CDC §6.4.3 — sécurité.
     "max_failed_login_attempts": 5,
     "lockout_base_minutes": 15,

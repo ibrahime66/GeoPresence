@@ -15,6 +15,39 @@
     </div>
   </div>
 
+  {% if show_onboarding %}
+  <section class="gp-home-section">
+    <div class="gp-onboarding-card">
+      <div class="gp-onboarding-head">
+        <div>
+          <h2 class="gp-onboarding-title">Bienvenue sur GeoPresence 👋</h2>
+          <p class="gp-onboarding-sub">{{ onboarding_done_count }}/{{ onboarding_steps|length }} étapes complétées pour démarrer</p>
+        </div>
+        <form method="post" action="{% url 'tenants:onboarding_dismiss' %}">
+          {% csrf_token %}
+          <button type="submit" class="gp-onboarding-dismiss-btn" aria-label="Masquer cette check-list">
+            {% include "core/_icon.html" with icon="x-circle" size="16" %}
+          </button>
+        </form>
+      </div>
+      <div class="gp-onboarding-steps">
+        {% for step in onboarding_steps %}
+        <a href="{% url step.url_name %}" class="gp-onboarding-step {% if step.done %}is-done{% endif %}">
+          <span class="gp-onboarding-step-check">
+            {% if step.done %}{% include "core/_icon.html" with icon="check" size="16" %}{% else %}{{ forloop.counter }}{% endif %}
+          </span>
+          <span class="gp-onboarding-step-body">
+            <span class="gp-onboarding-step-title">{{ step.label }}</span>
+            <span class="gp-onboarding-step-detail">{{ step.detail }}</span>
+          </span>
+          {% if not step.done %}{% include "core/_icon.html" with icon="chevron-right" size="16" %}{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
   {% if pending_leaves or pending_absences or unstaffed_slots_count %}
   <section class="gp-home-section">
     <h2 class="gp-home-section-title">À traiter</h2>
@@ -83,6 +116,8 @@
       </div>
     </div>
   </section>
+
+  {% include "core/_presence_today_widget.html" %}
 
   <section class="gp-home-section">
     <h2 class="gp-home-section-title">Tendances</h2>
