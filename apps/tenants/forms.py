@@ -28,6 +28,10 @@ class OrganizationSettingsForm(BootstrapModelFormMixin, forms.Form):
         label="Pointage multi-créneaux", required=False,
         help_text="Autorise plusieurs arrivées/départs par jour, un par créneau d'horaire (ex. enseignants).",
     )
+    school_scheduling_enabled = forms.BooleanField(
+        label="Horaires enseignants (matière/salle/groupe)", required=False,
+        help_text="Ajoute les champs matière, salle, groupe et remplacement sur les créneaux d'horaire.",
+    )
 
     gps_radius_default_meters = forms.IntegerField(
         label="Rayon GPS par défaut (m)", min_value=50, max_value=5000,

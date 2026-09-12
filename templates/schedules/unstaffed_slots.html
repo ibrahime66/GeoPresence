@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Cours sans professeur — GeoPresence{% endblock %}
+{% block page_title %}Cours sans professeur{% endblock %}
+{% block content %}
+<div class="gp-page-header">
+  <div>
+    <h1>Cours sans professeur</h1>
+    <p>Créneaux planifiés aujourd'hui dont la fenêtre d'arrivée est dépassée, sans aucun pointage enregistré. Les remplaçants proposés sont les collègues actifs dont l'emploi du temps du jour ne chevauche pas ce créneau — à contacter manuellement, aucune affectation automatique.</p>
+  </div>
+</div>
+
+{% if not school_scheduling_enabled %}
+<div class="alert alert-warning">Le module « Horaires enseignants » n'est pas activé pour votre organisation. Activez-le depuis Paramètres pour utiliser cette alerte.</div>
+{% else %}
+
+<div class="gp-table-card">
+  <div class="gp-table-scroll">
+    <table class="gp-table">
+      <thead>
+        <tr>
+          <th>Heure prévue</th><th>Enseignant</th><th>Matière</th><th>Salle</th><th>Groupe</th>
+          <th>Remplaçants disponibles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in alerts %}
+        <tr>
+          <td class="fw-semibold">{{ a.expected|date:"H:i" }}</td>
+          <td>{{ a.employee.user.full_name|default:a.employee.user.email }}</td>
+          <td>{{ a.slot.subject|default:"—" }}</td>
+          <td>{{ a.slot.room|default:"—" }}</td>
+          <td>{{ a.slot.student_group|default:"—" }}</td>
+          <td>
+            {% if a.substitutes %}
+            <div class="gp-sub-chips">
+              {% for s in a.substitutes %}
+              <span class="gp-badge neutral">{{ s.user.full_name|default:s.user.email }}</span>
+              {% endfor %}
+              {% if a.substitutes_more %}
+              <span class="gp-badge neutral">+{{ a.substitutes_more }} autre{{ a.substitutes_more|pluralize }}</span>
+              {% endif %}
+            </div>
+            {% else %}
+            <span class="text-muted-cell">Aucun collègue libre à cet horaire</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="gp-table-empty">Aucun créneau sans professeur pour le moment — tout est couvert.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

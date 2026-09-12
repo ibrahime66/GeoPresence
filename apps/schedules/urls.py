@@ -9,4 +9,6 @@ urlpatterns = [
     path("horaires/nouveau/", views.ScheduleFormView.as_view(), name="create"),
     path("horaires/<uuid:pk>/modifier/", views.ScheduleFormView.as_view(), name="update"),
     path("horaires/<uuid:pk>/basculer/", views.ScheduleToggleActiveView.as_view(), name="toggle_active"),
+    path("horaires/salles-sans-professeur/", views.UnstaffedSlotsView.as_view(), name="unstaffed"),
+    path("horaires/planning-salles/", views.RoomPlanningView.as_view(), name="room_planning"),
 ]

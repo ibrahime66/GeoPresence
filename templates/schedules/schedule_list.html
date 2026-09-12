@@ -8,6 +8,10 @@
     <p>Plages de travail affectées aux employés, postes, départements ou agences.</p>
   </div>
   <div class="gp-page-header-actions">
+    {% if school_scheduling_enabled %}
+    <a href="{% url 'schedules:room_planning' %}" class="btn btn-outline-secondary">Planning des salles</a>
+    <a href="{% url 'schedules:unstaffed' %}" class="btn btn-outline-secondary">Cours sans professeur</a>
+    {% endif %}
     <a href="{% url 'schedules:create' %}" class="btn btn-primary">+ Nouvel horaire</a>
   </div>
 </div>
