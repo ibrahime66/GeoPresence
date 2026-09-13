@@ -6,6 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.http import urlencode
 from django.views import View
 from django.views.generic import ListView, TemplateView
 
@@ -18,7 +19,7 @@ from apps.core.views import DEFAULT_PAGE_SIZE, TenantQuerysetMixin, ToggleActive
 from apps.tenants.org_settings import get_org_setting
 
 from . import services
-from .forms import ScheduleForm, ScheduleSlotFormSet
+from .forms import ScheduleForm, ScheduleSlotFormSet, SlotExceptionForm
 from .models import Schedule
 
 # Regroupements proposés sur la page « Présence enseignants » — clé de tri
@@ -236,7 +237,9 @@ class TeacherPresenceView(RoleRequiredMixin, TemplateView):
         ]
         context["total_slots"] = len(entries)
         context["clocked_count"] = sum(1 for e in entries if e["clocked"])
-        context["missing_count"] = sum(1 for e in entries if not e["clocked"])
+        context["missing_count"] = sum(1 for e in entries if not e["clocked"] and e["exception"] is None)
+        context["cancelled_count"] = sum(1 for e in entries if e["exception"] and e["exception"].kind == "CANCELLED")
+        context["substituted_count"] = sum(1 for e in entries if e["exception"] and e["exception"].kind == "SUBSTITUTED")
         context["in_progress_count"] = sum(1 for e in entries if e["in_progress"])
         context["query_string"] = self.request.GET.urlencode()
         return context
@@ -251,7 +254,7 @@ class TeacherPresenceExportView(RoleRequiredMixin, View):
 
     HEADERS = [
         "Date", "Début", "Fin", "Matière", "Classe", "Salle", "Enseignant",
-        "Arrivée", "Statut arrivée", "Départ", "En classe",
+        "Annulation / remplacement", "Arrivée", "Statut arrivée", "Départ", "En classe",
     ]
 
     def get(self, request, fmt):
@@ -262,7 +265,13 @@ class TeacherPresenceExportView(RoleRequiredMixin, View):
 
         rows = []
         for e in entries:
-            slot, arrival, departure = e["slot"], e["arrival"], e["departure"]
+            slot, arrival, departure, exc = e["slot"], e["arrival"], e["departure"], e["exception"]
+            if exc is None:
+                exc_label = ""
+            elif exc.kind == "CANCELLED":
+                exc_label = f"Annulé{f' ({exc.reason})' if exc.reason else ''}"
+            else:
+                exc_label = f"Remplacé par {exc.substitute_label}{f' ({exc.reason})' if exc.reason else ''}"
             rows.append([
                 on_date.isoformat(),
                 slot.start_time.strftime("%H:%M"),
@@ -271,8 +280,9 @@ class TeacherPresenceExportView(RoleRequiredMixin, View):
                 slot.student_group or "",
                 slot.room or "",
                 e["employee"].user.full_name or e["employee"].user.email,
+                exc_label,
                 timezone.localtime(arrival.server_time).strftime("%H:%M") if arrival else "",
-                arrival.get_status_display() if arrival else "Non pointé",
+                arrival.get_status_display() if arrival else ("—" if exc else "Non pointé"),
                 timezone.localtime(departure.server_time).strftime("%H:%M") if departure else "",
                 "Oui" if e["in_progress"] else "",
             ])
@@ -295,3 +305,89 @@ class TeacherPresenceExportView(RoleRequiredMixin, View):
             description=f"Export présence enseignants ({fmt}, {len(rows)} lignes)",
         )
         return response
+
+
+class SlotExceptionView(RoleRequiredMixin, View):
+    """CDC §10.2.4 : annuler ou faire remplacer un cours pour UNE date — depuis
+    la page « Présence enseignants ». Une seule exception par (créneau, date) :
+    reposter écrase la précédente, ?action=delete la retire."""
+
+    allowed_roles = ADMIN_ONLY
+
+    def _redirect_back(self, request, on_date):
+        params = {"date": on_date.isoformat()}
+        groupe = request.POST.get("groupe") or request.GET.get("groupe")
+        if groupe:
+            params["groupe"] = groupe
+        return redirect(f"{reverse_lazy('schedules:teacher_presence')}?{urlencode(params)}")
+
+    def _get_slot(self, request, slot_id):
+        from .models import ScheduleSlot
+
+        if not get_org_setting(request.tenant, "school_scheduling_enabled"):
+            raise Http404("Module horaires enseignants non activé.")
+        return get_object_or_404(
+            ScheduleSlot.objects.all_tenants().filter(tenant=request.tenant), pk=slot_id
+        )
+
+    def _existing(self, request, slot, on_date):
+        from .models import SlotException
+
+        return (
+            SlotException.objects.all_tenants()
+            .filter(tenant=request.tenant, slot=slot, date=on_date)
+            .select_related("substitute_employee__user", "original_employee__user")
+            .first()
+        )
+
+    def get(self, request, slot_id):
+        slot = self._get_slot(request, slot_id)
+        on_date = _presence_date(request)
+        existing = self._existing(request, slot, on_date)
+        form = SlotExceptionForm(instance=existing, tenant=request.tenant)
+        return render(request, "schedules/slot_exception_form.html", {
+            "form": form, "slot": slot, "on_date": on_date, "existing": existing,
+            "original_employee_id": request.GET.get("employe", ""),
+            "groupe": request.GET.get("groupe", ""),
+        })
+
+    def post(self, request, slot_id):
+        from apps.employees.models import Employee
+
+        slot = self._get_slot(request, slot_id)
+        on_date = _presence_date(request)
+        existing = self._existing(request, slot, on_date)
+
+        if request.POST.get("action") == "delete":
+            if existing:
+                existing.delete()
+                messages.success(request, "Annulation / remplacement retiré — le cours redevient normal.")
+            return self._redirect_back(request, on_date)
+
+        if on_date.weekday() != slot.weekday:
+            messages.error(request, "Cette date ne correspond pas au jour du créneau.")
+            return self._redirect_back(request, on_date)
+
+        form = SlotExceptionForm(request.POST, instance=existing, tenant=request.tenant)
+        form.instance.tenant = request.tenant
+        form.instance.slot = slot
+        form.instance.date = on_date
+        form.instance.created_by = request.user
+        if not existing:
+            original_id = request.POST.get("original_employee_id") or None
+            if original_id:
+                form.instance.original_employee = (
+                    Employee.objects.all_tenants()
+                    .filter(tenant=request.tenant, pk=original_id).first()
+                )
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Cours mis à jour pour cette date.")
+            return self._redirect_back(request, on_date)
+
+        return render(request, "schedules/slot_exception_form.html", {
+            "form": form, "slot": slot, "on_date": on_date, "existing": existing,
+            "original_employee_id": request.POST.get("original_employee_id", ""),
+            "groupe": request.POST.get("groupe", ""),
+        })
