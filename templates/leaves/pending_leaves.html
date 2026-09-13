@@ -22,11 +22,11 @@
         {% for leave in leaves %}
         <tr>
           <td class="fw-semibold">{{ leave.employee }}</td>
-          <td>{{ leave.leave_type.name }}</td>
-          <td>{{ leave.start_date }}</td>
-          <td>{{ leave.end_date }}</td>
-          <td>{{ leave.working_days }}</td>
-          <td class="text-muted-cell">{{ leave.employee_comment|default:"—" }}</td>
+          <td data-label="Type">{{ leave.leave_type.name }}</td>
+          <td data-label="Du">{{ leave.start_date }}</td>
+          <td data-label="Au">{{ leave.end_date }}</td>
+          <td data-label="Jours">{{ leave.working_days }}</td>
+          <td class="text-muted-cell" data-label="Commentaire">{{ leave.employee_comment|default:"—" }}</td>
           <td>
             <div class="gp-table-actions">
               <form method="post" action="{% url 'leaves:review' leave.pk %}">

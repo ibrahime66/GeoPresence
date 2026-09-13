@@ -115,10 +115,10 @@
           {% for a in recent_attendances %}
           <tr>
             <td class="fw-semibold">{{ a.clock_date }}</td>
-            <td>{{ a.get_clock_type_display }}</td>
-            <td>{{ a.server_time|date:"H:i" }}</td>
-            <td>{{ a.get_status_display }}</td>
-            <td>{{ a.agency.name }}</td>
+            <td data-label="Type">{{ a.get_clock_type_display }}</td>
+            <td data-label="Heure">{{ a.server_time|date:"H:i" }}</td>
+            <td data-label="Statut">{{ a.get_status_display }}</td>
+            <td data-label="Agence">{{ a.agency.name }}</td>
           </tr>
           {% empty %}
           <tr><td colspan="5"><div class="gp-table-empty">Aucun pointage.</div></td></tr>

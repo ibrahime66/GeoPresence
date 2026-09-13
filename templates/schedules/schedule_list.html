@@ -25,9 +25,9 @@
         {% for schedule in schedules %}
         <tr>
           <td class="fw-semibold">{{ schedule.name }}</td>
-          <td>{{ schedule.get_schedule_type_display }}</td>
-          <td>{{ schedule.slots.count }}</td>
-          <td>
+          <td data-label="Type">{{ schedule.get_schedule_type_display }}</td>
+          <td data-label="Créneaux">{{ schedule.slots.count }}</td>
+          <td data-label="Statut">
             {% if schedule.is_active %}<span class="gp-badge success"><span class="dot"></span>Actif</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>Inactif</span>{% endif %}
           </td>

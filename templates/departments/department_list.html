@@ -21,9 +21,9 @@
         {% for dept in departments %}
         <tr>
           <td class="fw-semibold">{{ dept.name }}</td>
-          <td class="text-muted-cell">{{ dept.code }}</td>
-          <td>{{ dept.default_schedule|default:"—" }}</td>
-          <td>
+          <td class="text-muted-cell" data-label="Code">{{ dept.code }}</td>
+          <td data-label="Horaire par défaut">{{ dept.default_schedule|default:"—" }}</td>
+          <td data-label="Statut">
             {% if dept.is_active %}<span class="gp-badge success"><span class="dot"></span>Actif</span>
             {% else %}<span class="gp-badge neutral"><span class="dot"></span>Inactif</span>{% endif %}
           </td>

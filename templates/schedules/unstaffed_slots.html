@@ -26,11 +26,11 @@
         {% for a in alerts %}
         <tr>
           <td class="fw-semibold">{{ a.expected|date:"H:i" }}</td>
-          <td>{{ a.employee.user.full_name|default:a.employee.user.email }}</td>
-          <td>{{ a.slot.subject|default:"—" }}</td>
-          <td>{{ a.slot.room|default:"—" }}</td>
-          <td>{{ a.slot.student_group|default:"—" }}</td>
-          <td>
+          <td data-label="Enseignant">{{ a.employee.user.full_name|default:a.employee.user.email }}</td>
+          <td data-label="Matière">{{ a.slot.subject|default:"—" }}</td>
+          <td data-label="Salle">{{ a.slot.room|default:"—" }}</td>
+          <td data-label="Groupe">{{ a.slot.student_group|default:"—" }}</td>
+          <td data-label="Remplaçants disponibles">
             {% if a.substitutes %}
             <div class="gp-sub-chips">
               {% for s in a.substitutes %}

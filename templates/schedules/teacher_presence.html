@@ -63,16 +63,16 @@
         {% for e in group.entries %}
         <tr class="{% if e.exception %}gp-presence-row-exception{% elif not e.clocked %}gp-presence-row-missing{% endif %}">
           <td class="text-nowrap fw-semibold">{{ e.slot.start_time|time:"H:i" }}–{{ e.slot.end_time|time:"H:i" }}</td>
-          <td>{{ e.slot.subject|default:"—" }}</td>
-          <td>{{ e.slot.student_group|default:"—" }}</td>
-          <td>{{ e.slot.room|default:"—" }}</td>
-          <td>
+          <td data-label="Matière">{{ e.slot.subject|default:"—" }}</td>
+          <td data-label="Classe">{{ e.slot.student_group|default:"—" }}</td>
+          <td data-label="Salle">{{ e.slot.room|default:"—" }}</td>
+          <td data-label="Enseignant">
             {{ e.employee.user.full_name|default:e.employee.user.email }}
             {% if e.exception.kind == "SUBSTITUTED" %}
             <div class="text-muted-cell small">→ {{ e.exception.substitute_label }}</div>
             {% endif %}
           </td>
-          <td>
+          <td data-label="Arrivée">
             {% if e.exception %}
               <span class="text-muted-cell">—</span>
             {% elif e.arrival %}
@@ -85,7 +85,7 @@
               <span class="text-muted-cell">—</span>
             {% endif %}
           </td>
-          <td>
+          <td data-label="État">
             {% if e.exception.kind == "CANCELLED" %}<span class="gp-badge neutral"><span class="dot"></span>Annulé</span>{% if e.exception.reason %} <span class="text-muted-cell small">{{ e.exception.reason }}</span>{% endif %}
             {% elif e.exception.kind == "SUBSTITUTED" %}<span class="gp-badge info"><span class="dot"></span>Remplacé</span>{% if e.exception.reason %} <span class="text-muted-cell small">{{ e.exception.reason }}</span>{% endif %}
             {% elif e.in_progress %}<span class="gp-badge info"><span class="dot"></span>En classe</span>
