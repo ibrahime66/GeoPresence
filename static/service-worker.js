@@ -6,8 +6,13 @@
  * interceptée (le pointage POST passe toujours par le réseau ou par la file
  * d'attente IndexedDB gérée dans clock.js, jamais par ce cache HTTP).
  */
-const CACHE_NAME = "geopresence-shell-v14";
+const CACHE_NAME = "geopresence-shell-v15";
 const OFFLINE_FALLBACK_URL = "/static/offline.html";
+// Au-delà de ce délai, on cesse d'attendre le réseau pour une navigation et
+// on ressert la dernière version connue de la page (ou la page hors ligne) —
+// évite l'écran blanc figé "au clic" sur une connexion lente/instable, sans
+// pour autant renoncer à la fraîcheur quand le réseau répond normalement.
+const NAV_NETWORK_TIMEOUT_MS = 3500;
 const SHELL_ASSETS = [
   "/static/css/main.css",
   "/static/img/logo-mark.png",
@@ -51,10 +56,19 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
+    const network = fetch(request)
+      .then((response) => cachePut(request, response))
+      .catch(() => null);
+    const timeout = new Promise((resolve) => setTimeout(() => resolve(null), NAV_NETWORK_TIMEOUT_MS));
     event.respondWith(
-      fetch(request)
-        .then((response) => cachePut(request, response))
-        .catch(() => caches.match(request).then((cached) => cached || caches.match(OFFLINE_FALLBACK_URL)))
+      Promise.race([network, timeout]).then(
+        (response) =>
+          response ||
+          caches
+            .match(request)
+            .then((cached) => cached || network) // pas de cache : on laisse le réseau finir malgré tout
+            .then((r) => r || caches.match(OFFLINE_FALLBACK_URL))
+      )
     );
     return;
   }
